@@ -80,7 +80,7 @@ const INITIAL_SLIDE_SETTINGS = {
   3: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0, offsetX: 0, offsetY: 0 },
 };
 
-export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, onUpdateSlideSettings, onSaveToArchive, isSaved }) {
+export function CarouselStudio({ post, project, gallery, onUpdateGallery, slideSettings, onUpdateSlideSettings, onSaveToArchive, isSaved }) {
   const [activeSlide, setActiveSlide] = useState(0); // 0, 1, 2, 3
   const [isExporting, setIsExporting] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
@@ -384,10 +384,25 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
     );
   }
 
+  const rawWatermark = post.watermark || project?.watermark || post.projectShortCode || project?.shortCode || 'L O R E';
+  const slideLogo = rawWatermark.trim();
+  const slideAccentColor = post.accentColor || project?.accentColor || '#e6c280';
+  const slideTagline = project?.tagline || post.tagline || 'Kültür & Statü Şifreleri';
+
+  const formatQuote = (q, fallback) => {
+    let quote = q || fallback || '';
+    if (!quote) return '';
+    quote = quote.trim();
+    if (!/[.!?]$/.test(quote)) {
+      quote = quote.replace(/[,;:\s]+$/, '') + '.';
+    }
+    return quote;
+  };
+
   // Slide quotes (all 3 slides: 2, 3 and 4)
-  const slide1Quote = post.slideQuotes?.[0] || getPunchyExcerpt(post.lore?.[0], 2);
-  const slide2Quote = post.slideQuotes?.[1] || getPunchyExcerpt(post.lore?.[1] || post.lore?.[0], 2);
-  const slide3Quote = post.slideQuotes?.[2] || getPunchyExcerpt(post.lore?.[2] || post.lore?.[0], 2);
+  const slide1Quote = formatQuote(post.slideQuotes?.[0], getPunchyExcerpt(post.lore?.[0], 2));
+  const slide2Quote = formatQuote(post.slideQuotes?.[1], getPunchyExcerpt(post.lore?.[1] || post.lore?.[0], 2));
+  const slide3Quote = formatQuote(post.slideQuotes?.[2], getPunchyExcerpt(post.lore?.[2] || post.lore?.[0], 2));
 
   const getImageForSlide = (slideIdx) => {
     const imgId = slideSettings?.[slideIdx]?.imageId;
@@ -574,8 +589,11 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
 
               {/* Top Header */}
               <div className="flex items-center justify-between border-b border-white/15 pb-3 relative z-10">
-                <span className="font-serif tracking-[0.3em] text-xs font-bold uppercase text-[#e6c280]">
-                  L O R E
+                <span
+                  className="font-serif tracking-[0.25em] text-xs font-bold uppercase drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]"
+                  style={{ color: slideAccentColor }}
+                >
+                  {slideLogo}
                 </span>
                 <span className="font-mono text-[10px] tracking-wider text-neutral-300 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
                   01 / 04
@@ -590,13 +608,16 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
                   }}
                   className="space-y-3 mt-auto pb-3 relative z-10 transition-transform duration-75"
                 >
-                  <div className="text-[9px] font-mono tracking-[0.2em] text-[#e6c280] uppercase">
-                    Kültür & Statü Şifreleri
+                  <div
+                    className="text-[9px] font-mono tracking-[0.2em] uppercase font-semibold drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]"
+                    style={{ color: slideAccentColor }}
+                  >
+                    {slideTagline}
                   </div>
                   <h2 className="font-serif text-2xl font-black leading-tight tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]">
                     {post.title}
                   </h2>
-                  <div className="w-10 h-[1.5px] bg-[#e6c280]" />
+                  <div className="w-10 h-[1.5px]" style={{ backgroundColor: slideAccentColor }} />
                   <p className="font-serif italic text-xs text-neutral-200 leading-relaxed drop-shadow-[0_1px_5px_rgba(0,0,0,0.9)]">
                     "{post.hook}"
                   </p>
@@ -625,8 +646,11 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
 
               {/* Top Header */}
               <div className="flex items-center justify-between border-b border-white/15 pb-3 relative z-10">
-                <span className="font-serif tracking-[0.3em] text-xs font-bold uppercase text-[#e6c280]">
-                  L O R E
+                <span
+                  className="font-serif tracking-[0.25em] text-xs font-bold uppercase drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]"
+                  style={{ color: slideAccentColor }}
+                >
+                  {slideLogo}
                 </span>
                 <span className="font-mono text-[10px] tracking-wider text-neutral-300 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
                   02 / 04
@@ -642,20 +666,23 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
                   className="space-y-3 mt-auto pb-3 relative z-10 transition-transform duration-75"
                 >
                   <div className="flex items-center space-x-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#e6c280]" />
-                    <span className="text-[9px] font-mono tracking-widest uppercase text-[#e6c280]">
-                      01 / İkonikleşme
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: slideAccentColor }} />
+                    <span
+                      className="text-[9px] font-mono tracking-widest uppercase font-semibold"
+                      style={{ color: slideAccentColor }}
+                    >
+                      01 / İkonikleşme & Giriş
                     </span>
                   </div>
 
-                  <p className="font-serif italic text-sm sm:text-base text-white leading-relaxed line-clamp-3 min-h-[4.4rem] drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                  <p className="font-serif italic text-[13.5px] sm:text-sm text-white leading-relaxed drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
                     "{slide1Quote}"
                   </p>
 
                   <div className="flex items-center space-x-1.5 text-[9px] font-mono text-neutral-300">
-                    <span className="text-[#e6c280]">&bull;</span>
+                    <span style={{ color: slideAccentColor }}>&bull;</span>
                     <span>Popüler kültürün gizli şifreleri</span>
-                    <span className="text-[#e6c280]">&rarr;</span>
+                    <span style={{ color: slideAccentColor }}>&rarr;</span>
                   </div>
                 </div>
               )}
@@ -682,8 +709,11 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
 
               {/* Top Header */}
               <div className="flex items-center justify-between border-b border-white/15 pb-3 relative z-10">
-                <span className="font-serif tracking-[0.3em] text-xs font-bold uppercase text-[#e6c280]">
-                  L O R E
+                <span
+                  className="font-serif tracking-[0.25em] text-xs font-bold uppercase drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]"
+                  style={{ color: slideAccentColor }}
+                >
+                  {slideLogo}
                 </span>
                 <span className="font-mono text-[10px] tracking-wider text-neutral-300 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
                   03 / 04
@@ -699,20 +729,23 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
                   className="space-y-3 mt-auto pb-3 relative z-10 transition-transform duration-75"
                 >
                   <div className="flex items-center space-x-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#e6c280]" />
-                    <span className="text-[9px] font-mono tracking-widest uppercase text-[#e6c280]">
-                      02 / Statü Şifresi
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: slideAccentColor }} />
+                    <span
+                      className="text-[9px] font-mono tracking-widest uppercase font-semibold"
+                      style={{ color: slideAccentColor }}
+                    >
+                      02 / Statü Şifresi & Perde Arkası
                     </span>
                   </div>
 
-                  <p className="font-serif italic text-sm sm:text-base text-white leading-relaxed line-clamp-3 min-h-[4.4rem] drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                  <p className="font-serif italic text-[13.5px] sm:text-sm text-white leading-relaxed drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
                     "{slide2Quote}"
                   </p>
 
                   <div className="flex items-center space-x-1.5 text-[9px] font-mono text-neutral-300">
-                    <span className="text-[#e6c280]">&bull;</span>
+                    <span style={{ color: slideAccentColor }}>&bull;</span>
                     <span>Detaylı hikaye açıklamada</span>
-                    <span className="text-[#e6c280]">&darr;</span>
+                    <span style={{ color: slideAccentColor }}>&darr;</span>
                   </div>
                 </div>
               )}
@@ -739,8 +772,11 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
 
               {/* Top Header */}
               <div className="flex items-center justify-between border-b border-white/15 pb-3 relative z-10">
-                <span className="font-serif tracking-[0.3em] text-xs font-bold uppercase text-[#e6c280]">
-                  L O R E
+                <span
+                  className="font-serif tracking-[0.25em] text-xs font-bold uppercase drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]"
+                  style={{ color: slideAccentColor }}
+                >
+                  {slideLogo}
                 </span>
                 <span className="font-mono text-[10px] tracking-wider text-neutral-300 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
                   04 / 04
@@ -756,20 +792,23 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
                   className="space-y-3 mt-auto pb-3 relative z-10 transition-transform duration-75"
                 >
                   <div className="flex items-center space-x-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#e6c280]" />
-                    <span className="text-[9px] font-mono tracking-widest uppercase text-[#e6c280]">
-                      03 / Kültürel Miras
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: slideAccentColor }} />
+                    <span
+                      className="text-[9px] font-mono tracking-widest uppercase font-semibold"
+                      style={{ color: slideAccentColor }}
+                    >
+                      03 / Kültürel Miras & Kapanış
                     </span>
                   </div>
 
-                  <p className="font-serif italic text-sm sm:text-base text-white leading-relaxed line-clamp-3 min-h-[4.4rem] drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                  <p className="font-serif italic text-[13.5px] sm:text-sm text-white leading-relaxed drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
                     "{slide3Quote}"
                   </p>
 
                   <div className="flex items-center space-x-1.5 text-[9px] font-mono text-neutral-300">
-                    <span className="text-[#e6c280]">&bull;</span>
+                    <span style={{ color: slideAccentColor }}>&bull;</span>
                     <span>Bu detayı biliyor muydunuz? Görüşlerinizi yazın</span>
-                    <span className="text-[#e6c280]">&darr;</span>
+                    <span style={{ color: slideAccentColor }}>&darr;</span>
                   </div>
 
                   {/* Hashtags: Eski zarif, küçük yapısında sadece bir tık daha belirgin */}

@@ -34,7 +34,7 @@ ${categoriesDesc}
 
 Çıktı Formatı Kuralları:
 Sadece geçerli bir JSON objesi döndür.
-Instagram carousel slaytlarında insanlar uzun paragraflar okumaz; bu yüzden 'slideQuotes' alanında her slayt için tam olarak 3 satır uzunluğunda (yaklaşık 25-30 kelime), ultra vurucu, dergi editoryal tespitleri yaz. Derinlemesine 3 paragraflık tam analiz ise 'lore' alanında (Instagram açıklaması için) yer alsın.
+Instagram carousel slaytlarında 'slideQuotes' alanında her slayt için MUTLAKA eksiksiz, noktayla veya ünlemle biten, kesinlikle yarım kalmayan, 1 veya en fazla 2 kısa, net ve vurucu cümle (yaklaşık 16-20 kelime) yaz. Cümleleri ASLA yarım bırakma, '...' ile kesme, sonuna mutlaka noktalama işareti koy. Derinlemesine 3 paragraflık tam editoryal analiz ise 'lore' alanında (Instagram açıklaması için) yer alsın.
 
 JSON yapısı:
 {
@@ -46,14 +46,14 @@ JSON yapısı:
     "3. Paragraf: Geleceğe etkisi, günümüze mirası veya kapanış çıkarımı."
   ],
   "slideQuotes": [
-    "Slayt 2: Tam 3 satır uzunluğunda (25-30 kelime), tek bir akıcı editoryal tespit.",
-    "Slayt 3: Tam 3 satır uzunluğunda (25-30 kelime), perde arkasını ifşa eden editoryal tespit.",
-    "Slayt 4: Tam 3 satır uzunluğunda (25-30 kelime), etkiyi ve sonucu özetleyen editoryal tespit."
+    "Slayt 2: Tam ve eksiksiz 1-2 cümlelik (16-20 kelime), noktayla biten editoryal tespit.",
+    "Slayt 3: Tam ve eksiksiz 1-2 cümlelik (16-20 kelime), noktayla biten perde arkası tespiti.",
+    "Slayt 4: Tam ve eksiksiz 1-2 cümlelik (16-20 kelime), noktayla biten kültürel miras ve sonuç tespiti."
   ],
   "visualNote": "Bu içeriğin görseli için Pinterest/Unsplash/Arşiv için en uygun İngilizce estetik arama terimi.",
   "hashtags": ["#etiket1", "#etiket2", "#etiket3", "#etiket4"]
 }
-Önemli: Kesinlikle hiçbir emoji kullanma. Sadece JSON döndür.
+Önemli: Kesinlikle hiçbir emoji kullanma. Sadece JSON döndür. Slayt cümlelerini asla yarım bırakma.
 `;
 }
 
@@ -63,7 +63,7 @@ Sen, yüksek estetik anlayışına sahip elit bir dijital kültür dergisinin "�
 
 Çıktı Formatı Kuralları:
 Sadece geçerli bir JSON objesi döndür.
-Instagram carousel slaytlarında insanlar uzun paragraflar okumaz; bu yüzden 'slideQuotes' alanında her slayt için tam olarak 3 satır uzunluğunda (yaklaşık 25-30 kelime), ultra vurucu, dergi editoryal tespitleri yaz. Derinlemesine 3 paragraflık tam analiz ise 'lore' alanında (Instagram açıklaması için) yer alsın.
+Instagram carousel slaytlarında 'slideQuotes' alanında her slayt için MUTLAKA eksiksiz, noktayla veya ünlemle biten, kesinlikle yarım kalmayan, 1 veya en fazla 2 kısa, net ve vurucu cümle (yaklaşık 16-20 kelime) yaz. Cümleleri ASLA yarım bırakma, '...' ile kesme, sonuna mutlaka noktalama işareti koy. Derinlemesine 3 paragraflık tam editoryal analiz ise 'lore' alanında (Instagram açıklaması için) yer alsın.
 
 JSON yapısı:
 {
@@ -75,14 +75,14 @@ JSON yapısı:
     "3. Paragraf: Tüketim çılgınlığı, günümüze mirası ve bıraktığı kültürel iz."
   ],
   "slideQuotes": [
-    "Slayt 2 (İkonikleşme): Tam 3 satır uzunluğunda (25-30 kelime), tek bir akıcı editoryal tespit.",
-    "Slayt 3 (Statü Şifresi): Tam 3 satır uzunluğunda (25-30 kelime), statü psikolojisini ifşa eden editoryal tespit.",
-    "Slayt 4 (Kültürel Miras & Kapanış): Tam 3 satır uzunluğunda (25-30 kelime), günümüze bıraktığı etkiyi özetleyen editoryal tespit."
+    "Slayt 2 (İkonikleşme): Tam ve eksiksiz 1-2 cümlelik (16-20 kelime), noktayla biten editoryal tespit.",
+    "Slayt 3 (Statü Şifresi): Tam ve eksiksiz 1-2 cümlelik (16-20 kelime), noktayla biten statü tespiti.",
+    "Slayt 4 (Kültürel Miras & Kapanış): Tam ve eksiksiz 1-2 cümlelik (16-20 kelime), noktayla biten kapanış tespiti."
   ],
   "visualNote": "Bu içeriğin arka planı için internetten bulunması gereken en estetik orijinal karenin İngilizce arama terimi.",
   "hashtags": ["#etiket1", "#etiket2", "#etiket3", "#etiket4"]
 }
-Önemli: Kesinlikle hiçbir emoji kullanma. Sadece JSON döndür.
+Önemli: Kesinlikle hiçbir emoji kullanma. Sadece JSON döndür. Slayt cümlelerini asla yarım bırakma.
 `;
 
 /**
@@ -108,14 +108,20 @@ export async function getAvailableModels(apiKey) {
   }
 }
 
-// Cümle ayıklayıcı (kısa slayt metni fallback'i)
+// Cümle ayıklayıcı (kısa slayt metni fallback'i - asla yarım cümle bırakmaz)
 export function getPunchyExcerpt(text, maxSentences = 2) {
   if (!text) return "";
-  const matches = text.match(/[^.!?]+[.!?]+/g);
+  const clean = text.trim();
+  const matches = clean.match(/[^.!?]+[.!?]+/g);
   if (matches && matches.length > 0) {
     return matches.slice(0, maxSentences).join(" ").trim();
   }
-  return text.length > 140 ? text.substring(0, 140) + "..." : text;
+  // Noktalama yoksa kelime sınırında kes ve nokta koy
+  const words = clean.split(/\s+/);
+  if (words.length <= 18) {
+    return clean + (/[.!?]$/.test(clean) ? '' : '.');
+  }
+  return words.slice(0, 18).join(" ") + ".";
 }
 
 export async function generateEditorialPost({ apiKey, category, decade, customTopic, model = "gemini-2.5-flash", onProgress, project }) {
@@ -226,13 +232,23 @@ ${project?.filterTypeLabel || 'Filtre / Dönem'}: ${decade}
       const parsed = JSON.parse(cleaned);
 
       // Slide quotes fallback (3 slides: 2, 3 and 4)
-      const slideQuotes = Array.isArray(parsed.slideQuotes) && parsed.slideQuotes.length >= 3
+      const rawSlideQuotes = Array.isArray(parsed.slideQuotes) && parsed.slideQuotes.length >= 3
         ? parsed.slideQuotes
         : [
             getPunchyExcerpt(Array.isArray(parsed.lore) ? parsed.lore[0] : parsed.lore, 2),
             getPunchyExcerpt(Array.isArray(parsed.lore) ? (parsed.lore[1] || parsed.lore[0]) : parsed.lore, 2),
             getPunchyExcerpt(Array.isArray(parsed.lore) ? (parsed.lore[2] || parsed.lore[0]) : parsed.lore, 2)
           ];
+
+      // Cümlelerin asla yarım kalmamasını garanti et
+      const slideQuotes = rawSlideQuotes.map((q) => {
+        if (!q) return '';
+        let s = q.trim();
+        if (!/[.!?]$/.test(s)) {
+          s = s.replace(/[,;:\s]+$/, '') + '.';
+        }
+        return s;
+      });
 
       // Instagram Açıklama (Caption) formatı (Tüm detaylı paragraflar buraya gelir)
       const formattedCaption = `[Gönderi Başlığı: ${parsed.title}]
@@ -259,6 +275,8 @@ ${Array.isArray(parsed.hashtags) ? parsed.hashtags.join(" ") : parsed.hashtags}`
         projectId: project?.id || 'lore-magazine',
         projectName: project?.name || 'Lore Magazine',
         projectShortCode: project?.shortCode || 'LORE',
+        watermark: project?.watermark || project?.shortCode || 'L O R E',
+        accentColor: project?.accentColor || '#e6c280',
         createdAt: new Date().toISOString(),
         id: "post_" + Date.now()
       };

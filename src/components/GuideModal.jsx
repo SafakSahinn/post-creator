@@ -115,10 +115,10 @@ export function GuideModal({ isOpen, onClose, onOpenSettings, onOpenProjects }) 
               <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 space-y-2">
                 <div className="flex items-center space-x-2.5 text-[#e6c280] font-mono text-xs font-semibold">
                   <span className="w-5 h-5 rounded-full bg-[#e6c280] text-black flex items-center justify-center text-[10px] font-bold">2</span>
-                  <span>Şablon Klonlayın veya Sıfırdan Başlayın</span>
+                  <span>Marka Adı, Kısa Kod & Slayt Logosu</span>
                 </div>
                 <p className="text-xs text-neutral-300 pl-7 leading-relaxed font-sans">
-                  İsterseniz mevcut hazır projelerin (Lore, Tech, Sinema, Minimalizm) yanındaki <strong>Kopyala (<Copy className="w-3 h-3 inline text-[#e6c280]" />)</strong> ikonuna basarak hazır bir şablon üzerinden ilerleyebilir, isterseniz sıfırdan tamamen size özel bir kanal kurgulayabilirsiniz.
+                  Projenizin adını, kısa kodunu ve <strong>Slayt Köşe Logosunu (Filigran)</strong> belirleyin. Slaytların sol üst köşesinde beliren logo metni (örn: <code>L O R E</code>, <code>T E C H</code>, <code>C I N E</code> veya kendi kanal adınız) projenize özel olarak otomatik konumlanır.
                 </p>
               </div>
 

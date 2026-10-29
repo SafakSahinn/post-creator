@@ -437,6 +437,7 @@ export function App() {
             ) : (
               <CarouselStudio
                 post={currentPost}
+                project={activeProject}
                 gallery={gallery}
                 onUpdateGallery={setGallery}
                 slideSettings={slideSettings}

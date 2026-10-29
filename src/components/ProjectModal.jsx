@@ -31,6 +31,7 @@ export function ProjectModal({
   const [formData, setFormData] = useState({
     name: '',
     shortCode: '',
+    watermark: '',
     tagline: '',
     badge: 'Kültür & Medya',
     buttonText: 'İçeriği Üret',
@@ -61,13 +62,15 @@ export function ProjectModal({
         ...template,
         id: 'proj_' + Date.now(),
         name: `${template.name} (Kopya)`,
-        shortCode: template.shortCode + '2'
+        shortCode: template.shortCode + '2',
+        watermark: template.watermark || template.shortCode || ''
       });
     } else {
       setFormData({
         id: 'proj_' + Date.now(),
         name: '',
         shortCode: '',
+        watermark: '',
         tagline: '',
         badge: 'Özel Kanal',
         buttonText: 'İçeriği Üret',
@@ -96,7 +99,10 @@ export function ProjectModal({
 
   const handleStartEdit = (proj) => {
     setEditingProject(proj);
-    setFormData(JSON.parse(JSON.stringify(proj)));
+    setFormData({
+      ...JSON.parse(JSON.stringify(proj)),
+      watermark: proj.watermark || proj.shortCode || ''
+    });
     setView('edit');
   };
 
@@ -107,11 +113,13 @@ export function ProjectModal({
       return;
     }
     const cleanShort = formData.shortCode?.trim().toUpperCase() || formData.name.slice(0, 4).toUpperCase();
+    const cleanWatermark = formData.watermark?.trim().toUpperCase() || cleanShort;
     const finalProj = {
       ...formData,
       id: editingProject?.id || formData.id || 'proj_' + Date.now(),
       name: formData.name.trim(),
       shortCode: cleanShort,
+      watermark: cleanWatermark,
       buttonText: formData.buttonText?.trim() || `${formData.name} İçeriğini Üret`
     };
 
@@ -357,20 +365,28 @@ export function ProjectModal({
                 </span>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="sm:col-span-2">
+                  <div>
                     <label className="text-[10px] font-mono text-neutral-400 block mb-1">Proje Adı *</label>
                     <input
                       type="text"
                       required
                       value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFormData((prev) => ({
+                          ...prev,
+                          name: val,
+                          shortCode: prev.shortCode ? prev.shortCode : val.slice(0, 4).toUpperCase(),
+                          watermark: prev.watermark ? prev.watermark : val.slice(0, 8).toUpperCase()
+                        }));
+                      }}
                       placeholder="Örn: Cinema Scope veya Tech Radar"
                       className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-[#e6c280]"
                     />
                   </div>
 
                   <div>
-                    <label className="text-[10px] font-mono text-neutral-400 block mb-1">Kısa Kod (Kapak Köşesi)</label>
+                    <label className="text-[10px] font-mono text-neutral-400 block mb-1">Kısa Kod (Kapak)</label>
                     <input
                       type="text"
                       maxLength={6}
@@ -380,6 +396,39 @@ export function ProjectModal({
                       className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-xs text-white uppercase font-mono placeholder-neutral-600 focus:outline-none focus:border-[#e6c280]"
                     />
                   </div>
+
+                  <div>
+                    <label className="text-[10px] font-mono text-[#e6c280] block mb-1 font-semibold flex items-center justify-between">
+                      <span>Slayt Köşe Logosu *</span>
+                      <span className="text-[9px] text-neutral-400 font-normal">Tüm slaytlarda çıkar</span>
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={14}
+                      value={formData.watermark}
+                      onChange={(e) => setFormData({ ...formData, watermark: e.target.value.toUpperCase() })}
+                      placeholder="Örn: LORE veya TECH"
+                      className="w-full bg-black/50 border border-[#e6c280]/40 rounded-lg px-3 py-2 text-xs text-[#e6c280] font-bold tracking-widest uppercase font-serif placeholder-neutral-600 focus:outline-none focus:border-[#e6c280]"
+                    />
+                  </div>
+                </div>
+
+                {/* Slayt Köşe Logosu Canlı Önizleme */}
+                <div className="flex items-center justify-between px-3.5 py-2.5 rounded-lg bg-black/40 border border-white/10">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[10px] font-mono text-neutral-400">Slayt Başlık Logosu Önizleme:</span>
+                    <span
+                      className="font-serif tracking-[0.3em] text-xs font-bold uppercase px-2.5 py-0.5 rounded border"
+                      style={{
+                        color: formData.accentColor || '#e6c280',
+                        borderColor: `${formData.accentColor || '#e6c280'}40`,
+                        backgroundColor: `${formData.accentColor || '#e6c280'}10`
+                      }}
+                    >
+                      {formData.watermark || formData.shortCode || formData.name || 'LOGO'}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono text-neutral-500 hidden sm:inline">01 / 04</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

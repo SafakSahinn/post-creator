@@ -11,6 +11,7 @@ export const BUILTIN_PROJECTS = [
     id: 'lore-magazine',
     name: 'Lore Magazine',
     shortCode: 'LORE',
+    watermark: 'L O R E',
     tagline: 'Kültürel Statü & Nostalji Stüdyosu',
     badge: 'Kültür & Moda',
     buttonText: 'Lore İçeriğini Üret',
@@ -76,6 +77,7 @@ export const BUILTIN_PROJECTS = [
     id: 'tech-ai-radar',
     name: 'Tech & AI Radar',
     shortCode: 'TECH',
+    watermark: 'T E C H',
     tagline: 'Geleceğin Teknolojileri, Kod & Girişim',
     badge: 'Yapay Zeka & Sistem',
     buttonText: 'Tech Raporunu Üret',
@@ -230,6 +232,7 @@ export const BUILTIN_PROJECTS = [
     id: 'cinema-visual-cult',
     name: 'Sinema & Görsel Kültür',
     shortCode: 'CINE',
+    watermark: 'C I N E',
     tagline: 'Auteur Sineması, Sahne Analizi & Estetik',
     badge: 'Sinematografi & Sanat',
     buttonText: 'Sinema Postunu Üret',
@@ -384,6 +387,7 @@ export const BUILTIN_PROJECTS = [
     id: 'minimal-living',
     name: 'Sessiz Lüks & Minimalizm',
     shortCode: 'QUIET',
+    watermark: 'Q U I E T',
     tagline: 'Sadeleşme, Mekan Tasarımı & Zamansız Kalite',
     badge: 'Tasarım & Yaşam',
     buttonText: 'Minimalist İçeriği Üret',
@@ -559,7 +563,10 @@ export function getAllProjects() {
         combined.push(custom);
       }
     });
-    return combined;
+    return combined.map((p) => ({
+      ...p,
+      watermark: p.watermark || (p.shortCode ? p.shortCode.split('').join(' ') : (p.name || 'POST').slice(0, 4).toUpperCase().split('').join(' '))
+    }));
   } catch (err) {
     console.warn('Projeler yüklenirken hata:', err);
     return BUILTIN_PROJECTS;
