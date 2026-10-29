@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Post Creator — Gizlilik Politikası</title>
+<link rel="icon" href="favicon.svg">
+<style>
+  :root { --bg: #090a0d; --fg: #ebe7e0; --muted: #a39d93; --link: #e6c280; --card: #121318; }
+  body { background: var(--bg); color: var(--fg); font: 16px/1.65 system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0; }
+  main { max-width: 720px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 1.8rem; margin: 0.5em 0 0.2em; color: #fff; }
+  h2 { font-size: 1.2rem; margin-top: 2em; color: var(--link); }
+  li { margin: 0.4em 0; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .muted { color: var(--muted); font-size: 0.9rem; }
+  code { background: rgba(255,255,255,0.1); padding: 2px 5px; border-radius: 4px; font-size: 0.9em; }
+</style>
+</head>
+<body>
+<main>
+  <p><a href="./">← Post Creator</a></p>
+  <h1>Gizlilik Politikası ve Kullanıcı Verileri Bildirimi</h1>
+  <p class="muted">Son güncelleme: 29 Ekim 2026</p>
+  <p>
+    Bu metin, <strong>Post Creator</strong> uygulamasının kullanıcı verilerini nasıl işlediğini açıklar.
+    İletişim: <a href="mailto:getpostcreator@gmail.com">getpostcreator@gmail.com</a>.
+  </p>
+
+  <h2>Temel İlke: Tam Kullanıcı Mülkiyeti & Sıfır Sunucu Kaydı</h2>
+  <p>
+    Post Creator, ürettiğiniz içerikleri ve carousel görsellerini üçüncü taraf sunucularda saklamaz.
+    Bütün verileriniz cihazınızın yerel tarayıcı hafızasında (IndexedDB) ve isteğinize bağlı olarak
+    bağladığınız kendi <strong>Google Drive</strong> hesabınızda durur.
+  </p>
+
+  <h2>Google Drive İzni (drive.file Kapsamı)</h2>
+  <p>
+    Uygulama, Google hesabınıza bağlanırken yalnızca <code>https://www.googleapis.com/auth/drive.file</code> iznini ister.
+    Bu izin sayesinde:
+  </p>
+  <ul>
+    <li>Uygulama yalnızca kendi oluşturduğu <b>Post Creator</b> klasörünü ve bu klasör içindeki gönderi/görsel dosyalarını yönetir.</li>
+    <li>Kişisel Google Drive'ınızdaki diğer belgelere, fotoğraflara veya dosyalara <b>kesinlikle erişemez ve göremez</b>.</li>
+    <li>İstediğiniz zaman Google hesabınızın güvenlik ayarlarından erişimi tek tıkla kaldırabilirsiniz.</li>
+  </ul>
+
+  <h2>Google Verilerinin Kullanımı</h2>
+  <p>
+    Post Creator'ın Google API'lerinden aldığı bilgileri kullanımı, Sınırlı Kullanım (Limited Use) şartları dahil
+    <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer">
+    Google API Hizmetleri Kullanıcı Verileri Politikası</a>'na uygundur.
+    Hesabınızdan alınan hiçbir bilgi üçüncü taraflara satılmaz, reklam amaçlı kullanılmaz veya yapay zekâ eğitimi için paylaşılmaz.
+  </p>
+
+  <h2>İletişim</h2>
+  <p>Her türlü soru ve destek talepleriniz için: <a href="mailto:getpostcreator@gmail.com">getpostcreator@gmail.com</a></p>
+  <p class="muted"><a href="terms.html">Kullanım Koşulları</a></p>
+</main>
+</body>
+</html>
