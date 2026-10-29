@@ -1,8 +1,8 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { 
-  Download, ChevronLeft, ChevronRight, Check, Image as ImageIcon, 
+  Download, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Check, Image as ImageIcon, 
   Upload, Trash2, Undo2, Redo2, Sliders, Eye, Sparkles, Layers,
-  Sun, ZoomIn, Contrast, MoveVertical, RotateCcw, ShieldOff, ShieldAlert,
+  Sun, ZoomIn, Contrast, MoveVertical, Move, RotateCcw, ShieldOff, ShieldAlert,
   Bookmark, BookmarkCheck, Video, Play
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
@@ -31,9 +31,11 @@ function SlideBackground({ media, settings }) {
   const zoom = (settings?.zoom ?? 105) / 100;
   const filter = getComputedFilter(settings?.filter, settings?.brightness);
   const vignette = settings?.vignette ?? 75;
+  const offsetX = settings?.offsetX || 0;
+  const offsetY = settings?.offsetY || 0;
 
   return (
-    <div className="absolute inset-0 z-0 overflow-hidden">
+    <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
       {isVideo ? (
         <video
           src={media.dataUrl}
@@ -42,20 +44,21 @@ function SlideBackground({ media, settings }) {
           muted
           playsInline
           style={{
-            transform: `scale(${zoom})`,
+            transform: `translate(${offsetX}px, ${offsetY}px) scale(${zoom})`,
             filter
           }}
-          className="w-full h-full object-cover transition-all duration-150 pointer-events-none"
+          className="w-full h-full object-cover transition-transform duration-75 pointer-events-none"
         />
       ) : (
         <img
           src={media.dataUrl}
           alt=""
           style={{
-            transform: `scale(${zoom})`,
+            transform: `translate(${offsetX}px, ${offsetY}px) scale(${zoom})`,
             filter
           }}
-          className="w-full h-full object-cover transition-all duration-150"
+          className="w-full h-full object-cover transition-transform duration-75 pointer-events-none select-none"
+          draggable={false}
         />
       )}
       {vignette > 0 && (
@@ -71,10 +74,10 @@ function SlideBackground({ media, settings }) {
 }
 
 const INITIAL_SLIDE_SETTINGS = {
-  0: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0 },
-  1: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0 },
-  2: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0 },
-  3: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0 },
+  0: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0, offsetX: 0, offsetY: 0 },
+  1: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0, offsetX: 0, offsetY: 0 },
+  2: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0, offsetX: 0, offsetY: 0 },
+  3: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0, offsetX: 0, offsetY: 0 },
 };
 
 export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, onUpdateSlideSettings, onSaveToArchive, isSaved }) {
@@ -239,6 +242,69 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
       }
     };
     onUpdateSlideSettings(updatedSettings);
+  };
+
+  // Interactive Direct Drag & Pan on the Canvas
+  const [isDraggingMedia, setIsDraggingMedia] = useState(false);
+  const dragStartRef = useRef({ x: 0, y: 0, initialX: 0, initialY: 0 });
+
+  const handleCanvasMouseDown = (e) => {
+    if (!currentSettings.imageId) return;
+    if (e.button !== 0) return; // sol tik
+    setIsDraggingMedia(true);
+    dragStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      initialX: currentSettings.offsetX || 0,
+      initialY: currentSettings.offsetY || 0
+    };
+  };
+
+  useEffect(() => {
+    if (!isDraggingMedia) return;
+
+    const handleMouseMove = (e) => {
+      const dx = e.clientX - dragStartRef.current.x;
+      const dy = e.clientY - dragStartRef.current.y;
+      const newX = Math.round(Math.max(-250, Math.min(250, dragStartRef.current.initialX + dx)));
+      const newY = Math.round(Math.max(-250, Math.min(250, dragStartRef.current.initialY + dy)));
+
+      onUpdateSlideSettings((prev) => ({
+        ...prev,
+        [activeSlide]: {
+          ...(prev[activeSlide] || INITIAL_SLIDE_SETTINGS[activeSlide]),
+          offsetX: newX,
+          offsetY: newY
+        }
+      }));
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingMedia(false);
+      pushStateToHistory(slideSettings, gallery);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDraggingMedia, activeSlide, slideSettings, gallery, onUpdateSlideSettings, pushStateToHistory]);
+
+  const handleNudge = (dx, dy) => {
+    const newX = Math.round(Math.max(-250, Math.min(250, (currentSettings.offsetX || 0) + dx)));
+    const newY = Math.round(Math.max(-250, Math.min(250, (currentSettings.offsetY || 0) + dy)));
+    const updated = {
+      ...slideSettings,
+      [activeSlide]: {
+        ...currentSettings,
+        offsetX: newX,
+        offsetY: newY
+      }
+    };
+    onUpdateSlideSettings(updated);
+    pushStateToHistory(updated, gallery);
   };
 
   // Delete image from gallery
@@ -486,7 +552,12 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
         {/* LEFT COLUMN: THE REAL WYSIWYG CANVAS */}
         <div className="lg:col-span-7 flex flex-col items-center justify-center bg-black/60 p-4 sm:p-6 rounded-2xl border border-white/5 overflow-hidden">
           
-          <div className="relative shadow-2xl overflow-hidden rounded-md border border-white/15 select-none">
+          <div
+            onMouseDown={handleCanvasMouseDown}
+            className={`relative shadow-2xl overflow-hidden rounded-md border border-white/15 select-none ${
+              currentSettings.imageId ? (isDraggingMedia ? 'cursor-grabbing' : 'cursor-grab') : ''
+            }`}
+          >
             
             {/* SLIDE 0: COVER */}
             <div
@@ -725,6 +796,15 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
             <span>Slayt {activeSlide + 1} / 4</span>
             <span>·</span>
             <span>Instagram 4:5 Portre (1080x1350)</span>
+            {currentSettings.imageId && (
+              <>
+                <span>·</span>
+                <span className="text-[#e6c280] flex items-center space-x-1">
+                  <Move className="w-2.5 h-2.5" />
+                  <span>Sürükleyerek Kaydır</span>
+                </span>
+              </>
+            )}
           </div>
 
         </div>
@@ -999,11 +1079,145 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
                   <input
                     type="range"
                     min="100"
-                    max="150"
+                    max="160"
                     value={currentSettings.zoom}
                     onChange={(e) => handleUpdateSlideProperty('zoom', Number(e.target.value))}
                     className="w-full accent-[#e6c280] cursor-pointer"
                   />
+                </div>
+
+                {/* Görsel / Video Konumlandırma (Kaydır: Sağa / Sola / Yukarı / Aşağı) */}
+                <div className="p-3 rounded-xl bg-black/50 border border-white/10 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-mono text-neutral-300 flex items-center space-x-1.5 font-semibold">
+                      <Move className="w-3.5 h-3.5 text-[#e6c280]" />
+                      <span>Görsel Konumu (Kaydır)</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = {
+                          ...slideSettings,
+                          [activeSlide]: {
+                            ...currentSettings,
+                            offsetX: 0,
+                            offsetY: 0
+                          }
+                        };
+                        onUpdateSlideSettings(updated);
+                        pushStateToHistory(updated, gallery);
+                      }}
+                      className="text-[9px] font-mono text-neutral-400 hover:text-[#e6c280] flex items-center space-x-1 transition-colors cursor-pointer"
+                      title="Görseli merkeze al"
+                    >
+                      <RotateCcw className="w-2.5 h-2.5" />
+                      <span>Ortala</span>
+                    </button>
+                  </div>
+
+                  {/* Yön Tuşları (D-Pad) */}
+                  <div className="flex items-center justify-center py-1">
+                    <div className="grid grid-cols-3 gap-1.5 w-32">
+                      <div />
+                      <button
+                        type="button"
+                        onClick={() => handleNudge(0, -15)}
+                        className="p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-neutral-300 hover:text-white flex items-center justify-center border border-white/10 text-xs active:scale-95 transition-all cursor-pointer"
+                        title="Yukarı Kaydır"
+                      >
+                        <ChevronUp className="w-3.5 h-3.5 text-[#e6c280]" />
+                      </button>
+                      <div />
+
+                      <button
+                        type="button"
+                        onClick={() => handleNudge(-15, 0)}
+                        className="p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-neutral-300 hover:text-white flex items-center justify-center border border-white/10 text-xs active:scale-95 transition-all cursor-pointer"
+                        title="Sola Kaydır"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5 text-[#e6c280]" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = {
+                            ...slideSettings,
+                            [activeSlide]: {
+                              ...currentSettings,
+                              offsetX: 0,
+                              offsetY: 0
+                            }
+                          };
+                          onUpdateSlideSettings(updated);
+                          pushStateToHistory(updated, gallery);
+                        }}
+                        className="p-1.5 rounded-lg bg-white/10 hover:bg-[#e6c280] hover:text-black text-neutral-300 flex items-center justify-center border border-white/10 text-[10px] font-mono active:scale-95 transition-all cursor-pointer"
+                        title="Ortala"
+                      >
+                        ●
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleNudge(15, 0)}
+                        className="p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-neutral-300 hover:text-white flex items-center justify-center border border-white/10 text-xs active:scale-95 transition-all cursor-pointer"
+                        title="Sağa Kaydır"
+                      >
+                        <ChevronRight className="w-3.5 h-3.5 text-[#e6c280]" />
+                      </button>
+
+                      <div />
+                      <button
+                        type="button"
+                        onClick={() => handleNudge(0, 15)}
+                        className="p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-neutral-300 hover:text-white flex items-center justify-center border border-white/10 text-xs active:scale-95 transition-all cursor-pointer"
+                        title="Aşağı Kaydır"
+                      >
+                        <ChevronDown className="w-3.5 h-3.5 text-[#e6c280]" />
+                      </button>
+                      <div />
+                    </div>
+                  </div>
+
+                  {/* Hassas Sürgüler */}
+                  <div className="space-y-2 pt-1 border-t border-white/5">
+                    <div>
+                      <div className="flex justify-between text-[10px] font-mono text-neutral-400 mb-0.5">
+                        <span>Yatay Konum (X)</span>
+                        <span className="text-[#e6c280] font-bold">
+                          {(currentSettings.offsetX || 0) > 0 ? `+${currentSettings.offsetX}px (Sağ)` : (currentSettings.offsetX || 0) < 0 ? `${currentSettings.offsetX}px (Sol)` : '0px'}
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="-200"
+                        max="200"
+                        value={currentSettings.offsetX || 0}
+                        onChange={(e) => handleUpdateSlideProperty('offsetX', Number(e.target.value))}
+                        className="w-full accent-[#e6c280] cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[10px] font-mono text-neutral-400 mb-0.5">
+                        <span>Dikey Konum (Y)</span>
+                        <span className="text-[#e6c280] font-bold">
+                          {(currentSettings.offsetY || 0) > 0 ? `+${currentSettings.offsetY}px (Aşağı)` : (currentSettings.offsetY || 0) < 0 ? `${currentSettings.offsetY}px (Yukarı)` : '0px'}
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="-200"
+                        max="200"
+                        value={currentSettings.offsetY || 0}
+                        onChange={(e) => handleUpdateSlideProperty('offsetY', Number(e.target.value))}
+                        className="w-full accent-[#e6c280] cursor-pointer"
+                      />
+                    </div>
+                  </div>
+
+                  <p className="text-[9px] font-mono text-neutral-500 text-center">
+                    Görseli soldaki önizleme üzerinden <strong>mouse ile sürükleyerek</strong> de serbestçe kaydırabilirsiniz.
+                  </p>
                 </div>
               </>
             )}
