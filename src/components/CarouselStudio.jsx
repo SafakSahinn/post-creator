@@ -253,8 +253,16 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
 
   if (!post) {
     return (
-      <div className="bg-[#121318] border border-white/5 rounded-2xl p-12 text-center text-neutral-400 text-xs font-mono">
-        Lütfen önce sol panelden içerik üretin.
+      <div className="bg-[#121318] border border-white/5 rounded-2xl p-12 text-center flex flex-col items-center justify-center min-h-[480px]">
+        <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-neutral-500 mb-4">
+          <ImageIcon className="w-7 h-7 text-[#e6c280]/60" />
+        </div>
+        <h3 className="font-serif text-xl font-bold text-white mb-2 tracking-wide">
+          Carousel Stüdyosu Beklemede
+        </h3>
+        <p className="text-neutral-400 text-xs max-w-md font-sans leading-relaxed">
+          Bu proje için henüz bir içerik üretilmedi. Sol paneldeki parametreleri belirleyip içeriği ürettiğinizde 4 slaytlık görsel mizanpaj burada açılacaktır.
+        </p>
       </div>
     );
   }

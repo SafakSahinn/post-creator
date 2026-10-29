@@ -141,6 +141,31 @@ export function App() {
     localStorage.setItem('lore_gemini_model', newModel);
   };
 
+  // Proje Değiştirme ve Stüdyo Çalışma Alanını Sıfırlama
+  const handleSwitchProject = (targetProject) => {
+    if (!targetProject) return;
+    setActiveProjectId(targetProject.id);
+    setActiveProject(targetProject);
+    if (targetProject.categories?.[0]) {
+      setCategory(targetProject.categories[0].id || targetProject.categories[0].name);
+    }
+    if (targetProject.filterOptions?.[0]) {
+      setDecade(targetProject.filterOptions[0].id || targetProject.filterOptions[0].label);
+    }
+    // Önceki projeye ait içerik ve görselleri temizle, stüdyoyu temiz bekleme moduna al
+    setCustomTopic('');
+    setCurrentPost(null);
+    setGallery([]);
+    setSlideSettings({
+      0: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0 },
+      1: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0 },
+      2: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0 },
+      3: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0 },
+    });
+    setActiveTab('editorial');
+    setErrorMessage(null);
+  };
+
   // Generate Post
   const handleGenerate = async () => {
     if (!apiKey) {
@@ -476,30 +501,21 @@ export function App() {
         projects={projects}
         activeProject={activeProject}
         onSelectProject={(id) => {
-          setActiveProjectId(id);
           const p = projects.find((x) => x.id === id);
-          if (p) {
-            setActiveProject(p);
-            if (p.categories?.[0]) setCategory(p.categories[0].id || p.categories[0].name);
-            if (p.filterOptions?.[0]) setDecade(p.filterOptions[0].id || p.filterOptions[0].label);
-          }
+          if (p) handleSwitchProject(p);
         }}
         onSaveProject={(proj) => {
           saveProject(proj);
           const updated = getAllProjects();
           setProjects(updated);
-          setActiveProject(proj);
-          if (proj.categories?.[0]) setCategory(proj.categories[0].id || proj.categories[0].name);
-          if (proj.filterOptions?.[0]) setDecade(proj.filterOptions[0].id || proj.filterOptions[0].label);
+          handleSwitchProject(proj);
         }}
         onDeleteProject={(id) => {
           deleteProject(id);
           const updated = getAllProjects();
           setProjects(updated);
           const newActive = getActiveProject();
-          setActiveProject(newActive);
-          if (newActive.categories?.[0]) setCategory(newActive.categories[0].id || newActive.categories[0].name);
-          if (newActive.filterOptions?.[0]) setDecade(newActive.filterOptions[0].id || newActive.filterOptions[0].label);
+          handleSwitchProject(newActive);
         }}
       />
 
