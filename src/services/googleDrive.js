@@ -70,7 +70,7 @@ export function logoutGoogleDrive() {
 }
 
 export function getStoredClientId() {
-  return localStorage.getItem(CLIENT_ID_KEY) || (import.meta.env.VITE_GOOGLE_CLIENT_ID || '');
+  return import.meta.env.VITE_GOOGLE_CLIENT_ID || localStorage.getItem(CLIENT_ID_KEY) || '';
 }
 
 export function setStoredClientId(clientId) {
