@@ -195,10 +195,11 @@ export async function uploadImageToDrive(filename, dataUrl, folderId, token) {
     mimeType = blob.type || 'image/png';
   }
 
+  const isVideo = mimeType.startsWith('video/');
   const meta = {
     name: filename,
     parents: [folderId],
-    appProperties: { app: 'post-creator', type: 'carousel-slide' }
+    appProperties: { app: 'post-creator', type: isVideo ? 'carousel-video' : 'carousel-slide' }
   };
 
   const { body, headers } = multipartBody(meta, blob, mimeType);
@@ -217,11 +218,12 @@ export async function uploadImageToDrive(filename, dataUrl, folderId, token) {
 export async function backupPostToDrive(post, gallery = [], slideSettings = {}, token) {
   const folders = await ensureLoreFolders(token);
   
-  // 1. Slaytlardaki görselleri yükle
+  // 1. Slaytlardaki görselleri ve videoları yükle
   const uploadedImages = [];
   for (let slideIdx = 0; slideIdx < 4; slideIdx++) {
     const imgId = slideSettings?.[slideIdx]?.imageId;
-    let dataUrl = gallery?.find((g) => g.id === imgId)?.dataUrl;
+    const galleryItem = gallery?.find((g) => g.id === imgId);
+    let dataUrl = galleryItem?.dataUrl;
 
     // Fallback: Post içerisindeki thumbnail veya doğrudan gallery sırası
     if (!dataUrl && post?.thumbnails?.[slideIdx]) {
@@ -232,15 +234,18 @@ export async function backupPostToDrive(post, gallery = [], slideSettings = {}, 
     }
 
     if (dataUrl) {
+      const isVid = dataUrl.startsWith('data:video') || galleryItem?.type === 'video';
+      const ext = isVid ? (dataUrl.includes('webm') ? 'webm' : 'mp4') : 'png';
       const cleanTitle = (post.title || 'Slide').replace(/[^a-zA-Z0-9\u00C0-\u017F]/g, '_').slice(0, 30);
-      const filename = `Slide_${slideIdx + 1}_${cleanTitle}.png`;
+      const filename = `Slide_${slideIdx + 1}_${cleanTitle}.${ext}`;
       try {
         const uploaded = await uploadImageToDrive(filename, dataUrl, folders.images, token);
         uploadedImages.push({
           slideIndex: slideIdx,
           driveId: uploaded.id,
           name: uploaded.name,
-          webViewLink: uploaded.webViewLink
+          webViewLink: uploaded.webViewLink,
+          isVideo: isVid
         });
       } catch (err) {
         console.warn(`Slayt ${slideIdx + 1} Drive'a yüklenemedi:`, err);

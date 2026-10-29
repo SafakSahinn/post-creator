@@ -3,7 +3,7 @@ import {
   Download, ChevronLeft, ChevronRight, Check, Image as ImageIcon, 
   Upload, Trash2, Undo2, Redo2, Sliders, Eye, Sparkles, Layers,
   Sun, ZoomIn, Contrast, MoveVertical, RotateCcw, ShieldOff, ShieldAlert,
-  Bookmark, BookmarkCheck
+  Bookmark, BookmarkCheck, Video, Play
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { getPunchyExcerpt } from '../services/gemini';
@@ -24,6 +24,51 @@ const getComputedFilter = (filterId, brightness = 100) => {
   }
   return brightness !== 100 ? `${baseFilter} brightness(${brightness}%)` : baseFilter;
 };
+
+function SlideBackground({ media, settings }) {
+  if (!media) return null;
+  const isVideo = media.type === 'video' || media.dataUrl?.startsWith('data:video') || /\.(mp4|webm|mov|ogg)$/i.test(media.name || '');
+  const zoom = (settings?.zoom ?? 105) / 100;
+  const filter = getComputedFilter(settings?.filter, settings?.brightness);
+  const vignette = settings?.vignette ?? 75;
+
+  return (
+    <div className="absolute inset-0 z-0 overflow-hidden">
+      {isVideo ? (
+        <video
+          src={media.dataUrl}
+          autoPlay
+          loop
+          muted
+          playsInline
+          style={{
+            transform: `scale(${zoom})`,
+            filter
+          }}
+          className="w-full h-full object-cover transition-all duration-150 pointer-events-none"
+        />
+      ) : (
+        <img
+          src={media.dataUrl}
+          alt=""
+          style={{
+            transform: `scale(${zoom})`,
+            filter
+          }}
+          className="w-full h-full object-cover transition-all duration-150"
+        />
+      )}
+      {vignette > 0 && (
+        <div
+          style={{
+            background: `linear-gradient(to top, rgba(11,12,16, ${vignette / 100}) 0%, rgba(11,12,16, ${vignette / 250}) 45%, transparent 85%)`
+          }}
+          className="absolute inset-0 pointer-events-none transition-opacity"
+        />
+      )}
+    </div>
+  );
+}
 
 const INITIAL_SLIDE_SETTINGS = {
   0: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0 },
@@ -112,26 +157,29 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleUndo, handleRedo]);
 
-  // Handle Multi-file Upload
+  // Handle Multi-file Upload (Görsel & Video Destekli)
   const handleAddFiles = (files) => {
     if (!files || files.length === 0) return;
     const newItems = [];
     let processed = 0;
 
     Array.from(files).forEach((file) => {
+      const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|mov|ogg)$/i.test(file.name);
       const reader = new FileReader();
       reader.onload = (e) => {
         newItems.push({
-          id: 'img_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+          id: (isVideo ? 'vid_' : 'img_') + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
           dataUrl: e.target.result,
-          name: file.name
+          name: file.name,
+          type: isVideo ? 'video' : 'image',
+          mimeType: file.type || (isVideo ? 'video/mp4' : 'image/png')
         });
         processed++;
         if (processed === files.length) {
           const updatedGallery = [...gallery, ...newItems];
           onUpdateGallery(updatedGallery);
 
-          // Auto-assign to current slide if it has no image
+          // Auto-assign to current slide if it has no image/video
           if (!currentSettings.imageId && newItems[0]) {
             const updatedSettings = {
               ...slideSettings,
@@ -151,16 +199,19 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
     });
   };
 
-  // Clipboard Paste Support
+  // Clipboard Paste Support (Görsel & Video)
   const handlePaste = (e) => {
     const items = e.clipboardData?.items;
     if (items) {
+      const filesToUpload = [];
       for (let i = 0; i < items.length; i++) {
-        if (items[i].type.indexOf('image') !== -1) {
-          const blob = items[i].getAsFile();
-          handleAddFiles([blob]);
-          break;
+        if (items[i].type.indexOf('image') !== -1 || items[i].type.indexOf('video') !== -1) {
+          const file = items[i].getAsFile();
+          if (file) filesToUpload.push(file);
         }
+      }
+      if (filesToUpload.length > 0) {
+        handleAddFiles(filesToUpload);
       }
     }
   };
@@ -380,7 +431,8 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
             { idx: 2, label: '03 / Lore II' },
             { idx: 3, label: '04 / Sonuç' },
           ].map(({ idx, label }) => {
-            const hasImg = !!getImageForSlide(idx);
+            const media = getImageForSlide(idx);
+            const isVid = media && (media.type === 'video' || media.dataUrl?.startsWith('data:video'));
             return (
               <button
                 key={idx}
@@ -393,13 +445,15 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
                 }`}
               >
                 <span>{label}</span>
-                {hasImg && (
+                {isVid ? (
+                  <Video className={`w-3 h-3 ${activeSlide === idx ? 'text-black' : 'text-sky-400'}`} />
+                ) : media ? (
                   <span
                     className={`w-1.5 h-1.5 rounded-full ${
                       activeSlide === idx ? 'bg-black' : 'bg-emerald-400'
                     }`}
                   />
-                )}
+                ) : null}
               </button>
             );
           })}
@@ -444,28 +498,8 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
               }}
               className="bg-[#0b0c10] text-white p-7 flex flex-col justify-between relative overflow-hidden font-sans"
             >
-              {/* Background Archival Photo */}
-              {getImageForSlide(0) && (
-                <div className="absolute inset-0 z-0 overflow-hidden">
-                  <img
-                    src={getImageForSlide(0).dataUrl}
-                    alt=""
-                    style={{
-                      transform: `scale(${(slideSettings?.[0]?.zoom ?? 105) / 100})`,
-                      filter: getComputedFilter(slideSettings?.[0]?.filter, slideSettings?.[0]?.brightness)
-                    }}
-                    className="w-full h-full object-cover transition-all duration-150"
-                  />
-                  {(slideSettings?.[0]?.vignette ?? 75) > 0 && (
-                    <div
-                      style={{
-                        background: `linear-gradient(to top, rgba(11,12,16, ${(slideSettings?.[0]?.vignette ?? 75) / 100}) 0%, rgba(11,12,16, ${(slideSettings?.[0]?.vignette ?? 75) / 250}) 45%, transparent 85%)`
-                      }}
-                      className="absolute inset-0 pointer-events-none transition-opacity"
-                    />
-                  )}
-                </div>
-              )}
+              {/* Background Archival Photo or Video */}
+              <SlideBackground media={getImageForSlide(0)} settings={slideSettings?.[0]} />
 
               {/* Top Header */}
               <div className="flex items-center justify-between border-b border-white/15 pb-3 relative z-10">
@@ -515,27 +549,8 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
               }}
               className="bg-[#0b0c10] text-white p-7 flex flex-col justify-between relative overflow-hidden font-sans"
             >
-              {getImageForSlide(1) && (
-                <div className="absolute inset-0 z-0 overflow-hidden">
-                  <img
-                    src={getImageForSlide(1).dataUrl}
-                    alt=""
-                    style={{
-                      transform: `scale(${(slideSettings?.[1]?.zoom ?? 105) / 100})`,
-                      filter: getComputedFilter(slideSettings?.[1]?.filter, slideSettings?.[1]?.brightness)
-                    }}
-                    className="w-full h-full object-cover transition-all duration-150"
-                  />
-                  {(slideSettings?.[1]?.vignette ?? 75) > 0 && (
-                    <div
-                      style={{
-                        background: `linear-gradient(to top, rgba(11,12,16, ${(slideSettings?.[1]?.vignette ?? 75) / 100}) 0%, rgba(11,12,16, ${(slideSettings?.[1]?.vignette ?? 75) / 250}) 45%, transparent 85%)`
-                      }}
-                      className="absolute inset-0 pointer-events-none transition-opacity"
-                    />
-                  )}
-                </div>
-              )}
+              {/* Background Archival Photo or Video */}
+              <SlideBackground media={getImageForSlide(1)} settings={slideSettings?.[1]} />
 
               {/* Top Header */}
               <div className="flex items-center justify-between border-b border-white/15 pb-3 relative z-10">
@@ -591,27 +606,8 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
               }}
               className="bg-[#0b0c10] text-white p-7 flex flex-col justify-between relative overflow-hidden font-sans"
             >
-              {getImageForSlide(2) && (
-                <div className="absolute inset-0 z-0 overflow-hidden">
-                  <img
-                    src={getImageForSlide(2).dataUrl}
-                    alt=""
-                    style={{
-                      transform: `scale(${(slideSettings?.[2]?.zoom ?? 105) / 100})`,
-                      filter: getComputedFilter(slideSettings?.[2]?.filter, slideSettings?.[2]?.brightness)
-                    }}
-                    className="w-full h-full object-cover transition-all duration-150"
-                  />
-                  {(slideSettings?.[2]?.vignette ?? 75) > 0 && (
-                    <div
-                      style={{
-                        background: `linear-gradient(to top, rgba(11,12,16, ${(slideSettings?.[2]?.vignette ?? 75) / 100}) 0%, rgba(11,12,16, ${(slideSettings?.[2]?.vignette ?? 75) / 250}) 45%, transparent 85%)`
-                      }}
-                      className="absolute inset-0 pointer-events-none transition-opacity"
-                    />
-                  )}
-                </div>
-              )}
+              {/* Background Archival Photo or Video */}
+              <SlideBackground media={getImageForSlide(2)} settings={slideSettings?.[2]} />
 
               {/* Top Header */}
               <div className="flex items-center justify-between border-b border-white/15 pb-3 relative z-10">
@@ -667,27 +663,8 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
               }}
               className="bg-[#0b0c10] text-white p-7 flex flex-col justify-between relative overflow-hidden font-sans"
             >
-              {getImageForSlide(3) && (
-                <div className="absolute inset-0 z-0 overflow-hidden">
-                  <img
-                    src={getImageForSlide(3).dataUrl}
-                    alt=""
-                    style={{
-                      transform: `scale(${(slideSettings?.[3]?.zoom ?? 105) / 100})`,
-                      filter: getComputedFilter(slideSettings?.[3]?.filter, slideSettings?.[3]?.brightness)
-                    }}
-                    className="w-full h-full object-cover transition-all duration-150"
-                  />
-                  {(slideSettings?.[3]?.vignette ?? 75) > 0 && (
-                    <div
-                      style={{
-                        background: `linear-gradient(to top, rgba(11,12,16, ${(slideSettings?.[3]?.vignette ?? 75) / 100}) 0%, rgba(11,12,16, ${(slideSettings?.[3]?.vignette ?? 75) / 250}) 45%, transparent 85%)`
-                      }}
-                      className="absolute inset-0 pointer-events-none transition-opacity"
-                    />
-                  )}
-                </div>
-              )}
+              {/* Background Archival Photo or Video */}
+              <SlideBackground media={getImageForSlide(3)} settings={slideSettings?.[3]} />
 
               {/* Top Header */}
               <div className="flex items-center justify-between border-b border-white/15 pb-3 relative z-10">
@@ -755,12 +732,12 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
         {/* RIGHT COLUMN: MULTI-IMAGE TRAY & SLIDE CONTROLS (5 Cols) */}
         <div className="lg:col-span-5 space-y-5">
           
-          {/* 1. Görsel Havuzu / Tray */}
+          {/* 1. Medya Havuzu / Tray (Foto & Video) */}
           <div className="space-y-2.5">
             <div className="flex items-center justify-between">
               <label className="text-xs font-mono uppercase tracking-wider text-neutral-300 flex items-center space-x-1.5">
                 <ImageIcon className="w-3.5 h-3.5 text-[#e6c280]" />
-                <span>Görsel Havuzu ({gallery.length})</span>
+                <span>Medya Havuzu ({gallery.length})</span>
               </label>
               <span className="text-[10px] font-mono text-neutral-500">
                 Slayt {activeSlide + 1} için tıkla
@@ -771,7 +748,7 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
               ref={fileInputRef}
               type="file"
               multiple
-              accept="image/*"
+              accept="image/*,video/*"
               onChange={(e) => handleAddFiles(e.target.files)}
               className="hidden"
             />
@@ -790,24 +767,37 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
                 <span className="text-[9px] text-neutral-500">(Siyah)</span>
               </button>
 
-              {gallery.map((img) => {
-                const isAssigned = currentSettings.imageId === img.id;
+              {gallery.map((media) => {
+                const isAssigned = currentSettings.imageId === media.id;
+                const isVid = media.type === 'video' || media.dataUrl?.startsWith('data:video') || /\.(mp4|webm|mov|ogg)$/i.test(media.name || '');
                 return (
                   <div
-                    key={img.id}
-                    onClick={() => handleAssignImage(img.id)}
+                    key={media.id}
+                    onClick={() => handleAssignImage(media.id)}
                     className={`relative h-20 rounded-xl border overflow-hidden cursor-pointer group transition-all ${
                       isAssigned
                         ? 'border-[#e6c280] ring-2 ring-[#e6c280] shadow-[0_0_12px_rgba(230,194,128,0.3)]'
                         : 'border-white/10 opacity-70 hover:opacity-100 hover:border-white/30'
                     }`}
                   >
-                    <img src={img.dataUrl} alt="" className="w-full h-full object-cover" />
+                    {isVid ? (
+                      <video src={media.dataUrl} className="w-full h-full object-cover" muted playsInline />
+                    ) : (
+                      <img src={media.dataUrl} alt="" className="w-full h-full object-cover" />
+                    )}
+
+                    {/* Video rozeti */}
+                    {isVid && (
+                      <div className="absolute top-1 left-1 bg-black/80 text-sky-300 rounded px-1 py-0.2 text-[8px] font-mono flex items-center space-x-1 border border-sky-400/30">
+                        <Video className="w-2.5 h-2.5" />
+                        <span>VİDEO</span>
+                      </div>
+                    )}
                     
                     <button
                       type="button"
-                      onClick={(e) => handleDeleteImage(img.id, e)}
-                      title="Görseli Havuzdan Sil"
+                      onClick={(e) => handleDeleteImage(media.id, e)}
+                      title="Medyayı Havuzdan Sil"
                       className="absolute top-1 right-1 p-1 rounded bg-black/80 text-neutral-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <Trash2 className="w-3 h-3" />
@@ -825,15 +815,16 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="h-20 rounded-xl border border-dashed border-white/20 hover:border-[#e6c280]/60 hover:bg-white/[0.03] text-neutral-400 hover:text-[#e6c280] flex flex-col items-center justify-center text-[10px] font-mono transition-all space-y-1"
+                className="h-20 rounded-xl border border-dashed border-white/20 hover:border-[#e6c280]/60 hover:bg-white/[0.03] text-neutral-400 hover:text-[#e6c280] flex flex-col items-center justify-center text-[10px] font-mono transition-all space-y-0.5 cursor-pointer"
               >
                 <Upload className="w-4 h-4" />
-                <span>+ Görsel</span>
+                <span>+ Medya</span>
+                <span className="text-[8px] text-neutral-500">Foto / Video</span>
               </button>
             </div>
 
             <p className="text-[10px] text-neutral-500 font-mono">
-              İpucu: Görselleri doğrudan <kbd className="bg-white/10 px-1 py-0.5 rounded text-[9px]">Ctrl+V</kbd> ile de yapıştırabilirsiniz.
+              İpucu: Fotoğraf veya MP4 / WebM video yükleyebilir, doğrudan <kbd className="bg-white/10 px-1 py-0.5 rounded text-[9px]">Ctrl+V</kbd> ile de yapıştırabilirsiniz.
             </p>
           </div>
 
@@ -853,9 +844,32 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
                     : 'border-white/10 text-neutral-400'
                 }`}
               >
-                {currentSettings.showText ? 'Metin Açık' : 'Yalnızca Fotoğraf'}
+                {currentSettings.showText ? 'Metin Açık' : 'Yalnızca Medya'}
               </button>
             </div>
+
+            {/* Video Slayt Bilgisi & İndirme */}
+            {(() => {
+              const currentMedia = getImageForSlide(activeSlide);
+              const isVid = currentMedia && (currentMedia.type === 'video' || currentMedia.dataUrl?.startsWith('data:video'));
+              if (!isVid) return null;
+              return (
+                <div className="p-2.5 rounded-lg bg-sky-950/30 border border-sky-500/30 flex items-center justify-between text-xs font-mono">
+                  <div className="flex items-center space-x-2 text-sky-300">
+                    <Video className="w-4 h-4 text-sky-400 shrink-0" />
+                    <span className="text-[11px]">Video Slayt (Sonsuz Döngü)</span>
+                  </div>
+                  <a
+                    href={currentMedia.dataUrl}
+                    download={currentMedia.name || `Slayt_${activeSlide + 1}_video.mp4`}
+                    className="px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-white text-[10px] flex items-center space-x-1 transition-colors"
+                  >
+                    <Download className="w-3 h-3" />
+                    <span>Videoyu İndir</span>
+                  </a>
+                </div>
+              );
+            })()}
 
             {/* Metin Dikey İnce Ayarı */}
             {currentSettings.showText && (
