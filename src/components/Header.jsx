@@ -1,8 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Key, Bookmark, Sparkles, HelpCircle, Activity, LogOut, Cloud } from 'lucide-react';
+import { Key, Bookmark, Sparkles, HelpCircle, Activity, LogOut, Cloud, Layers } from 'lucide-react';
 import { getQuotaStats } from '../services/apiQuota';
 
-export function Header({ hasApiKey, onOpenSettings, archiveCount, onOpenArchive, onOpenGuide, user, onLogout, model }) {
+export function Header({
+  hasApiKey,
+  onOpenSettings,
+  archiveCount,
+  onOpenArchive,
+  onOpenGuide,
+  user,
+  onLogout,
+  model,
+  activeProject,
+  onOpenProjects
+}) {
   const [quota, setQuota] = useState(() => getQuotaStats());
 
   useEffect(() => {
@@ -36,6 +47,36 @@ export function Header({ hasApiKey, onOpenSettings, archiveCount, onOpenArchive,
               INSTAGRAM CAROUSEL & İÇERİK STÜDYOSU
             </p>
           </div>
+
+          {/* Active Project Pill / Switcher */}
+          {activeProject && (
+            <button
+              type="button"
+              onClick={onOpenProjects}
+              className="hidden md:flex items-center space-x-2.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.07] hover:border-[#e6c280]/40 transition-all text-left group ml-2 cursor-pointer"
+              title="Aktif projeyi değiştirin veya yeni proje oluşturun"
+            >
+              <div
+                className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-mono font-bold"
+                style={{
+                  backgroundColor: `${activeProject.accentColor || '#e6c280'}20`,
+                  color: activeProject.accentColor || '#e6c280',
+                  border: `1px solid ${activeProject.accentColor || '#e6c280'}40`
+                }}
+              >
+                {activeProject.shortCode?.slice(0, 2) || 'PC'}
+              </div>
+              <div className="leading-tight">
+                <div className="text-[9px] font-mono uppercase text-neutral-400 group-hover:text-neutral-300">
+                  Proje
+                </div>
+                <div className="text-xs font-serif font-bold text-white group-hover:text-[#e6c280] transition-colors truncate max-w-[140px]">
+                  {activeProject.name || 'Lore Magazine'}
+                </div>
+              </div>
+              <Layers className="w-3.5 h-3.5 text-neutral-500 group-hover:text-[#e6c280] transition-colors ml-0.5" />
+            </button>
+          )}
         </div>
 
         {/* Action Buttons */}

@@ -213,7 +213,8 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
       setIsExporting(true);
       const dataUrl = await toPng(currentRef, { quality: 0.98, pixelRatio: 2.5 });
       const link = document.createElement('a');
-      link.download = `LORE_${post?.category || 'Post'}_${post?.decade || ''}_Slayt_${activeSlide + 1}.png`;
+      const prefix = post?.projectShortCode || 'POST';
+      link.download = `${prefix}_${post?.category || 'Post'}_${post?.decade || ''}_Slayt_${activeSlide + 1}.png`;
       link.href = dataUrl;
       link.click();
       setDownloadSuccess(true);
@@ -234,7 +235,8 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
         if (ref) {
           const dataUrl = await toPng(ref, { quality: 0.98, pixelRatio: 2.5 });
           const link = document.createElement('a');
-          link.download = `LORE_${post?.category || 'Post'}_${post?.decade || ''}_Slayt_${i + 1}.png`;
+          const prefix = post?.projectShortCode || 'POST';
+          link.download = `${prefix}_${post?.category || 'Post'}_${post?.decade || ''}_Slayt_${i + 1}.png`;
           link.href = dataUrl;
           link.click();
           await new Promise((r) => setTimeout(r, 400));
@@ -728,7 +730,7 @@ export function CarouselStudio({ post, gallery, onUpdateGallery, slideSettings, 
               {/* Bottom Footer: pt-3 to mirror the pb-3 above the line */}
               <div className="flex items-center justify-between pt-3 border-t border-white/15 text-[9px] font-mono text-[#e6c280] relative z-10">
                 <span>KAYDET · PAYLAŞ</span>
-                <span>@LOREMAGAZINE</span>
+                <span>@{post?.projectShortCode ? `${post.projectShortCode.toUpperCase()}` : 'POSTCREATOR'}</span>
               </div>
             </div>
 

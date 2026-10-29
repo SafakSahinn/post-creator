@@ -6,8 +6,16 @@ import { CarouselStudio } from './components/CarouselStudio';
 import { SettingsModal } from './components/SettingsModal';
 import { ArchiveDrawer } from './components/ArchiveDrawer';
 import { GuideModal } from './components/GuideModal';
+import { ProjectModal } from './components/ProjectModal';
 import { LoginScreen } from './components/LoginScreen';
 import { generateEditorialPost } from './services/gemini';
+import {
+  getAllProjects,
+  getActiveProject,
+  setActiveProjectId,
+  saveProject,
+  deleteProject
+} from './services/projects';
 import {
   getStoredGoogleUser,
   getStoredDriveToken,
@@ -53,9 +61,20 @@ export function App() {
     return localStorage.getItem('lore_gemini_model') || 'gemini-2.5-flash';
   });
 
-  // Editor Inputs
-  const [category, setCategory] = useState('Dolap');
-  const [decade, setDecade] = useState("90'lar");
+  // Multi-Project State
+  const [projects, setProjects] = useState(() => getAllProjects());
+  const [activeProject, setActiveProject] = useState(() => getActiveProject());
+  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+
+  // Editor Inputs (Aktif projeye göre başlatılır)
+  const [category, setCategory] = useState(() => {
+    const p = getActiveProject();
+    return p?.categories?.[0]?.id || p?.categories?.[0]?.name || 'Dolap';
+  });
+  const [decade, setDecade] = useState(() => {
+    const p = getActiveProject();
+    return p?.filterOptions?.[0]?.id || p?.filterOptions?.[0]?.label || "80'ler";
+  });
   const [customTopic, setCustomTopic] = useState('');
 
   // Generation State
@@ -140,7 +159,8 @@ export function App() {
         decade,
         customTopic,
         model,
-        onProgress: (msg) => setProgressText(msg)
+        onProgress: (msg) => setProgressText(msg),
+        project: activeProject
       });
 
       setCurrentPost(result);
@@ -201,6 +221,15 @@ export function App() {
 
   const handleLoadPostFromArchive = (item) => {
     setCurrentPost(item);
+    if (item.projectId) {
+      const matchProj = projects.find((p) => p.id === item.projectId);
+      if (matchProj) {
+        setActiveProject(matchProj);
+        setActiveProjectId(matchProj.id);
+      }
+    }
+    if (item.category) setCategory(item.category);
+    if (item.decade) setDecade(item.decade);
     if (item.savedGallery && item.savedGallery.length > 0) {
       setGallery(item.savedGallery);
     }
@@ -242,6 +271,8 @@ export function App() {
         user={currentUser}
         onLogout={handleLogout}
         model={model}
+        activeProject={activeProject}
+        onOpenProjects={() => setIsProjectModalOpen(true)}
       />
 
       {/* Main Workspace */}
@@ -305,6 +336,8 @@ export function App() {
               progressText={progressText}
               model={model}
               onOpenSettings={() => setIsSettingsOpen(true)}
+              project={activeProject}
+              onOpenProjects={() => setIsProjectModalOpen(true)}
             />
 
             {/* Quick Tips */}
@@ -429,6 +462,40 @@ export function App() {
         onOpenSettings={() => {
           setIsGuideOpen(false);
           setIsSettingsOpen(true);
+        }}
+      />
+
+      {/* Multi-Project Manager Modal */}
+      <ProjectModal
+        isOpen={isProjectModalOpen}
+        onClose={() => setIsProjectModalOpen(false)}
+        projects={projects}
+        activeProject={activeProject}
+        onSelectProject={(id) => {
+          setActiveProjectId(id);
+          const p = projects.find((x) => x.id === id);
+          if (p) {
+            setActiveProject(p);
+            if (p.categories?.[0]) setCategory(p.categories[0].id || p.categories[0].name);
+            if (p.filterOptions?.[0]) setDecade(p.filterOptions[0].id || p.filterOptions[0].label);
+          }
+        }}
+        onSaveProject={(proj) => {
+          saveProject(proj);
+          const updated = getAllProjects();
+          setProjects(updated);
+          setActiveProject(proj);
+          if (proj.categories?.[0]) setCategory(proj.categories[0].id || proj.categories[0].name);
+          if (proj.filterOptions?.[0]) setDecade(proj.filterOptions[0].id || proj.filterOptions[0].label);
+        }}
+        onDeleteProject={(id) => {
+          deleteProject(id);
+          const updated = getAllProjects();
+          setProjects(updated);
+          const newActive = getActiveProject();
+          setActiveProject(newActive);
+          if (newActive.categories?.[0]) setCategory(newActive.categories[0].id || newActive.categories[0].name);
+          if (newActive.filterOptions?.[0]) setDecade(newActive.filterOptions[0].id || newActive.filterOptions[0].label);
         }}
       />
 

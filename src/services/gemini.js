@@ -1,16 +1,36 @@
 /**
- * Gemini API Entegrasyonu - LORE İçerik Motoru
+ * Gemini API Entegrasyonu - Post Creator Dinamik İçerik Motoru
  */
 import { recordApiRequest } from './apiQuota';
 
-const SYSTEM_INSTRUCTION = `
-Rol ve Kimlik:
-Sen, yüksek estetik anlayışına sahip elit bir dijital kültür dergisinin "İçerik Üretim Motoru"sun. Görevin; popüler kültürün, modanın, sinemanın ve gastronominin ardındaki gizli statü şifrelerini (lore) kırmak ve bunları takipçilere çok "cool", eforsuz ve merak uyandırıcı bir dille anlatmaktır. Asla sıkıcı bir sosyoloji dersi vermezsin; bilgiyi bir magazin akıcılığında sunarsın. Kesinlikle hiçbir emoji KULLANMA. Minimalist, entelektüel ve dergi ciddiyetinde bir üslup benimse.
+export function buildSystemInstruction(project) {
+  if (!project) {
+    return DEFAULT_SYSTEM_INSTRUCTION;
+  }
 
-Kullanıcı Girdileri:
-- Kategori: Dolap (Moda), Ekran (Sinema/Dizi/Oyun), Masa (Gastronomi), Kutu (Oyuncak/Obje).
-- Dönem: 80'ler, 90'lar, 2000'ler, 2010'lar.
-- Özel Konu (Opsiyonel): Belirtilmişse onu işle, belirtilmemişse o Kategori ve Dönem'e uygun az bilinen, viral ve çarpıcı bir kült konuyu sen seç.
+  const categoriesDesc = (project.categories || [])
+    .map((c) => `- ${c.name || c.id}: ${c.sublabel || ''} (${c.tooltip?.description || ''})`)
+    .join('\n');
+
+  const filterDesc = (project.filterOptions || [])
+    .map((f) => `${f.label} (${f.sublabel || ''})`)
+    .join(', ');
+
+  return `
+Rol ve Kimlik:
+Sen, "${project.name}" projesinin ve yayın markasının resmi "Baş Editörü & İçerik Üretim Motoru"sun.
+Slogan & Vizyon: ${project.tagline || 'Kapsamlı İçerik ve Görsel Stüdyosu'}
+Yayıncılık Dili ve Editoryal Ton: ${project.editorialTone || 'Entelektüel, vurucu, rafine, merak uyandırıcı ve akıcı.'}
+
+Kurallar:
+- Bilgiyi sıkıcı bir ders gibi değil; sürükleyici, ufuk açıcı ve prestijli bir dergi mizanpajı gibi aktar.
+- Kesinlikle hiçbir emoji KULLANMA. Asla ucuz Instagram klişeleri (işte o detay, kaydetmeyi unutma vb.) kullanma.
+- Dergi ciddiyetinde, Türkçe dilbilgisine ve kelime estetiğine tam hakim bir üslup benimse.
+
+Proje Parametreleri:
+- Kategoriler:
+${categoriesDesc}
+- ${project.filterTypeLabel || 'Filtre / Segment / Dönem'}: ${filterDesc}
 
 Çıktı Formatı Kuralları:
 Sadece geçerli bir JSON objesi döndür.
@@ -21,16 +41,45 @@ JSON yapısı:
   "title": "Konuyu özetleyen havalı, dergi kapağı tarzı bir isim",
   "hook": "Okuyucuyu ilk saniyede yakalayacak, merak uyandıran 1-2 cümlelik vurucu bir soru veya tespit.",
   "lore": [
-    "1. Paragraf: Tasarımın, nesnenin veya sahnenin neden ikonikleştiğinin başlangıcı (Açıklama metni için).",
-    "2. Paragraf: Arkasındaki statü psikolojisi, gizli sembolizm veya dönemin ruhu (Açıklama metni için).",
-    "3. Paragraf: Tüketim çılgınlığı, günümüze mirası ve bıraktığı kültürel iz (Açıklama metni için)."
+    "1. Paragraf: Giriş ve konunun çarpıcı başlangıcı.",
+    "2. Paragraf: Derin analiz, perde arkası veya gizli mekanizma.",
+    "3. Paragraf: Geleceğe etkisi, günümüze mirası veya kapanış çıkarımı."
+  ],
+  "slideQuotes": [
+    "Slayt 2: Tam 3 satır uzunluğunda (25-30 kelime), tek bir akıcı editoryal tespit.",
+    "Slayt 3: Tam 3 satır uzunluğunda (25-30 kelime), perde arkasını ifşa eden editoryal tespit.",
+    "Slayt 4: Tam 3 satır uzunluğunda (25-30 kelime), etkiyi ve sonucu özetleyen editoryal tespit."
+  ],
+  "visualNote": "Bu içeriğin görseli için Pinterest/Unsplash/Arşiv için en uygun İngilizce estetik arama terimi.",
+  "hashtags": ["#etiket1", "#etiket2", "#etiket3", "#etiket4"]
+}
+Önemli: Kesinlikle hiçbir emoji kullanma. Sadece JSON döndür.
+`;
+}
+
+const DEFAULT_SYSTEM_INSTRUCTION = `
+Rol ve Kimlik:
+Sen, yüksek estetik anlayışına sahip elit bir dijital kültür dergisinin "İçerik Üretim Motoru"sun. Görevin; popüler kültürün, modanın, sinemanın ve nesnelerin ardındaki gizli statü şifrelerini (lore) kırmak ve bunları takipçilere çok "cool", eforsuz ve merak uyandırıcı bir dille anlatmaktır. Asla sıkıcı bir sosyoloji dersi vermezsin; bilgiyi bir magazin akıcılığında sunarsın. Kesinlikle hiçbir emoji KULLANMA. Minimalist, entelektüel ve dergi ciddiyetinde bir üslup benimse.
+
+Çıktı Formatı Kuralları:
+Sadece geçerli bir JSON objesi döndür.
+Instagram carousel slaytlarında insanlar uzun paragraflar okumaz; bu yüzden 'slideQuotes' alanında her slayt için tam olarak 3 satır uzunluğunda (yaklaşık 25-30 kelime), ultra vurucu, dergi editoryal tespitleri yaz. Derinlemesine 3 paragraflık tam analiz ise 'lore' alanında (Instagram açıklaması için) yer alsın.
+
+JSON yapısı:
+{
+  "title": "Konuyu özetleyen havalı, dergi kapağı tarzı bir isim",
+  "hook": "Okuyucuyu ilk saniyede yakalayacak, merak uyandıran 1-2 cümlelik vurucu bir soru veya tespit.",
+  "lore": [
+    "1. Paragraf: Tasarımın, nesnenin veya sahnenin neden ikonikleştiğinin başlangıcı.",
+    "2. Paragraf: Arkasındaki statü psikolojisi, gizli sembolizm veya dönemin ruhu.",
+    "3. Paragraf: Tüketim çılgınlığı, günümüze mirası ve bıraktığı kültürel iz."
   ],
   "slideQuotes": [
     "Slayt 2 (İkonikleşme): Tam 3 satır uzunluğunda (25-30 kelime), tek bir akıcı editoryal tespit.",
     "Slayt 3 (Statü Şifresi): Tam 3 satır uzunluğunda (25-30 kelime), statü psikolojisini ifşa eden editoryal tespit.",
     "Slayt 4 (Kültürel Miras & Kapanış): Tam 3 satır uzunluğunda (25-30 kelime), günümüze bıraktığı etkiyi özetleyen editoryal tespit."
   ],
-  "visualNote": "Bu içeriğin arka planı için internetten (Pinterest/Müze/Film arşivi) bulunması gereken en estetik, orijinal karenin İngilizce arama terimi. (Örn: 'Vintage 1999 Furby close up aesthetic' veya 'Christian Louboutin 1993 prototype red sole runway')",
+  "visualNote": "Bu içeriğin arka planı için internetten bulunması gereken en estetik orijinal karenin İngilizce arama terimi.",
   "hashtags": ["#etiket1", "#etiket2", "#etiket3", "#etiket4"]
 }
 Önemli: Kesinlikle hiçbir emoji kullanma. Sadece JSON döndür.
@@ -69,15 +118,16 @@ export function getPunchyExcerpt(text, maxSentences = 2) {
   return text.length > 140 ? text.substring(0, 140) + "..." : text;
 }
 
-export async function generateEditorialPost({ apiKey, category, decade, customTopic, model = "gemini-1.5-flash", onProgress }) {
+export async function generateEditorialPost({ apiKey, category, decade, customTopic, model = "gemini-2.5-flash", onProgress, project }) {
   if (!apiKey?.trim()) {
     throw new Error("Lütfen ayarlardan geçerli bir Gemini API anahtarı girin.");
   }
 
   const promptUser = `
+Proje: ${project?.name || 'Post Creator'}
 Kategori: ${category}
-Dönem: ${decade}
-Özel Konu: ${customTopic?.trim() ? customTopic.trim() : "Seçimi sen yap (az bilinen, en çarpıcı kült konuyu seç)"}
+${project?.filterTypeLabel || 'Filtre / Dönem'}: ${decade}
+Özel Konu: ${customTopic?.trim() ? customTopic.trim() : "Seçimi sen yap (bu projeye en uygun, en çarpıcı konuyu seç)"}
 `;
 
   if (onProgress) onProgress("Google'dan hesabınıza uygun aktif modeller listeleniyor...");
@@ -136,7 +186,7 @@ Dönem: ${decade}
           }
         ],
         systemInstruction: {
-          parts: [{ text: SYSTEM_INSTRUCTION }]
+          parts: [{ text: buildSystemInstruction(project) }]
         },
         generationConfig: {
           temperature: 0.75,
@@ -206,6 +256,9 @@ ${Array.isArray(parsed.hashtags) ? parsed.hashtags.join(" ") : parsed.hashtags}`
         decade,
         formattedCaption,
         activeModelUsed: shortName,
+        projectId: project?.id || 'lore-magazine',
+        projectName: project?.name || 'Lore Magazine',
+        projectShortCode: project?.shortCode || 'LORE',
         createdAt: new Date().toISOString(),
         id: "post_" + Date.now()
       };

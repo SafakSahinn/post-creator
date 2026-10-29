@@ -422,7 +422,12 @@ export function ArchiveDrawer({
                 className="p-4 rounded-xl bg-white/[0.02] border border-white/5 hover:border-[#e6c280]/40 hover:bg-white/[0.05] transition-all cursor-pointer group relative"
               >
                 <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center space-x-1.5">
+                  <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
+                    {item.projectName && (
+                      <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-sky-950/40 text-sky-300 border border-sky-500/30 font-semibold">
+                        {item.projectName}
+                      </span>
+                    )}
                     <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-[#e6c280]/10 text-[#e6c280] border border-[#e6c280]/20">
                       {item.category}
                     </span>

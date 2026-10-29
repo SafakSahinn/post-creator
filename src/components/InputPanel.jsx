@@ -1,100 +1,48 @@
 import React, { useState } from 'react';
-import { Sparkles, Shirt, Film, Utensils, Box, Dice5, Flame, RefreshCw } from 'lucide-react';
-import { CURATED_INSPIRATIONS } from '../services/curatedTopics';
+import {
+  Sparkles,
+  Shirt,
+  Film,
+  Utensils,
+  Box,
+  Dice5,
+  Flame,
+  RefreshCw,
+  Code,
+  Cpu,
+  HardDrive,
+  Zap,
+  Camera,
+  Clapperboard,
+  UserCheck,
+  Palette,
+  Home,
+  Feather,
+  Compass,
+  Layers,
+  ChevronRight
+} from 'lucide-react';
+import { BUILTIN_PROJECTS } from '../services/projects';
 
-const CATEGORIES = [
-  {
-    id: 'Dolap',
-    name: 'Dolap',
-    shortSubtitle: 'Moda & Stil',
-    icon: Shirt,
-    badge: 'Vogue & Arşiv',
-    tooltip: {
-      title: 'DOLAP · Moda & Gardırop',
-      description: 'Podyum anları, sokak modası devrimleri, ikonik kıyafetler ve gardırobun ardındaki sessiz zenginlik kodları.',
-      examples: 'Hermès Birkin bekleme sırası, Kurt Cobain hırkası, 90\'lar Prada naylon sırt çantası.'
-    }
-  },
-  {
-    id: 'Ekran',
-    name: 'Ekran',
-    shortSubtitle: 'Sinema & Oyun',
-    icon: Film,
-    badge: 'Kült Sahneler',
-    tooltip: {
-      title: 'EKRAN · Sinema, Dizi & Oyun',
-      description: 'Kült film sahneleri, unutulmaz TV anları, efsanevi video oyunları ve görsel kültürün dönüm noktaları.',
-      examples: 'Matrix deri trençkotu, American Psycho kartvizit sahnesi, GTA Vice City neon estetiği.'
-    }
-  },
-  {
-    id: 'Masa',
-    name: 'Masa',
-    shortSubtitle: 'Gastronomi & Mekan',
-    icon: Utensils,
-    badge: 'Statü Sofraları',
-    tooltip: {
-      title: 'MASA · Gastronomi & Mekan',
-      description: 'Elit restoran ritüelleri, içki kültürü, trend tabaklar ve sofraların ardındaki sınıfsal statü göstergeleri.',
-      examples: 'Negroni Sbagliato histerisi, 80\'ler borsa kahvaltısı, Nobu miso black cod fenomeni.'
-    }
-  },
-  {
-    id: 'Kutu',
-    name: 'Kutu',
-    shortSubtitle: 'Obje & Teknoloji',
-    icon: Box,
-    badge: 'Tasarım Fetişi',
-    tooltip: {
-      title: 'KUTU · Oyuncak & Retro Obje',
-      description: 'Nostaljik objeler, koleksiyon oyuncakları, analog cihazlar ve çocukluk anılarının fetiş nesneleri.',
-      examples: '1999 Furby çılgınlığı, Tamagotchi ölümü, Sony Walkman devrimi, Game Boy çağı.'
-    }
-  },
-];
-
-const DECADES = [
-  {
-    id: "80'ler",
-    label: "80'ler",
-    shortSubtitle: 'Analog Parlaklık',
-    tooltip: {
-      title: '1980\'LER · Aşırılık & Parlaklık',
-      spirit: 'Geniş vatkalar, neon ışıklar, Wall Street borsa bolluğu, synthwave müzik ve gösterişli lüks.',
-      highlights: 'Power suit modası, Miami Vice estetiği, MTV patlaması, ilk analog cep telefonları.'
-    }
-  },
-  {
-    id: "90'lar",
-    label: "90'lar",
-    shortSubtitle: 'Minimalist Grunge',
-    tooltip: {
-      title: '1990\'LAR · Ham Grunge & Cool Tavır',
-      spirit: 'Gösteriş karşıtı ham gerçeklik, süpermodeller çağı, salaş hırkalar, CD çalarlar ve ironik duruş.',
-      highlights: 'Kate Moss Calvin Klein dönemi, Nirvana, Friends jenerasyonu, Sony Discman.'
-    }
-  },
-  {
-    id: "2000'ler",
-    label: "2000'ler",
-    shortSubtitle: 'Y2K & Pop Çağı',
-    tooltip: {
-      title: '2000\'LER · Y2K & Tabloit Histerisi',
-      spirit: 'Dijital coşku, krom parlaklıklar, düşük bel kotlar, kapaklı telefonlar ve paparazzilerin altın çağı.',
-      highlights: 'Motorola RAZR, Von Dutch şapkalar, iPod mini, Paris Hilton ve Juicy Couture.'
-    }
-  },
-  {
-    id: "2010'lar",
-    label: "2010'lar",
-    shortSubtitle: 'Sessiz Lüks & Hype',
-    tooltip: {
-      title: '2010\'LAR · Algoritma & Sessiz Lüks',
-      spirit: 'Instagram estetiği, sneaker kuyrukları, gösterişsiz lüks (quiet luxury) ve mikro trendler.',
-      highlights: 'Yeezy çılgınlığı, Supreme logoları, flat white kahve kültürü, VSCO filtreleri.'
-    }
-  },
-];
+const ICON_MAP = {
+  Shirt,
+  Film,
+  Utensils,
+  Box,
+  Code,
+  Cpu,
+  HardDrive,
+  Zap,
+  Camera,
+  Clapperboard,
+  UserCheck,
+  Palette,
+  Home,
+  Feather,
+  Compass,
+  Sparkles,
+  Layers
+};
 
 export function InputPanel({
   selectedCategory,
@@ -107,41 +55,104 @@ export function InputPanel({
   isLoading,
   progressText,
   model,
-  onOpenSettings
+  onOpenSettings,
+  project = BUILTIN_PROJECTS[0],
+  onOpenProjects
 }) {
   const [showInspirations, setShowInspirations] = useState(false);
 
-  // Get current curated inspirations based on selected category & decade
-  const activeInspirations = CURATED_INSPIRATIONS[selectedCategory]?.[selectedDecade] || [];
+  const categories = project?.categories || BUILTIN_PROJECTS[0].categories;
+  const filterOptions = project?.filterOptions || BUILTIN_PROJECTS[0].filterOptions;
+  const filterTypeLabel = project?.filterTypeLabel || '02 / DÖNEM RUHUNU BELİRLE';
+  const filterCategoryTitle = project?.filterCategoryTitle || 'Kronoloji';
+  const buttonText = project?.buttonText || 'İçeriği Üret';
+
+  // Get current curated inspirations based on selected category & filter
+  const activeInspirations = project?.curatedTopics?.[selectedCategory]?.[selectedDecade] || [];
 
   const handleRandomPick = () => {
     if (activeInspirations.length > 0) {
       const random = activeInspirations[Math.floor(Math.random() * activeInspirations.length)];
       onChangeCustomTopic(random);
+    } else {
+      onChangeCustomTopic(`${selectedCategory} alanında ${selectedDecade} için en çarpıcı kült detayı analiz et`);
     }
   };
 
   return (
     <div className="bg-[#121318] border border-white/10 rounded-2xl p-6 sm:p-7 shadow-xl space-y-7">
       
+      {/* 00. AKTİF PROJE BİLGİ BANDI */}
+      <div className="flex items-center justify-between pb-4 border-b border-white/10">
+        <div className="flex items-center space-x-2.5">
+          <div
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-mono font-bold"
+            style={{
+              backgroundColor: `${project?.accentColor || '#e6c280'}20`,
+              color: project?.accentColor || '#e6c280',
+              border: `1px solid ${project?.accentColor || '#e6c280'}40`
+            }}
+          >
+            {project?.shortCode?.slice(0, 2) || 'PC'}
+          </div>
+          <div>
+            <div className="flex items-center space-x-2">
+              <span className="font-serif font-bold text-sm text-white tracking-wide">
+                {project?.name || 'Lore Magazine'}
+              </span>
+              <span
+                className="text-[9px] font-mono px-1.5 py-0.2 rounded border uppercase"
+                style={{
+                  borderColor: `${project?.accentColor || '#e6c280'}40`,
+                  backgroundColor: `${project?.accentColor || '#e6c280'}15`,
+                  color: project?.accentColor || '#e6c280'
+                }}
+              >
+                {project?.badge || 'Proje'}
+              </span>
+            </div>
+            <p className="text-[10px] text-neutral-400 font-sans truncate max-w-[260px] sm:max-w-xs">
+              {project?.tagline || 'Kapsamlı İçerik & Mizanpaj Stüdyosu'}
+            </p>
+          </div>
+        </div>
+
+        {onOpenProjects && (
+          <button
+            type="button"
+            onClick={onOpenProjects}
+            className="px-2.5 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white text-[11px] font-mono flex items-center space-x-1 transition-all"
+            title="Farklı bir projeye geçin veya yeni proje ekleyin"
+          >
+            <Layers className="w-3 h-3 text-[#e6c280]" />
+            <span className="hidden sm:inline">Projeyi Değiştir</span>
+            <ChevronRight className="w-3 h-3 opacity-60" />
+          </button>
+        )}
+      </div>
+
       {/* 1. KATEGORİ SEÇİMİ */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <label className="text-xs font-mono uppercase tracking-[0.2em] text-[#e6c280] font-semibold flex items-center space-x-2">
             <span>01 / Kategori</span>
           </label>
-          <span className="text-[11px] text-neutral-500 font-mono">Dolap · Ekran · Masa · Kutu</span>
+          <span className="text-[11px] text-neutral-500 font-mono truncate max-w-[200px]">
+            {categories.map((c) => c.name || c.id).join(' · ')}
+          </span>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-          {CATEGORIES.map((cat) => {
-            const Icon = cat.icon;
-            const isSelected = selectedCategory === cat.id;
+          {categories.map((cat) => {
+            const catId = cat.id || cat.name;
+            const Icon = (cat.iconName && ICON_MAP[cat.iconName]) ? ICON_MAP[cat.iconName] : Box;
+            const isSelected = selectedCategory === catId;
+
             return (
               <button
-                key={cat.id}
+                key={catId}
                 type="button"
-                onClick={() => onSelectCategory(cat.id)}
+                onClick={() => onSelectCategory(catId)}
                 className={`relative p-3.5 rounded-xl border text-left transition-all duration-200 group ${
                   isSelected
                     ? 'border-[#e6c280] bg-[#e6c280]/10 shadow-[0_0_20px_rgba(230,194,128,0.15)] ring-1 ring-[#e6c280]/40'
@@ -149,25 +160,31 @@ export function InputPanel({
                 }`}
               >
                 {/* Hover Bilgi Kutusu (Tooltip) */}
-                <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2.5 w-64 sm:w-72 p-3 bg-[#0d0e14] border border-[#e6c280]/40 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 text-left">
-                  <div className="flex items-center justify-between border-b border-white/10 pb-1.5 mb-1.5">
-                    <span className="font-serif font-bold text-xs text-[#e6c280] tracking-wide">
-                      {cat.tooltip.title}
-                    </span>
-                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[#e6c280]/15 text-[#e6c280]">
-                      {cat.badge}
-                    </span>
+                {cat.tooltip && (
+                  <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2.5 w-64 sm:w-72 p-3 bg-[#0d0e14] border border-[#e6c280]/40 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 text-left">
+                    <div className="flex items-center justify-between border-b border-white/10 pb-1.5 mb-1.5">
+                      <span className="font-serif font-bold text-xs text-[#e6c280] tracking-wide">
+                        {cat.tooltip.title || cat.name}
+                      </span>
+                      {cat.badge && (
+                        <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[#e6c280]/15 text-[#e6c280]">
+                          {cat.badge}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-neutral-300 leading-relaxed font-sans mb-1.5">
+                      {cat.tooltip.description}
+                    </p>
+                    {cat.tooltip.examples && (
+                      <div className="text-[10px] font-mono text-neutral-400 bg-white/5 p-2 rounded border border-white/5">
+                        <span className="text-[#e6c280] font-semibold">Örnekler: </span>
+                        <span>{cat.tooltip.examples}</span>
+                      </div>
+                    )}
+                    {/* Arrow */}
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-[1px] border-4 border-transparent border-t-[#e6c280]/40" />
                   </div>
-                  <p className="text-[11px] text-neutral-300 leading-relaxed font-sans mb-1.5">
-                    {cat.tooltip.description}
-                  </p>
-                  <div className="text-[10px] font-mono text-neutral-400 bg-white/5 p-2 rounded border border-white/5">
-                    <span className="text-[#e6c280] font-semibold">Örnekler: </span>
-                    <span>{cat.tooltip.examples}</span>
-                  </div>
-                  {/* Arrow */}
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-[1px] border-4 border-transparent border-t-[#e6c280]/40" />
-                </div>
+                )}
 
                 <div className="flex items-center justify-between mb-2">
                   <div
@@ -179,21 +196,23 @@ export function InputPanel({
                   >
                     <Icon className="w-4 h-4" />
                   </div>
-                  <span
-                    className={`text-[9px] font-mono tracking-wider px-1.5 py-0.5 rounded ${
-                      isSelected
-                        ? 'text-[#e6c280] bg-[#e6c280]/15'
-                        : 'text-neutral-500 bg-white/5'
-                    }`}
-                  >
-                    {cat.id}
-                  </span>
+                  {cat.badge && (
+                    <span
+                      className={`text-[9px] font-mono tracking-wider px-1.5 py-0.5 rounded ${
+                        isSelected
+                          ? 'text-[#e6c280] bg-[#e6c280]/15'
+                          : 'text-neutral-500 bg-white/5'
+                      }`}
+                    >
+                      {cat.badge}
+                    </span>
+                  )}
                 </div>
-                <div className="font-serif font-bold text-sm text-white tracking-wide">
-                  {cat.name}
+                <div className="font-serif font-bold text-sm text-white tracking-wide truncate">
+                  {cat.name || catId}
                 </div>
                 <div className="text-[11px] text-neutral-400 truncate mt-0.5 font-sans">
-                  {cat.shortSubtitle}
+                  {cat.sublabel || cat.shortSubtitle || ''}
                 </div>
               </button>
             );
@@ -201,23 +220,25 @@ export function InputPanel({
         </div>
       </div>
 
-      {/* 2. DÖNEM SEÇİMİ */}
+      {/* 2. DÖNEM VEYA ODAK SEÇİMİ */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <label className="text-xs font-mono uppercase tracking-[0.2em] text-[#e6c280] font-semibold flex items-center space-x-2">
-            <span>02 / Dönem Ruhunu Belirle</span>
+            <span>{filterTypeLabel}</span>
           </label>
-          <span className="text-[11px] text-neutral-500 font-mono">Kronoloji</span>
+          <span className="text-[11px] text-neutral-500 font-mono">{filterCategoryTitle}</span>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {DECADES.map((dec) => {
-            const isSelected = selectedDecade === dec.id;
+          {filterOptions.map((opt) => {
+            const optId = opt.id || opt.label;
+            const isSelected = selectedDecade === optId;
+
             return (
               <button
-                key={dec.id}
+                key={optId}
                 type="button"
-                onClick={() => onSelectDecade(dec.id)}
+                onClick={() => onSelectDecade(optId)}
                 className={`relative py-3 px-3 rounded-xl border text-center transition-all group ${
                   isSelected
                     ? 'border-[#e6c280] bg-[#e6c280]/10 text-white shadow-[0_0_15px_rgba(230,194,128,0.12)] ring-1 ring-[#e6c280]/30'
@@ -225,28 +246,34 @@ export function InputPanel({
                 }`}
               >
                 {/* Hover Bilgi Kutusu (Tooltip) */}
-                <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2.5 w-64 sm:w-72 p-3 bg-[#0d0e14] border border-[#e6c280]/40 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 text-left">
-                  <div className="flex items-center justify-between border-b border-white/10 pb-1.5 mb-1.5">
-                    <span className="font-serif font-bold text-xs text-[#e6c280] tracking-wide">
-                      {dec.tooltip.title}
-                    </span>
+                {opt.tooltip && (
+                  <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2.5 w-64 sm:w-72 p-3 bg-[#0d0e14] border border-[#e6c280]/40 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 text-left">
+                    <div className="flex items-center justify-between border-b border-white/10 pb-1.5 mb-1.5">
+                      <span className="font-serif font-bold text-xs text-[#e6c280] tracking-wide">
+                        {opt.tooltip.title || opt.label}
+                      </span>
+                    </div>
+                    {opt.tooltip.spirit && (
+                      <p className="text-[11px] text-neutral-300 leading-relaxed font-sans mb-1.5">
+                        {opt.tooltip.spirit}
+                      </p>
+                    )}
+                    {opt.tooltip.highlights && (
+                      <div className="text-[10px] font-mono text-neutral-400 bg-white/5 p-2 rounded border border-white/5">
+                        <span className="text-[#e6c280] font-semibold">Öne Çıkanlar: </span>
+                        <span>{opt.tooltip.highlights}</span>
+                      </div>
+                    )}
+                    {/* Arrow */}
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-[1px] border-4 border-transparent border-t-[#e6c280]/40" />
                   </div>
-                  <p className="text-[11px] text-neutral-300 leading-relaxed font-sans mb-1.5">
-                    {dec.tooltip.spirit}
-                  </p>
-                  <div className="text-[10px] font-mono text-neutral-400 bg-white/5 p-2 rounded border border-white/5">
-                    <span className="text-[#e6c280] font-semibold">Kült İkonlar: </span>
-                    <span>{dec.tooltip.highlights}</span>
-                  </div>
-                  {/* Arrow */}
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-[1px] border-4 border-transparent border-t-[#e6c280]/40" />
-                </div>
+                )}
 
-                <div className="font-serif font-bold text-sm tracking-wide">
-                  {dec.label}
+                <div className="font-serif font-bold text-sm tracking-wide truncate">
+                  {opt.label || optId}
                 </div>
                 <div className="text-[10px] text-neutral-400 mt-0.5 truncate font-mono">
-                  {dec.shortSubtitle}
+                  {opt.sublabel || opt.shortSubtitle || ''}
                 </div>
               </button>
             );
@@ -265,25 +292,27 @@ export function InputPanel({
             <button
               type="button"
               onClick={handleRandomPick}
-              className="text-[11px] font-mono text-[#e6c280] hover:text-[#f3d9a6] flex items-center space-x-1 py-0.5 px-2 rounded border border-[#e6c280]/20 bg-[#e6c280]/5 hover:bg-[#e6c280]/10 transition-all"
-              title="Küratörün seçtiği kült konulardan birini ata"
+              className="text-[11px] font-mono text-[#e6c280] hover:text-[#f3d9a6] flex items-center space-x-1 py-0.5 px-2 rounded border border-[#e6c280]/20 bg-[#e6c280]/5 hover:bg-[#e6c280]/10 transition-all cursor-pointer"
+              title="Küratörün seçtiği konulardan birini ata"
             >
               <Dice5 className="w-3.5 h-3.5" />
-              <span>Rastgele Kült Konu</span>
+              <span>Rastgele Konu</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => setShowInspirations(!showInspirations)}
-              className="text-[11px] font-mono text-neutral-400 hover:text-neutral-200 py-0.5 px-2 rounded border border-white/10 hover:bg-white/5 transition-all"
-            >
-              {showInspirations ? 'Listeyi Gizle' : 'Küratör Önerileri'}
-            </button>
+            {activeInspirations.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowInspirations(!showInspirations)}
+                className="text-[11px] font-mono text-neutral-400 hover:text-neutral-200 py-0.5 px-2 rounded border border-white/10 hover:bg-white/5 transition-all cursor-pointer"
+              >
+                {showInspirations ? 'Listeyi Gizle' : 'Örnek Konular'}
+              </button>
+            )}
           </div>
         </div>
 
         {/* Curated list dropdown/drawer */}
-        {showInspirations && (
+        {showInspirations && activeInspirations.length > 0 && (
           <div className="mb-3 p-3 rounded-xl bg-black/60 border border-white/10 space-y-1.5 animate-fadeIn">
             <div className="text-[10px] font-mono uppercase text-neutral-400 tracking-wider mb-1 flex items-center space-x-1.5">
               <Flame className="w-3 h-3 text-[#e6c280]" />
@@ -313,7 +342,7 @@ export function InputPanel({
             type="text"
             value={customTopic}
             onChange={(e) => onChangeCustomTopic(e.target.value)}
-            placeholder="Boş bırakırsanız küratör en çarpıcı gizli lore'u kendisi seçer..."
+            placeholder="Boş bırakırsanız küratör projeye uygun en çarpıcı konuyu kendisi seçer..."
             className="w-full bg-[#0a0b0e] border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-[#e6c280] font-sans transition-all shadow-inner"
           />
           {customTopic && (
@@ -339,7 +368,7 @@ export function InputPanel({
           <button
             type="button"
             onClick={onOpenSettings}
-            className="text-[10px] text-neutral-400 hover:text-white underline transition-colors"
+            className="text-[10px] text-neutral-400 hover:text-white underline transition-colors cursor-pointer"
           >
             Modeli Değiştir
           </button>
@@ -362,7 +391,7 @@ export function InputPanel({
           ) : (
             <>
               <Sparkles className="w-4 h-4 text-black" />
-              <span>Lore İçeriğini Üret</span>
+              <span>{buttonText}</span>
             </>
           )}
         </button>
