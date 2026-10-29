@@ -69,14 +69,15 @@ export function OutputView({ post, onSaveToArchive, isSaved, onOpenEditor, hasIm
           <button
             type="button"
             onClick={() => onSaveToArchive(post)}
-            className={`px-3.5 py-2 rounded-lg text-xs font-mono flex items-center space-x-1.5 transition-all ${
+            className={`px-3.5 py-2 rounded-lg text-xs font-mono flex items-center space-x-1.5 transition-all cursor-pointer ${
               isSaved
-                ? 'bg-emerald-950/40 border border-emerald-500/40 text-emerald-300'
+                ? 'bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-900/40'
                 : 'bg-white/5 border border-white/10 text-neutral-300 hover:text-white hover:border-white/20'
             }`}
+            title={isSaved ? "Arşiv kaydını son haliyle güncelle" : "Arşive kaydet"}
           >
             {isSaved ? <BookmarkCheck className="w-3.5 h-3.5 text-emerald-400" /> : <Bookmark className="w-3.5 h-3.5" />}
-            <span>{isSaved ? 'Arşivde Kayıtlı' : 'Arşive Kaydet'}</span>
+            <span>{isSaved ? 'Arşivi Güncelle' : 'Arşive Kaydet'}</span>
           </button>
 
           {/* Copy Caption */}

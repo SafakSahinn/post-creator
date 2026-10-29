@@ -1,6 +1,50 @@
 import React, { useState, useEffect } from 'react';
-import { Key, Bookmark, Sparkles, HelpCircle, Activity, LogOut, Cloud, Layers } from 'lucide-react';
+import { Key, Bookmark, Sparkles, HelpCircle, Activity, LogOut, Cloud, Layers, PlusCircle } from 'lucide-react';
 import { getQuotaStats } from '../services/apiQuota';
+
+function PostCreatorLogo() {
+  return (
+    <div className="relative w-11 h-11 shrink-0 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
+      {/* Glow Halo */}
+      <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-[#e6c280]/30 to-[#f59e0b]/20 blur-md opacity-75 group-hover:opacity-100 transition-opacity" />
+      
+      {/* Luxury Layered Isometric Carousel Slides Logo */}
+      <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-11 h-11 relative z-10 drop-shadow-[0_2px_10px_rgba(230,194,128,0.35)]">
+        {/* Back Card (Rotated Slide) */}
+        <rect x="13.5" y="5.5" width="25" height="30" rx="5" fill="#181a22" stroke="rgba(255,255,255,0.18)" strokeWidth="1.4" transform="rotate(7 26 20.5)" />
+        {/* Front Primary Card */}
+        <rect x="5.5" y="8" width="25" height="30" rx="5" fill="url(#pcCardGrad)" stroke="url(#pcGoldBorder)" strokeWidth="1.5" />
+        {/* Header Gold Line */}
+        <line x1="9" y1="13.5" x2="27" y2="13.5" stroke="#e6c280" strokeWidth="1.2" strokeLinecap="round" strokeOpacity="0.85" />
+        {/* Center Star / Aperture Spark */}
+        <path d="M18 18.5L19.2 22.2L23 23.5L19.2 24.8L18 28.5L16.8 24.8L13 23.5L16.8 22.2L18 18.5Z" fill="url(#pcGoldStar)" />
+        {/* Carousel 4 Indicator Dots */}
+        <circle cx="11.5" cy="33" r="1.2" fill="#e6c280" />
+        <circle cx="15.5" cy="33" r="1.2" fill="#e6c280" fillOpacity="0.4" />
+        <circle cx="19.5" cy="33" r="1.2" fill="#e6c280" fillOpacity="0.4" />
+        <circle cx="23.5" cy="33" r="1.2" fill="#e6c280" fillOpacity="0.4" />
+        
+        {/* Gradients */}
+        <defs>
+          <linearGradient id="pcCardGrad" x1="5.5" y1="8" x2="30.5" y2="38" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#1e2029" />
+            <stop offset="1" stopColor="#0b0c10" />
+          </linearGradient>
+          <linearGradient id="pcGoldBorder" x1="5.5" y1="8" x2="30.5" y2="38" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#f5eedb" />
+            <stop offset="0.5" stopColor="#e6c280" />
+            <stop offset="1" stopColor="#a37a34" />
+          </linearGradient>
+          <linearGradient id="pcGoldStar" x1="13" y1="18.5" x2="23" y2="28.5" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#ffffff" />
+            <stop offset="0.5" stopColor="#e6c280" />
+            <stop offset="1" stopColor="#d4a34e" />
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  );
+}
 
 export function Header({
   hasApiKey,
@@ -12,7 +56,8 @@ export function Header({
   onLogout,
   model,
   activeProject,
-  onOpenProjects
+  onOpenProjects,
+  onResetWorkspace
 }) {
   const [quota, setQuota] = useState(() => getQuotaStats());
 
@@ -29,24 +74,32 @@ export function Header({
     <header className="border-b border-white/10 bg-[#0c0d11]/80 backdrop-blur-md sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         
-        {/* Brand / Logo */}
+        {/* Brand / Logo (Tıklandığında Boş Çalışma Alanı / Stüdyo Sıfırlama) */}
         <div className="flex items-center space-x-4">
-          <div className="w-10 h-10 rounded-sm bg-gradient-to-br from-[#e6c280] to-[#b38e4a] flex items-center justify-center text-black font-serif font-black text-sm tracking-tighter shadow-[0_0_20px_rgba(230,194,128,0.25)]">
-            PC
-          </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <span className="font-serif tracking-[0.2em] text-lg font-bold text-white uppercase">
-                POST CREATOR
-              </span>
-              <span className="text-[10px] tracking-widest uppercase font-mono px-2 py-0.5 rounded border border-[#e6c280]/40 text-[#e6c280] bg-[#e6c280]/5">
-                v1.0 Studio
-              </span>
+          <button
+            type="button"
+            onClick={onResetWorkspace}
+            className="flex items-center space-x-3.5 text-left group cursor-pointer focus:outline-none transition-all select-none"
+            title="Yeni Boş Çalışma Alanı Aç (Stüdyoyu Sıfırla)"
+          >
+            <PostCreatorLogo />
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="font-serif tracking-[0.2em] text-lg font-black text-white uppercase group-hover:text-[#e6c280] transition-colors">
+                  POST CREATOR
+                </span>
+                <span className="text-[9px] tracking-widest uppercase font-mono px-2 py-0.5 rounded border border-[#e6c280]/40 text-[#e6c280] bg-[#e6c280]/10 shadow-[0_0_8px_rgba(230,194,128,0.15)]">
+                  Studio
+                </span>
+              </div>
+              <p className="text-[11px] text-neutral-400 font-mono tracking-wider group-hover:text-neutral-300 transition-colors flex items-center space-x-1.5">
+                <span>INSTAGRAM CAROUSEL STÜDYOSU</span>
+                <span className="text-[#e6c280] font-semibold opacity-0 group-hover:opacity-100 transition-opacity text-[10px] hidden sm:inline">
+                  &bull; Yeni Boş Sayfa
+                </span>
+              </p>
             </div>
-            <p className="text-xs text-neutral-400 font-mono tracking-wider">
-              INSTAGRAM CAROUSEL & İÇERİK STÜDYOSU
-            </p>
-          </div>
+          </button>
 
           {/* Active Project Pill / Switcher */}
           {activeProject && (

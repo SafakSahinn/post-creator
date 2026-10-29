@@ -157,10 +157,25 @@ export function App() {
     setCurrentPost(null);
     setGallery([]);
     setSlideSettings({
-      0: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0, offsetX: 0, offsetY: 0 },
-      1: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0, offsetX: 0, offsetY: 0 },
-      2: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0, offsetX: 0, offsetY: 0 },
-      3: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0, offsetX: 0, offsetY: 0 },
+      0: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0, offsetX: 0, offsetY: 0, customQuote: null },
+      1: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0, offsetX: 0, offsetY: 0, customQuote: null },
+      2: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0, offsetX: 0, offsetY: 0, customQuote: null },
+      3: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0, offsetX: 0, offsetY: 0, customQuote: null },
+    });
+    setActiveTab('editorial');
+    setErrorMessage(null);
+  };
+
+  // Post Creator Logosuna Tıklandığında Seçili Projede Temiz Boş Çalışma Alanı Açma
+  const handleResetWorkspace = () => {
+    setCurrentPost(null);
+    setGallery([]);
+    setCustomTopic('');
+    setSlideSettings({
+      0: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0, offsetX: 0, offsetY: 0, customQuote: null },
+      1: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0, offsetX: 0, offsetY: 0, customQuote: null },
+      2: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0, offsetX: 0, offsetY: 0, customQuote: null },
+      3: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0, offsetX: 0, offsetY: 0, customQuote: null },
     });
     setActiveTab('editorial');
     setErrorMessage(null);
@@ -201,7 +216,7 @@ export function App() {
     }
   };
 
-  // Archive Handlers - Görseller ve Slayt Ayarları ile Birlikte Kayıt
+  // Archive Handlers - Görseller, Slayt Ayarları ve Özel Metinlerle Birlikte Kayıt & Güncelleme
   const handleSaveToArchive = async (postToSave = currentPost) => {
     if (!postToSave) return;
     const existsIndex = archives.findIndex((a) => a.id === postToSave.id || a.title === postToSave.title);
@@ -213,8 +228,20 @@ export function App() {
       gallery.find((g) => g.id === slideSettings?.[3]?.imageId)?.dataUrl || null,
     ];
 
+    const activeWatermark = postToSave.watermark || activeProject?.watermark || postToSave.projectShortCode || activeProject?.shortCode || 'L O R E';
+    const activeAccent = postToSave.accentColor || activeProject?.accentColor || '#e6c280';
+
+    const updatedSlideQuotes = [
+      slideSettings?.[1]?.customQuote || postToSave.slideQuotes?.[0],
+      slideSettings?.[2]?.customQuote || postToSave.slideQuotes?.[1],
+      slideSettings?.[3]?.customQuote || postToSave.slideQuotes?.[2]
+    ];
+
     const enriched = {
       ...postToSave,
+      watermark: activeWatermark,
+      accentColor: activeAccent,
+      slideQuotes: updatedSlideQuotes.some(Boolean) ? updatedSlideQuotes : postToSave.slideQuotes,
       savedGallery: gallery,
       savedSlideSettings: slideSettings,
       thumbnails: thumbs,
@@ -245,13 +272,17 @@ export function App() {
   };
 
   const handleLoadPostFromArchive = (item) => {
-    setCurrentPost(item);
-    if (item.projectId) {
-      const matchProj = projects.find((p) => p.id === item.projectId);
-      if (matchProj) {
-        setActiveProject(matchProj);
-        setActiveProjectId(matchProj.id);
-      }
+    const matchProj = item.projectId ? projects.find((p) => p.id === item.projectId) : activeProject;
+    const enrichedItem = {
+      ...item,
+      watermark: item.watermark || matchProj?.watermark || item.projectShortCode || matchProj?.shortCode || 'L O R E',
+      accentColor: item.accentColor || matchProj?.accentColor || '#e6c280'
+    };
+
+    setCurrentPost(enrichedItem);
+    if (matchProj) {
+      setActiveProject(matchProj);
+      setActiveProjectId(matchProj.id);
     }
     if (item.category) setCategory(item.category);
     if (item.decade) setDecade(item.decade);
@@ -298,6 +329,7 @@ export function App() {
         model={model}
         activeProject={activeProject}
         onOpenProjects={() => setIsProjectModalOpen(true)}
+        onResetWorkspace={handleResetWorkspace}
       />
 
       {/* Main Workspace */}

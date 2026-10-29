@@ -465,16 +465,20 @@ export function CarouselStudio({ post, project, gallery, onUpdateGallery, slideS
           {onSaveToArchive && (
             <button
               type="button"
-              onClick={() => onSaveToArchive(post)}
-              className={`px-3 py-2 rounded-lg border text-xs font-mono transition-all flex items-center space-x-1.5 ${
+              onClick={() => {
+                onSaveToArchive(post);
+                setUndoToast(isSaved ? 'Arşivdeki gönderi güncellendi!' : 'Arşive kaydedildi!');
+                setTimeout(() => setUndoToast(null), 2000);
+              }}
+              className={`px-3 py-2 rounded-lg border text-xs font-mono transition-all flex items-center space-x-1.5 cursor-pointer ${
                 isSaved
-                  ? 'border-emerald-500/40 bg-emerald-950/30 text-emerald-300'
+                  ? 'border-emerald-500/40 bg-emerald-950/30 text-emerald-300 hover:bg-emerald-900/40 hover:border-emerald-400'
                   : 'border-white/10 bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white'
               }`}
-              title="Görsellerle birlikte yerel arşive ve Google Drive için kaydet"
+              title={isSaved ? "Metin, görsel veya logo değişikliklerini arşive kaydet / güncelle" : "Görsellerle birlikte yerel arşive kaydet"}
             >
               {isSaved ? <BookmarkCheck className="w-3.5 h-3.5 text-emerald-400" /> : <Bookmark className="w-3.5 h-3.5 text-[#e6c280]" />}
-              <span>{isSaved ? 'Arşivde' : 'Arşive Kaydet'}</span>
+              <span>{isSaved ? 'Arşivi Güncelle' : 'Arşive Kaydet'}</span>
             </button>
           )}
 
