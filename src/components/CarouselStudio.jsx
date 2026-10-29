@@ -384,9 +384,8 @@ export function CarouselStudio({ post, project, gallery, onUpdateGallery, slideS
     );
   }
 
-  const rawWatermark = post.watermark || project?.watermark || post.projectShortCode || project?.shortCode || 'L O R E';
-  const slideLogo = rawWatermark.trim();
-  const slideAccentColor = post.accentColor || project?.accentColor || '#e6c280';
+  const slideLogo = (project?.watermark || project?.shortCode || post.watermark || post.projectShortCode || 'L O R E').trim();
+  const slideAccentColor = project?.accentColor || post.accentColor || '#e6c280';
   const slideTagline = project?.tagline || post.tagline || 'Kültür & Statü Şifreleri';
 
   const formatQuote = (q, fallback) => {
@@ -405,10 +404,74 @@ export function CarouselStudio({ post, project, gallery, onUpdateGallery, slideS
     return raw;
   };
 
+  const p1 = Array.isArray(post.lore) ? post.lore[0] : (typeof post.lore === 'string' ? post.lore.split(/\n\s*\n/)[0] : '');
+  const p2 = Array.isArray(post.lore) ? (post.lore[1] || post.lore[0]) : (typeof post.lore === 'string' ? (post.lore.split(/\n\s*\n/)[1] || post.lore.split(/\n\s*\n/)[0]) : '');
+  const p3 = Array.isArray(post.lore) ? (post.lore[2] || post.lore[0]) : (typeof post.lore === 'string' ? (post.lore.split(/\n\s*\n/)[2] || post.lore.split(/\n\s*\n/)[0]) : '');
+
   // Slide quotes (all 3 slides: 2, 3 and 4) - 2 ila 3 satırı aşmayan net ve vurucu tek cümle
-  const slide1Quote = slideSettings?.[1]?.customQuote ?? formatQuote(post.slideQuotes?.[0], getPunchyExcerpt(post.lore?.[0], 1));
-  const slide2Quote = slideSettings?.[2]?.customQuote ?? formatQuote(post.slideQuotes?.[1], getPunchyExcerpt(post.lore?.[1] || post.lore?.[0], 1));
-  const slide3Quote = slideSettings?.[3]?.customQuote ?? formatQuote(post.slideQuotes?.[2], getPunchyExcerpt(post.lore?.[2] || post.lore?.[0], 1));
+  const slide1Quote = slideSettings?.[1]?.customQuote ?? (post.slideQuotes?.[0] ? formatQuote(post.slideQuotes[0]) : getPunchyExcerpt(p1, 1));
+  const slide2Quote = slideSettings?.[2]?.customQuote ?? (post.slideQuotes?.[1] ? formatQuote(post.slideQuotes[1]) : getPunchyExcerpt(p2, 1));
+  const slide3Quote = slideSettings?.[3]?.customQuote ?? (post.slideQuotes?.[2] ? formatQuote(post.slideQuotes[2]) : getPunchyExcerpt(p3, 1));
+
+  const handleSaveOrUpdate = () => {
+    const updatedPost = {
+      ...post,
+      projectId: project?.id || post.projectId || 'lore-magazine',
+      projectName: project?.name || post.projectName || 'Lore Magazine',
+      projectShortCode: project?.shortCode || post.projectShortCode || 'LORE',
+      watermark: slideLogo,
+      accentColor: slideAccentColor,
+      slideQuotes: [slide1Quote, slide2Quote, slide3Quote],
+      savedGallery: gallery,
+      savedSlideSettings: slideSettings
+    };
+    if (onSaveToArchive) {
+      onSaveToArchive(updatedPost);
+    }
+    setUndoToast(isSaved ? 'Arşivdeki gönderi ve mizanpaj güncellendi!' : 'Arşive kaydedildi!');
+    setTimeout(() => setUndoToast(null), 2000);
+  };
+
+  const handleRefreshAllQuotesFromLore = () => {
+    const q1 = getPunchyExcerpt(p1, 1);
+    const q2 = getPunchyExcerpt(p2, 1);
+    const q3 = getPunchyExcerpt(p3, 1);
+
+    const updatedSettings = {
+      ...slideSettings,
+      1: { ...(slideSettings[1] || {}), customQuote: q1 },
+      2: { ...(slideSettings[2] || {}), customQuote: q2 },
+      3: { ...(slideSettings[3] || {}), customQuote: q3 }
+    };
+    onUpdateSlideSettings(updatedSettings);
+    pushStateToHistory(updatedSettings, gallery);
+
+    const updatedPost = {
+      ...post,
+      projectId: project?.id || post.projectId || 'lore-magazine',
+      projectName: project?.name || post.projectName || 'Lore Magazine',
+      projectShortCode: project?.shortCode || post.projectShortCode || 'LORE',
+      watermark: slideLogo,
+      accentColor: slideAccentColor,
+      slideQuotes: [q1, q2, q3],
+      savedGallery: gallery,
+      savedSlideSettings: updatedSettings
+    };
+    if (onSaveToArchive) {
+      onSaveToArchive(updatedPost);
+    }
+    setUndoToast('Slayt metinleri 3 satırlık tam cümlelere yenilendi ve kaydedildi!');
+    setTimeout(() => setUndoToast(null), 2500);
+  };
+
+  const handleRefreshSingleQuote = (slideIdx) => {
+    if (slideIdx <= 0) return;
+    const targetPara = slideIdx === 1 ? p1 : slideIdx === 2 ? p2 : p3;
+    const freshQuote = getPunchyExcerpt(targetPara, 1);
+    handleUpdateSlideProperty('customQuote', freshQuote);
+    setUndoToast(`Slayt ${slideIdx + 1} metni yenilendi!`);
+    setTimeout(() => setUndoToast(null), 2000);
+  };
 
   const getImageForSlide = (slideIdx) => {
     const imgId = slideSettings?.[slideIdx]?.imageId;
@@ -462,14 +525,20 @@ export function CarouselStudio({ post, project, gallery, onUpdateGallery, slideS
             <Redo2 className="w-4 h-4" />
           </button>
 
+          <button
+            type="button"
+            onClick={handleRefreshAllQuotesFromLore}
+            className="px-3 py-2 rounded-lg border border-[#e6c280]/40 bg-[#e6c280]/10 hover:bg-[#e6c280]/20 text-[#e6c280] text-xs font-mono transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm"
+            title="Yapay zeka hikayesinden 3 satırlık tam anlamlı cümleleri çıkar ve tüm slaytlara uygula"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[#e6c280]" />
+            <span>Metinleri Yenile</span>
+          </button>
+
           {onSaveToArchive && (
             <button
               type="button"
-              onClick={() => {
-                onSaveToArchive(post);
-                setUndoToast(isSaved ? 'Arşivdeki gönderi güncellendi!' : 'Arşive kaydedildi!');
-                setTimeout(() => setUndoToast(null), 2000);
-              }}
+              onClick={handleSaveOrUpdate}
               className={`px-3 py-2 rounded-lg border text-xs font-mono transition-all flex items-center space-x-1.5 cursor-pointer ${
                 isSaved
                   ? 'border-emerald-500/40 bg-emerald-950/30 text-emerald-300 hover:bg-emerald-900/40 hover:border-emerald-400'
@@ -1048,17 +1117,28 @@ export function CarouselStudio({ post, project, gallery, onUpdateGallery, slideS
                     <Edit3 className="w-3.5 h-3.5 text-[#e6c280]" />
                     <span>Slayt Metni (2-3 Satır)</span>
                   </span>
-                  {currentSettings.customQuote !== null && currentSettings.customQuote !== undefined && (
+                  <div className="flex items-center space-x-2">
                     <button
                       type="button"
-                      onClick={() => handleUpdateSlideProperty('customQuote', null)}
-                      className="text-[9px] text-neutral-400 hover:text-[#e6c280] flex items-center space-x-0.5"
-                      title="Yapay zekanın orijinal metnine geri dön"
+                      onClick={() => handleRefreshSingleQuote(activeSlide)}
+                      className="text-[9px] text-[#e6c280] hover:underline flex items-center space-x-0.5 cursor-pointer"
+                      title="Bu slaytın metnini hikayeden tam cümle olarak yeniden çek"
                     >
-                      <RotateCcw className="w-2.5 h-2.5" />
-                      <span>Sıfırla</span>
+                      <Sparkles className="w-2.5 h-2.5 text-[#e6c280]" />
+                      <span>Metinden Yenile</span>
                     </button>
-                  )}
+                    {currentSettings.customQuote !== null && currentSettings.customQuote !== undefined && (
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateSlideProperty('customQuote', null)}
+                        className="text-[9px] text-neutral-400 hover:text-[#e6c280] flex items-center space-x-0.5"
+                        title="Yapay zekanın orijinal metnine geri dön"
+                      >
+                        <RotateCcw className="w-2.5 h-2.5" />
+                        <span>Sıfırla</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <textarea
                   rows={2}

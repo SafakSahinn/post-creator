@@ -24,6 +24,7 @@ import {
 import {
   getAllArchivesFromDb,
   saveArchiveToDb,
+  batchSaveArchivesToDb,
   deleteArchiveFromDb,
   clearAllArchivesFromDb
 } from './services/archiveDb';
@@ -221,34 +222,45 @@ export function App() {
     if (!postToSave) return;
     const existsIndex = archives.findIndex((a) => a.id === postToSave.id || a.title === postToSave.title);
 
+    const activeSettings = postToSave.savedSlideSettings || slideSettings;
+    const activeGallery = postToSave.savedGallery || gallery;
+
     const thumbs = [
-      gallery.find((g) => g.id === slideSettings?.[0]?.imageId)?.dataUrl || null,
-      gallery.find((g) => g.id === slideSettings?.[1]?.imageId)?.dataUrl || null,
-      gallery.find((g) => g.id === slideSettings?.[2]?.imageId)?.dataUrl || null,
-      gallery.find((g) => g.id === slideSettings?.[3]?.imageId)?.dataUrl || null,
+      activeGallery.find((g) => g.id === activeSettings?.[0]?.imageId)?.dataUrl || null,
+      activeGallery.find((g) => g.id === activeSettings?.[1]?.imageId)?.dataUrl || null,
+      activeGallery.find((g) => g.id === activeSettings?.[2]?.imageId)?.dataUrl || null,
+      activeGallery.find((g) => g.id === activeSettings?.[3]?.imageId)?.dataUrl || null,
     ];
 
-    const activeWatermark = postToSave.watermark || activeProject?.watermark || postToSave.projectShortCode || activeProject?.shortCode || 'L O R E';
-    const activeAccent = postToSave.accentColor || activeProject?.accentColor || '#e6c280';
+    const activeWatermark = (activeProject?.watermark || activeProject?.shortCode || postToSave.watermark || postToSave.projectShortCode || 'L O R E').trim();
+    const activeAccent = activeProject?.accentColor || postToSave.accentColor || '#e6c280';
+    const activeProjectIdVal = activeProject?.id || postToSave.projectId || 'lore-magazine';
+    const activeProjectNameVal = activeProject?.name || postToSave.projectName || 'Lore Magazine';
+    const activeShortCode = activeProject?.shortCode || postToSave.projectShortCode || 'LORE';
 
     const updatedSlideQuotes = [
-      slideSettings?.[1]?.customQuote || postToSave.slideQuotes?.[0],
-      slideSettings?.[2]?.customQuote || postToSave.slideQuotes?.[1],
-      slideSettings?.[3]?.customQuote || postToSave.slideQuotes?.[2]
+      activeSettings?.[1]?.customQuote || postToSave.slideQuotes?.[0],
+      activeSettings?.[2]?.customQuote || postToSave.slideQuotes?.[1],
+      activeSettings?.[3]?.customQuote || postToSave.slideQuotes?.[2]
     ];
 
     const enriched = {
       ...postToSave,
+      projectId: activeProjectIdVal,
+      projectName: activeProjectNameVal,
+      projectShortCode: activeShortCode,
       watermark: activeWatermark,
       accentColor: activeAccent,
       slideQuotes: updatedSlideQuotes.some(Boolean) ? updatedSlideQuotes : postToSave.slideQuotes,
-      savedGallery: gallery,
-      savedSlideSettings: slideSettings,
+      savedGallery: activeGallery,
+      savedSlideSettings: activeSettings,
       thumbnails: thumbs,
       updatedAt: new Date().toISOString()
     };
 
     await saveArchiveToDb(enriched);
+    setCurrentPost(enriched);
+    setSlideSettings(activeSettings);
 
     if (existsIndex >= 0) {
       const copy = [...archives];
@@ -298,6 +310,37 @@ export function App() {
   const handleUpdateArchiveItem = async (updatedItem) => {
     await saveArchiveToDb(updatedItem);
     setArchives((prev) => prev.map((a) => (a.id === updatedItem.id ? updatedItem : a)));
+    setCurrentPost((curr) => {
+      if (curr && (curr.id === updatedItem.id || curr.title === updatedItem.title)) {
+        if (updatedItem.savedSlideSettings) {
+          setSlideSettings(updatedItem.savedSlideSettings);
+        }
+        if (updatedItem.savedGallery) {
+          setGallery(updatedItem.savedGallery);
+        }
+        return { ...curr, ...updatedItem };
+      }
+      return curr;
+    });
+  };
+
+  const handleBatchUpdateArchives = async (updatedList) => {
+    await batchSaveArchivesToDb(updatedList);
+    setArchives(updatedList);
+    setCurrentPost((curr) => {
+      if (!curr) return null;
+      const match = updatedList.find((u) => u.id === curr.id || u.title === curr.title);
+      if (match) {
+        if (match.savedSlideSettings) {
+          setSlideSettings(match.savedSlideSettings);
+        }
+        if (match.savedGallery) {
+          setGallery(match.savedGallery);
+        }
+        return { ...curr, ...match };
+      }
+      return curr;
+    });
   };
 
   const isCurrentPostSaved = currentPost
@@ -512,6 +555,8 @@ export function App() {
         onDeletePost={handleDeletePost}
         onClearAll={handleClearAllArchives}
         onUpdateArchiveItem={handleUpdateArchiveItem}
+        activeProject={activeProject}
+        onBatchUpdateArchives={handleBatchUpdateArchives}
       />
 
       <GuideModal

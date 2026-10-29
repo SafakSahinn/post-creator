@@ -39,7 +39,9 @@ export function ArchiveDrawer({
   onLoadPost,
   onDeletePost,
   onClearAll,
-  onUpdateArchiveItem
+  onUpdateArchiveItem,
+  activeProject,
+  onBatchUpdateArchives
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [copiedId, setCopiedId] = useState(null);
@@ -60,39 +62,50 @@ export function ArchiveDrawer({
 
   const migrateItem = (item) => {
     const allProjects = getAllProjects();
-    const matchProj = allProjects.find((p) => p.id === item.projectId || p.shortCode === item.projectShortCode) || allProjects[0];
+    const matchProj = (item.projectId && allProjects.find((p) => p.id === item.projectId))
+      || (item.projectShortCode && allProjects.find((p) => p.shortCode === item.projectShortCode))
+      || activeProject
+      || allProjects[0];
 
-    const watermark = matchProj?.watermark || matchProj?.shortCode || item.watermark || 'L O R E';
-    const accentColor = matchProj?.accentColor || item.accentColor || '#e6c280';
-    const projectName = matchProj?.name || item.projectName || 'Lore Magazine';
+    const watermark = matchProj?.watermark || matchProj?.shortCode || 'L O R E';
+    const accentColor = matchProj?.accentColor || '#e6c280';
+    const projectName = matchProj?.name || 'Lore Magazine';
 
-    const rawQuotes = Array.isArray(item.slideQuotes) && item.slideQuotes.length >= 3
-      ? item.slideQuotes
-      : [
-          getPunchyExcerpt(Array.isArray(item.lore) ? item.lore[0] : item.lore, 1),
-          getPunchyExcerpt(Array.isArray(item.lore) ? (item.lore[1] || item.lore[0]) : item.lore, 1),
-          getPunchyExcerpt(Array.isArray(item.lore) ? (item.lore[2] || item.lore[0]) : item.lore, 1)
-        ];
+    // Lore paragraflarından tam, bağımsız, anlamı bütün cümleleri çıkar
+    let loreList = [];
+    if (Array.isArray(item.lore)) {
+      loreList = item.lore;
+    } else if (typeof item.lore === 'string') {
+      loreList = item.lore.split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean);
+    }
+    const p1 = loreList[0] || item.hook || item.title || '';
+    const p2 = loreList[1] || loreList[0] || item.hook || '';
+    const p3 = loreList[2] || loreList[0] || item.hook || '';
 
-    const slideQuotes = rawQuotes.map((q) => {
-      if (!q) return '';
-      let s = q.trim().replace(/^["'“]+|["'”]+$/g, '');
-      const sentences = s.match(/[^.!?]+[.!?]+/g);
-      if (sentences && sentences.length > 0) {
-        return sentences[0].trim();
-      }
-      if (!/[.!?]$/.test(s)) {
-        s = s.replace(/[,;:\s]+$/, '') + '.';
-      }
-      return s;
-    });
+    const freshQuotes = [
+      getPunchyExcerpt(p1, 1),
+      getPunchyExcerpt(p2, 1),
+      getPunchyExcerpt(p3, 1)
+    ];
+
+    // Slayt ayarlarını da güncelle ki customQuote içinde eski yarım metin kalmasın
+    const existingSettings = item.savedSlideSettings || {};
+    const updatedSlideSettings = {
+      0: existingSettings[0] || { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0, offsetX: 0, offsetY: 0, customQuote: null },
+      1: { ...(existingSettings[1] || {}), customQuote: freshQuotes[0] },
+      2: { ...(existingSettings[2] || {}), customQuote: freshQuotes[1] },
+      3: { ...(existingSettings[3] || {}), customQuote: freshQuotes[2] },
+    };
 
     return {
       ...item,
+      projectId: matchProj.id,
+      projectShortCode: matchProj.shortCode,
+      projectName,
       watermark,
       accentColor,
-      projectName,
-      slideQuotes,
+      slideQuotes: freshQuotes,
+      savedSlideSettings: updatedSlideSettings,
       updatedAt: new Date().toISOString()
     };
   };
@@ -115,13 +128,15 @@ export function ArchiveDrawer({
     if (!archives || archives.length === 0) return;
     setIsUpdatingArchives(true);
     try {
-      for (const item of archives) {
-        const updated = migrateItem(item);
-        if (onUpdateArchiveItem) {
-          await onUpdateArchiveItem(updated);
+      const updatedList = archives.map((item) => migrateItem(item));
+      if (onBatchUpdateArchives) {
+        await onBatchUpdateArchives(updatedList);
+      } else {
+        for (const item of updatedList) {
+          if (onUpdateArchiveItem) await onUpdateArchiveItem(item);
         }
       }
-      setUpdateStatusMsg('Tüm arşiv yeni proje logoları ve 3 satırlık net mizanpajla güncellendi!');
+      setUpdateStatusMsg(`${updatedList.length} adet gönderi yeni mizanpaja ve logolara güncellendi!`);
       setTimeout(() => setUpdateStatusMsg(null), 3000);
     } catch (err) {
       console.error('Arşiv güncellenemedi:', err);

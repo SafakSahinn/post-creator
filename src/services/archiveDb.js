@@ -65,6 +65,25 @@ export async function saveArchiveToDb(item) {
   }
 }
 
+export async function batchSaveArchivesToDb(items) {
+  if (!items || items.length === 0) return items;
+  try {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      for (const item of items) {
+        store.put(item);
+      }
+      tx.oncomplete = () => resolve(items);
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (err) {
+    console.warn('IndexedDB toplu kaydetme hatası:', err);
+    return items;
+  }
+}
+
 export async function deleteArchiveFromDb(id) {
   try {
     const db = await openDb();
