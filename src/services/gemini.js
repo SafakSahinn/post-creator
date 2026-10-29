@@ -34,7 +34,8 @@ ${categoriesDesc}
 
 Çıktı Formatı Kuralları:
 Sadece geçerli bir JSON objesi döndür.
-Instagram carousel slaytlarında 'slideQuotes' alanında her slayt için MUTLAKA eksiksiz, noktayla veya ünlemle biten, kesinlikle yarım kalmayan, 1 veya en fazla 2 kısa, net ve vurucu cümle (yaklaşık 16-20 kelime) yaz. Cümleleri ASLA yarım bırakma, '...' ile kesme, sonuna mutlaka noktalama işareti koy. Derinlemesine 3 paragraflık tam editoryal analiz ise 'lore' alanında (Instagram açıklaması için) yer alsın.
+Instagram carousel slaytlarında görselin nefes alması ve en fazla 2-3 SATIRDA (yaklaşık 10-13 kelime) rahatça okunabilmesi için 'slideQuotes' alanında her slayt için TEK BİR KISA, NET VE VURUCU CÜMLE yaz.
+ÖNEMLİ: Cümle MUTLAKA eksiksiz, noktayla veya ünlemle biten tam bir editoryal tespit olmalıdır. Asla 2. bir cümleye geçme, tek bir vurucu cümleyle bitir. Asla 13 kelimeyi aşma ki slaytta tam 2-3 satırda kalsın, görseli boğmasın ve asla yarım kalmasın. Derinlemesine 3 paragraflık tam editoryal analiz ise 'lore' alanında (Instagram açıklaması için) yer alsın.
 
 JSON yapısı:
 {
@@ -46,14 +47,14 @@ JSON yapısı:
     "3. Paragraf: Geleceğe etkisi, günümüze mirası veya kapanış çıkarımı."
   ],
   "slideQuotes": [
-    "Slayt 2: Tam ve eksiksiz 1-2 cümlelik (16-20 kelime), noktayla biten editoryal tespit.",
-    "Slayt 3: Tam ve eksiksiz 1-2 cümlelik (16-20 kelime), noktayla biten perde arkası tespiti.",
-    "Slayt 4: Tam ve eksiksiz 1-2 cümlelik (16-20 kelime), noktayla biten kültürel miras ve sonuç tespiti."
+    "Slayt 2: Tam 2-3 satıra sığacak, tek bir eksiksiz cümle (10-13 kelime, noktayla biten).",
+    "Slayt 3: Tam 2-3 satıra sığacak, tek bir eksiksiz cümle (10-13 kelime, noktayla biten).",
+    "Slayt 4: Tam 2-3 satıra sığacak, tek bir eksiksiz cümle (10-13 kelime, noktayla biten)."
   ],
   "visualNote": "Bu içeriğin görseli için Pinterest/Unsplash/Arşiv için en uygun İngilizce estetik arama terimi.",
   "hashtags": ["#etiket1", "#etiket2", "#etiket3", "#etiket4"]
 }
-Önemli: Kesinlikle hiçbir emoji kullanma. Sadece JSON döndür. Slayt cümlelerini asla yarım bırakma.
+Önemli: Kesinlikle hiçbir emoji kullanma. Sadece JSON döndür. Slayt cümleleri tam 2-3 satırlık (10-13 kelime) tek ve bitmiş bir cümle olsun.
 `;
 }
 
@@ -63,7 +64,8 @@ Sen, yüksek estetik anlayışına sahip elit bir dijital kültür dergisinin "�
 
 Çıktı Formatı Kuralları:
 Sadece geçerli bir JSON objesi döndür.
-Instagram carousel slaytlarında 'slideQuotes' alanında her slayt için MUTLAKA eksiksiz, noktayla veya ünlemle biten, kesinlikle yarım kalmayan, 1 veya en fazla 2 kısa, net ve vurucu cümle (yaklaşık 16-20 kelime) yaz. Cümleleri ASLA yarım bırakma, '...' ile kesme, sonuna mutlaka noktalama işareti koy. Derinlemesine 3 paragraflık tam editoryal analiz ise 'lore' alanında (Instagram açıklaması için) yer alsın.
+Instagram carousel slaytlarında görselin nefes alması ve en fazla 2-3 SATIRDA (yaklaşık 10-13 kelime) rahatça okunabilmesi için 'slideQuotes' alanında her slayt için TEK BİR KISA, NET VE VURUCU CÜMLE yaz.
+ÖNEMLİ: Cümle MUTLAKA eksiksiz, noktayla veya ünlemle biten tam bir editoryal tespit olmalıdır. Asla 2. bir cümleye geçme, tek bir vurucu cümleyle bitir. Asla 13 kelimeyi aşma ki slaytta tam 2-3 satırda kalsın, görseli boğmasın ve asla yarım kalmasın. Derinlemesine 3 paragraflık tam editoryal analiz ise 'lore' alanında (Instagram açıklaması için) yer alsın.
 
 JSON yapısı:
 {
@@ -75,14 +77,14 @@ JSON yapısı:
     "3. Paragraf: Tüketim çılgınlığı, günümüze mirası ve bıraktığı kültürel iz."
   ],
   "slideQuotes": [
-    "Slayt 2 (İkonikleşme): Tam ve eksiksiz 1-2 cümlelik (16-20 kelime), noktayla biten editoryal tespit.",
-    "Slayt 3 (Statü Şifresi): Tam ve eksiksiz 1-2 cümlelik (16-20 kelime), noktayla biten statü tespiti.",
-    "Slayt 4 (Kültürel Miras & Kapanış): Tam ve eksiksiz 1-2 cümlelik (16-20 kelime), noktayla biten kapanış tespiti."
+    "Slayt 2 (İkonikleşme): Tam 2-3 satıra sığacak, tek bir eksiksiz cümle (10-13 kelime, noktayla biten).",
+    "Slayt 3 (Statü Şifresi): Tam 2-3 satıra sığacak, tek bir eksiksiz cümle (10-13 kelime, noktayla biten).",
+    "Slayt 4 (Kültürel Miras & Kapanış): Tam 2-3 satıra sığacak, tek bir eksiksiz cümle (10-13 kelime, noktayla biten)."
   ],
   "visualNote": "Bu içeriğin arka planı için internetten bulunması gereken en estetik orijinal karenin İngilizce arama terimi.",
   "hashtags": ["#etiket1", "#etiket2", "#etiket3", "#etiket4"]
 }
-Önemli: Kesinlikle hiçbir emoji kullanma. Sadece JSON döndür. Slayt cümlelerini asla yarım bırakma.
+Önemli: Kesinlikle hiçbir emoji kullanma. Sadece JSON döndür. Slayt cümleleri tam 2-3 satırlık (10-13 kelime) tek ve bitmiş bir cümle olsun.
 `;
 
 /**
@@ -108,20 +110,25 @@ export async function getAvailableModels(apiKey) {
   }
 }
 
-// Cümle ayıklayıcı (kısa slayt metni fallback'i - asla yarım cümle bırakmaz)
-export function getPunchyExcerpt(text, maxSentences = 2) {
+// Cümle ayıklayıcı (kısa slayt metni fallback'i - tam 2-3 satırlık tek ve eksiksiz cümle)
+export function getPunchyExcerpt(text, maxSentences = 1) {
   if (!text) return "";
-  const clean = text.trim();
+  const clean = text.trim().replace(/^["'“]+|["'”]+$/g, '');
   const matches = clean.match(/[^.!?]+[.!?]+/g);
   if (matches && matches.length > 0) {
-    return matches.slice(0, maxSentences).join(" ").trim();
+    const first = matches[0].trim();
+    const words = first.split(/\s+/);
+    if (words.length <= 13) {
+      return first;
+    }
+    return words.slice(0, 12).join(" ") + ".";
   }
   // Noktalama yoksa kelime sınırında kes ve nokta koy
   const words = clean.split(/\s+/);
-  if (words.length <= 18) {
+  if (words.length <= 12) {
     return clean + (/[.!?]$/.test(clean) ? '' : '.');
   }
-  return words.slice(0, 18).join(" ") + ".";
+  return words.slice(0, 12).join(" ") + ".";
 }
 
 export async function generateEditorialPost({ apiKey, category, decade, customTopic, model = "gemini-2.5-flash", onProgress, project }) {
@@ -235,15 +242,26 @@ ${project?.filterTypeLabel || 'Filtre / Dönem'}: ${decade}
       const rawSlideQuotes = Array.isArray(parsed.slideQuotes) && parsed.slideQuotes.length >= 3
         ? parsed.slideQuotes
         : [
-            getPunchyExcerpt(Array.isArray(parsed.lore) ? parsed.lore[0] : parsed.lore, 2),
-            getPunchyExcerpt(Array.isArray(parsed.lore) ? (parsed.lore[1] || parsed.lore[0]) : parsed.lore, 2),
-            getPunchyExcerpt(Array.isArray(parsed.lore) ? (parsed.lore[2] || parsed.lore[0]) : parsed.lore, 2)
+            getPunchyExcerpt(Array.isArray(parsed.lore) ? parsed.lore[0] : parsed.lore, 1),
+            getPunchyExcerpt(Array.isArray(parsed.lore) ? (parsed.lore[1] || parsed.lore[0]) : parsed.lore, 1),
+            getPunchyExcerpt(Array.isArray(parsed.lore) ? (parsed.lore[2] || parsed.lore[0]) : parsed.lore, 1)
           ];
 
-      // Cümlelerin asla yarım kalmamasını garanti et
+      // Slaytlarda 2-3 satırı aşmayan, eksiksiz, noktayla biten tek cümle garantisi
       const slideQuotes = rawSlideQuotes.map((q) => {
         if (!q) return '';
-        let s = q.trim();
+        let s = q.trim().replace(/^["'“]+|["'”]+$/g, '');
+        const sentences = s.match(/[^.!?]+[.!?]+/g);
+        if (sentences && sentences.length > 0) {
+          const first = sentences[0].trim();
+          const words = first.split(/\s+/);
+          if (words.length <= 13) return first;
+          return words.slice(0, 12).join(' ') + '.';
+        }
+        const words = s.split(/\s+/);
+        if (words.length > 12) {
+          return words.slice(0, 12).join(' ') + '.';
+        }
         if (!/[.!?]$/.test(s)) {
           s = s.replace(/[,;:\s]+$/, '') + '.';
         }

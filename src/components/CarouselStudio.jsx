@@ -3,7 +3,7 @@ import {
   Download, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Check, Image as ImageIcon, 
   Upload, Trash2, Undo2, Redo2, Sliders, Eye, Sparkles, Layers,
   Sun, ZoomIn, Contrast, MoveVertical, Move, RotateCcw, ShieldOff, ShieldAlert,
-  Bookmark, BookmarkCheck, Video, Play
+  Bookmark, BookmarkCheck, Video, Play, Edit3
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { getPunchyExcerpt } from '../services/gemini';
@@ -74,10 +74,10 @@ function SlideBackground({ media, settings }) {
 }
 
 const INITIAL_SLIDE_SETTINGS = {
-  0: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0, offsetX: 0, offsetY: 0 },
-  1: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0, offsetX: 0, offsetY: 0 },
-  2: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0, offsetX: 0, offsetY: 0 },
-  3: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0, offsetX: 0, offsetY: 0 },
+  0: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0, offsetX: 0, offsetY: 0, customQuote: null },
+  1: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0, offsetX: 0, offsetY: 0, customQuote: null },
+  2: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0, offsetX: 0, offsetY: 0, customQuote: null },
+  3: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0, offsetX: 0, offsetY: 0, customQuote: null },
 };
 
 export function CarouselStudio({ post, project, gallery, onUpdateGallery, slideSettings, onUpdateSlideSettings, onSaveToArchive, isSaved }) {
@@ -390,19 +390,39 @@ export function CarouselStudio({ post, project, gallery, onUpdateGallery, slideS
   const slideTagline = project?.tagline || post.tagline || 'Kültür & Statü Şifreleri';
 
   const formatQuote = (q, fallback) => {
-    let quote = q || fallback || '';
-    if (!quote) return '';
-    quote = quote.trim();
-    if (!/[.!?]$/.test(quote)) {
-      quote = quote.replace(/[,;:\s]+$/, '') + '.';
+    let raw = (q || fallback || '').trim().replace(/^["'“]+|["'”]+$/g, '');
+    if (!raw) return '';
+
+    const sentences = raw.match(/[^.!?]+[.!?]+/g);
+    if (sentences && sentences.length > 0) {
+      const firstSentence = sentences[0].trim();
+      const words = firstSentence.split(/\s+/);
+      if (words.length >= 4 && words.length <= 14) {
+        return firstSentence;
+      }
+      if (words.length > 14) {
+        return words.slice(0, 12).join(' ') + '.';
+      }
+      if (sentences.length >= 2) {
+        const combined = `${firstSentence} ${sentences[1].trim()}`;
+        if (combined.split(/\s+/).length <= 13) {
+          return combined;
+        }
+      }
+      return firstSentence;
     }
-    return quote;
+
+    const words = raw.split(/\s+/);
+    if (words.length > 12) {
+      return words.slice(0, 12).join(' ') + '.';
+    }
+    return raw.replace(/[,;:\s]+$/, '') + '.';
   };
 
-  // Slide quotes (all 3 slides: 2, 3 and 4)
-  const slide1Quote = formatQuote(post.slideQuotes?.[0], getPunchyExcerpt(post.lore?.[0], 2));
-  const slide2Quote = formatQuote(post.slideQuotes?.[1], getPunchyExcerpt(post.lore?.[1] || post.lore?.[0], 2));
-  const slide3Quote = formatQuote(post.slideQuotes?.[2], getPunchyExcerpt(post.lore?.[2] || post.lore?.[0], 2));
+  // Slide quotes (all 3 slides: 2, 3 and 4) - 2 ila 3 satırı aşmayan net ve vurucu tek cümle
+  const slide1Quote = slideSettings?.[1]?.customQuote ?? formatQuote(post.slideQuotes?.[0], getPunchyExcerpt(post.lore?.[0], 1));
+  const slide2Quote = slideSettings?.[2]?.customQuote ?? formatQuote(post.slideQuotes?.[1], getPunchyExcerpt(post.lore?.[1] || post.lore?.[0], 1));
+  const slide3Quote = slideSettings?.[3]?.customQuote ?? formatQuote(post.slideQuotes?.[2], getPunchyExcerpt(post.lore?.[2] || post.lore?.[0], 1));
 
   const getImageForSlide = (slideIdx) => {
     const imgId = slideSettings?.[slideIdx]?.imageId;
@@ -675,7 +695,7 @@ export function CarouselStudio({ post, project, gallery, onUpdateGallery, slideS
                     </span>
                   </div>
 
-                  <p className="font-serif italic text-[13.5px] sm:text-sm text-white leading-relaxed drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
+                  <p className="font-serif italic text-sm sm:text-[15px] text-white leading-snug line-clamp-3 min-h-[3.6rem] drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
                     "{slide1Quote}"
                   </p>
 
@@ -738,7 +758,7 @@ export function CarouselStudio({ post, project, gallery, onUpdateGallery, slideS
                     </span>
                   </div>
 
-                  <p className="font-serif italic text-[13.5px] sm:text-sm text-white leading-relaxed drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
+                  <p className="font-serif italic text-sm sm:text-[15px] text-white leading-snug line-clamp-3 min-h-[3.6rem] drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
                     "{slide2Quote}"
                   </p>
 
@@ -801,7 +821,7 @@ export function CarouselStudio({ post, project, gallery, onUpdateGallery, slideS
                     </span>
                   </div>
 
-                  <p className="font-serif italic text-[13.5px] sm:text-sm text-white leading-relaxed drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
+                  <p className="font-serif italic text-sm sm:text-[15px] text-white leading-snug line-clamp-3 min-h-[3.6rem] drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
                     "{slide3Quote}"
                   </p>
 
@@ -1026,6 +1046,42 @@ export function CarouselStudio({ post, project, gallery, onUpdateGallery, slideS
                     <span>Sıfırla (Standart)</span>
                   </button>
                   <span>&darr; Aşağı (+50px)</span>
+                </div>
+              </div>
+            )}
+
+            {/* Slayt Metni Düzenleme (2-3 Satırlık Vurucu Cümle) */}
+            {currentSettings.showText && activeSlide > 0 && (
+              <div className="p-2.5 rounded-lg bg-black/40 border border-white/5 space-y-1.5">
+                <div className="flex items-center justify-between text-[11px] font-mono">
+                  <span className="text-neutral-300 flex items-center space-x-1.5">
+                    <Edit3 className="w-3.5 h-3.5 text-[#e6c280]" />
+                    <span>Slayt Metni (2-3 Satır)</span>
+                  </span>
+                  {currentSettings.customQuote !== null && currentSettings.customQuote !== undefined && (
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateSlideProperty('customQuote', null)}
+                      className="text-[9px] text-neutral-400 hover:text-[#e6c280] flex items-center space-x-0.5"
+                      title="Yapay zekanın orijinal metnine geri dön"
+                    >
+                      <RotateCcw className="w-2.5 h-2.5" />
+                      <span>Sıfırla</span>
+                    </button>
+                  )}
+                </div>
+                <textarea
+                  rows={2}
+                  value={currentSettings.customQuote ?? (activeSlide === 1 ? slide1Quote : activeSlide === 2 ? slide2Quote : slide3Quote)}
+                  onChange={(e) => handleUpdateSlideProperty('customQuote', e.target.value)}
+                  placeholder="2-3 satırlık vurucu bir editoryal tespit girin..."
+                  className="w-full bg-black/60 border border-white/10 rounded-lg p-2 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-[#e6c280] font-serif italic"
+                />
+                <div className="flex justify-between items-center text-[9px] font-mono text-neutral-500">
+                  <span>En net okuma için 10-13 kelimelik tek cümle</span>
+                  <span>
+                    {(currentSettings.customQuote ?? (activeSlide === 1 ? slide1Quote : activeSlide === 2 ? slide2Quote : slide3Quote)).split(/\s+/).filter(Boolean).length} kelime
+                  </span>
                 </div>
               </div>
             )}
