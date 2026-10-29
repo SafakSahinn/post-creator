@@ -105,7 +105,9 @@ export function InputPanel({
   onChangeCustomTopic,
   onGenerate,
   isLoading,
-  progressText
+  progressText,
+  model,
+  onOpenSettings
 }) {
   const [showInspirations, setShowInspirations] = useState(false);
 
@@ -326,8 +328,26 @@ export function InputPanel({
         </div>
       </div>
 
+      {/* Aktif Model & Üretim Bilgisi */}
+      <div className="flex items-center justify-between px-1 text-[11px] font-mono">
+        <div className="flex items-center space-x-1.5 text-neutral-400">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]" />
+          <span>Kullanılan Model:</span>
+          <span className="text-[#e6c280] font-semibold">{model || 'gemini-2.5-flash'}</span>
+        </div>
+        {onOpenSettings && (
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            className="text-[10px] text-neutral-400 hover:text-white underline transition-colors"
+          >
+            Modeli Değiştir
+          </button>
+        )}
+      </div>
+
       {/* ÜRET BUTONU */}
-      <div className="pt-2">
+      <div className="pt-1">
         <button
           type="button"
           disabled={isLoading}
@@ -337,7 +357,7 @@ export function InputPanel({
           {isLoading ? (
             <>
               <RefreshCw className="w-4 h-4 animate-spin text-black" />
-              <span>{progressText || 'Statü Şifreleri Çözülüyor & Metin Kürate Ediliyor...'}</span>
+              <span>{progressText || `${model || 'Gemini'} ile Kürate Ediliyor...`}</span>
             </>
           ) : (
             <>

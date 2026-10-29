@@ -6,7 +6,7 @@ import { getQuotaStats, resetQuotaStats } from '../services/apiQuota';
 export function SettingsModal({ isOpen, onClose, apiKey, onSaveApiKey, model, onSaveModel }) {
   const [tempKey, setTempKey] = useState(apiKey || '');
   const [showKey, setShowKey] = useState(false);
-  const [tempModel, setTempModel] = useState(model || 'gemini-1.5-flash');
+  const [tempModel, setTempModel] = useState(model || 'gemini-2.5-flash');
   const [testing, setTesting] = useState(false);
   const [detectedModels, setDetectedModels] = useState([]);
   const [testResult, setTestResult] = useState(null); // { success: bool, message: string }
@@ -225,10 +225,10 @@ export function SettingsModal({ isOpen, onClose, apiKey, onSaveApiKey, model, on
             </label>
             <div className="grid grid-cols-2 gap-2 mb-2">
               {[
-                { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', tag: 'En Hızlı & Önerilen' },
-                { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', tag: 'Yeni Nesil' },
-                { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', tag: 'Derin Akıl' },
-                { id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash', tag: 'Deneysel' },
+                { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', tag: 'En Yeni & Önerilen' },
+                { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', tag: 'Yeni Nesil Hızlı' },
+                { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', tag: 'Klasik Hızlı' },
+                { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', tag: 'Derin Akıl & Detay' },
               ].map((m) => (
                 <button
                   key={m.id}

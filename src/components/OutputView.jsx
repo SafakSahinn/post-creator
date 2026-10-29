@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Copy, Check, Bookmark, BookmarkCheck, ExternalLink, Image as ImageIcon, Sliders, Upload } from 'lucide-react';
 
-export function OutputView({ post, onSaveToArchive, isSaved, onOpenEditor, hasImages }) {
+export function OutputView({ post, onSaveToArchive, isSaved, onOpenEditor, hasImages, model }) {
   const [copied, setCopied] = useState(false);
   const [copiedQuery, setCopiedQuery] = useState(false);
 
@@ -56,9 +56,10 @@ export function OutputView({ post, onSaveToArchive, isSaved, onOpenEditor, hasIm
           <span className="text-xs font-mono px-2.5 py-1 rounded bg-white/5 border border-white/10 text-neutral-300">
             {post.decade}
           </span>
-          {post.activeModelUsed && (
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950/40 border border-emerald-500/30 text-emerald-300">
-              {post.activeModelUsed}
+          {(post.activeModelUsed || model) && (
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 flex items-center space-x-1.5" title="Bu içeriği üreten yapay zeka modeli">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              <span>Model: {post.activeModelUsed || model}</span>
             </span>
           )}
         </div>

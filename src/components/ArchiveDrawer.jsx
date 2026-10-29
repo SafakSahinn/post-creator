@@ -136,11 +136,13 @@ export function ArchiveDrawer({
     e.stopPropagation();
     if (!driveToken) {
       setShowDriveConfig(true);
+      setDriveStatusMsg('Lütfen önce Google ile Oturum Açın.');
       return;
     }
 
     try {
       setSyncingId(item.id);
+      setDriveStatusMsg(`"${item.title?.slice(0, 25)}..." Drive'a yükleniyor...`);
       const gallery = item.savedGallery || [];
       const slideSettings = item.savedSlideSettings || {};
 
@@ -150,12 +152,15 @@ export function ArchiveDrawer({
           ...item,
           savedToDrive: true,
           driveBackupDate: new Date().toISOString(),
-          driveFileId: result.fileId
+          driveFileId: result.fileId,
+          driveWebViewLink: result.webViewLink
         });
       }
-      setDriveStatusMsg(`"${item.title}" görselleriyle Google Drive'a yüklendi!`);
-      setTimeout(() => setDriveStatusMsg(null), 3000);
+      setDriveStatusMsg(`"${item.title?.slice(0, 25)}" (${result.uploadedImagesCount} görsel) Drive'a yüklendi!`);
+      setTimeout(() => setDriveStatusMsg(null), 3500);
     } catch (err) {
+      console.error(err);
+      setDriveStatusMsg(`Hata: ${err.message}`);
       alert(`Drive yükleme hatası: ${err.message}`);
     } finally {
       setSyncingId(null);
@@ -165,19 +170,26 @@ export function ArchiveDrawer({
   const handleBackupAllToDrive = async () => {
     if (!driveToken) {
       setShowDriveConfig(true);
+      setDriveStatusMsg('Lütfen önce Google ile Oturum Açın.');
       return;
     }
 
     try {
       setSyncAllLoading(true);
+      setDriveStatusMsg('Tüm arşiv Google Drive\'a yükleniyor...');
+      let count = 0;
       for (const item of archives) {
         const gallery = item.savedGallery || [];
         const slideSettings = item.savedSlideSettings || {};
         await backupPostToDrive(item, gallery, slideSettings, driveToken);
+        count++;
+        setDriveStatusMsg(`Yedekleniyor: ${count} / ${archives.length}...`);
       }
-      setDriveStatusMsg('Tüm arşiv ve görseller Google Drive / Post Creator klasörüne yedeklendi!');
-      setTimeout(() => setDriveStatusMsg(null), 3500);
+      setDriveStatusMsg(`Tüm arşiv (${archives.length} gönderi) Post Creator klasörüne başarıyla yedeklendi!`);
+      setTimeout(() => setDriveStatusMsg(null), 4000);
     } catch (err) {
+      console.error(err);
+      setDriveStatusMsg(`Hata: ${err.message}`);
       alert(`Toplu yedekleme hatası: ${err.message}`);
     } finally {
       setSyncAllLoading(false);
@@ -220,7 +232,7 @@ export function ArchiveDrawer({
                     : 'text-neutral-500 border-white/10'
                 }`}
               >
-                {driveToken ? 'Bağlı (Thalamus Mimarisi)' : 'Bağlı Değil'}
+                {driveToken ? 'Google Drive Bağlı' : 'Bağlı Değil'}
               </span>
             </div>
 

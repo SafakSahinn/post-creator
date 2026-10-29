@@ -50,7 +50,7 @@ export function App() {
     return localStorage.getItem('lore_gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY || '';
   });
   const [model, setModel] = useState(() => {
-    return localStorage.getItem('lore_gemini_model') || 'gemini-1.5-flash';
+    return localStorage.getItem('lore_gemini_model') || 'gemini-2.5-flash';
   });
 
   // Editor Inputs
@@ -241,6 +241,7 @@ export function App() {
         onOpenGuide={() => setIsGuideOpen(true)}
         user={currentUser}
         onLogout={handleLogout}
+        model={model}
       />
 
       {/* Main Workspace */}
@@ -302,6 +303,8 @@ export function App() {
               onGenerate={handleGenerate}
               isLoading={isLoading}
               progressText={progressText}
+              model={model}
+              onOpenSettings={() => setIsSettingsOpen(true)}
             />
 
             {/* Quick Tips */}
@@ -371,6 +374,7 @@ export function App() {
                 isSaved={isCurrentPostSaved}
                 onOpenEditor={() => setActiveTab('studio')}
                 hasImages={gallery.length > 0}
+                model={model}
               />
             ) : (
               <CarouselStudio

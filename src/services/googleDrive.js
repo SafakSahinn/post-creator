@@ -1,10 +1,10 @@
 /**
  * Google Drive REST API Entegrasyonu (drive.file scope)
- * Thalamus (github.com/SafakSahinn/thalamus) mimarisi baz alınarak tasarlanmıştır.
+ * Post Creator - Arşiv ve Slayt Görselleri Bulut Depolama
  * 
  * Yerleşim:
- * Drive'ım / LORE Magazine / posts / <post_id>.json
- * Drive'ım / LORE Magazine / images / <image_id>.png
+ * Drive'ım / Post Creator / posts / <post_id>.json
+ * Drive'ım / Post Creator / images / <image_id>.png
  */
 
 const API = 'https://www.googleapis.com/drive/v3';
@@ -84,7 +84,7 @@ export function setStoredClientId(clientId) {
 async function request(url, init = {}, token) {
   const activeToken = token || getStoredDriveToken();
   if (!activeToken) {
-    throw new Error('Google Drive erişim belirteci (token) bulunamadı. Lütfen giriş yapın veya token girin.');
+    throw new Error('Google Drive erişim belirteci (token) bulunamadı. Lütfen "Google ile Oturum Aç" butonuna tıklayın.');
   }
 
   const res = await fetch(url, {
@@ -96,7 +96,11 @@ async function request(url, init = {}, token) {
   });
 
   if (res.status === 401) {
-    throw new Error('Google Drive oturumu süresi dolmuş veya yetki geçersiz (401). Lütfen tekrar bağlanın.');
+    setStoredDriveToken('');
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('lore_drive_auth_change'));
+    }
+    throw new Error('Google Drive oturum süresi dolmuş (401). Lütfen tekrar "Google ile Oturum Aç" butonuna tıklayarak yenileyin.');
   }
 
   if (!res.ok) {
@@ -109,7 +113,7 @@ async function request(url, init = {}, token) {
 }
 
 function multipartBody(meta, content, contentType) {
-  const boundary = `lore_${Math.random().toString(36).slice(2)}`;
+  const boundary = `pc_${Math.random().toString(36).slice(2)}`;
   const body = new Blob([
     `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n`,
     `--${boundary}\r\nContent-Type: ${contentType}\r\n\r\n`,
@@ -127,22 +131,33 @@ function multipartBody(meta, content, contentType) {
 const encodeQ = (s) => encodeURIComponent(s);
 
 async function findFolder(name, parent = 'root', token) {
-  const q = `mimeType='${FOLDER_MIME}' and trashed=false and name='${name}' and '${parent}' in parents`;
+  let q = `mimeType='${FOLDER_MIME}' and trashed=false and name='${name}'`;
+  if (parent && parent !== 'root') {
+    q += ` and '${parent}' in parents`;
+  } else if (parent === 'root') {
+    q += ` and 'root' in parents`;
+  }
   const res = await request(`${API}/files?q=${encodeQ(q)}&fields=files(id,name)&spaces=drive`, {}, token);
   const data = await res.json();
   return data.files?.[0]?.id || null;
 }
 
 async function createFolder(name, parent = 'root', token) {
+  const body = {
+    name,
+    mimeType: FOLDER_MIME,
+    appProperties: { app: 'post-creator' },
+  };
+  // In Google Drive v3, passing parents: ['root'] returns 404 "File not found: root".
+  // To create in the root folder, parents MUST be omitted.
+  if (parent && parent !== 'root') {
+    body.parents = [parent];
+  }
+
   const res = await request(`${API}/files?fields=id,name`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      name,
-      mimeType: FOLDER_MIME,
-      parents: [parent],
-      appProperties: { app: 'lore-magazine' }
-    }),
+    body: JSON.stringify(body),
   }, token);
   const data = await res.json();
   return data.id;
@@ -183,7 +198,7 @@ export async function uploadImageToDrive(filename, dataUrl, folderId, token) {
   const meta = {
     name: filename,
     parents: [folderId],
-    appProperties: { app: 'lore-magazine', type: 'carousel-slide' }
+    appProperties: { app: 'post-creator', type: 'carousel-slide' }
   };
 
   const { body, headers } = multipartBody(meta, blob, mimeType);
@@ -199,18 +214,28 @@ export async function uploadImageToDrive(filename, dataUrl, folderId, token) {
 /**
  * Gönderiyi ve slayt görsellerini Google Drive'a tam yedekler
  */
-export async function backupPostToDrive(post, gallery, slideSettings, token) {
+export async function backupPostToDrive(post, gallery = [], slideSettings = {}, token) {
   const folders = await ensureLoreFolders(token);
   
   // 1. Slaytlardaki görselleri yükle
   const uploadedImages = [];
   for (let slideIdx = 0; slideIdx < 4; slideIdx++) {
     const imgId = slideSettings?.[slideIdx]?.imageId;
-    const galleryItem = gallery?.find((g) => g.id === imgId);
-    if (galleryItem?.dataUrl) {
-      const filename = `Slide_${slideIdx + 1}_${post.title?.replace(/[^a-zA-Z0-9]/g, '_') || 'LORE'}.png`;
+    let dataUrl = gallery?.find((g) => g.id === imgId)?.dataUrl;
+
+    // Fallback: Post içerisindeki thumbnail veya doğrudan gallery sırası
+    if (!dataUrl && post?.thumbnails?.[slideIdx]) {
+      dataUrl = post.thumbnails[slideIdx];
+    }
+    if (!dataUrl && gallery?.[slideIdx]?.dataUrl) {
+      dataUrl = gallery[slideIdx].dataUrl;
+    }
+
+    if (dataUrl) {
+      const cleanTitle = (post.title || 'Slide').replace(/[^a-zA-Z0-9\u00C0-\u017F]/g, '_').slice(0, 30);
+      const filename = `Slide_${slideIdx + 1}_${cleanTitle}.png`;
       try {
-        const uploaded = await uploadImageToDrive(filename, galleryItem.dataUrl, folders.images, token);
+        const uploaded = await uploadImageToDrive(filename, dataUrl, folders.images, token);
         uploadedImages.push({
           slideIndex: slideIdx,
           driveId: uploaded.id,
@@ -231,12 +256,13 @@ export async function backupPostToDrive(post, gallery, slideSettings, token) {
     driveImages: uploadedImages
   };
 
-  const postFilename = `${post.id || 'post_' + Date.now()}.json`;
+  const cleanPostTitle = (post.title || post.id || 'post').replace(/[^a-zA-Z0-9\u00C0-\u017F]/g, '_').slice(0, 40);
+  const postFilename = `${cleanPostTitle}_${Date.now()}.json`;
   const meta = {
     name: postFilename,
     parents: [folders.posts],
     mimeType: 'application/json',
-    appProperties: { app: 'lore-magazine', type: 'post' }
+    appProperties: { app: 'post-creator', type: 'post' }
   };
 
   const { body, headers } = multipartBody(meta, JSON.stringify(postBackupData, null, 2), 'application/json');
@@ -249,8 +275,10 @@ export async function backupPostToDrive(post, gallery, slideSettings, token) {
   const savedMeta = await res.json();
   return {
     fileId: savedMeta.id,
+    webViewLink: savedMeta.webViewLink,
     postData: postBackupData,
-    folders
+    folders,
+    uploadedImagesCount: uploadedImages.length
   };
 }
 

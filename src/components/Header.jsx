@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Key, Bookmark, Sparkles, HelpCircle, Activity, LogOut, Cloud } from 'lucide-react';
 import { getQuotaStats } from '../services/apiQuota';
 
-export function Header({ hasApiKey, onOpenSettings, archiveCount, onOpenArchive, onOpenGuide, user, onLogout }) {
+export function Header({ hasApiKey, onOpenSettings, archiveCount, onOpenArchive, onOpenGuide, user, onLogout, model }) {
   const [quota, setQuota] = useState(() => getQuotaStats());
 
   useEffect(() => {
@@ -67,8 +67,8 @@ export function Header({ hasApiKey, onOpenSettings, archiveCount, onOpenArchive,
           {/* API Key Status & Quota Display */}
           <button
             onClick={onOpenSettings}
-            title={hasApiKey ? `Bugün Kalan: ${quota.remaining} / ${quota.dailyLimit} istek (${quota.percentRemaining}%)` : 'API Anahtarı Tanımlayın'}
-            className={`flex items-center space-x-2 px-3.5 py-2 rounded border text-xs font-mono transition-all ${
+            title={hasApiKey ? `Model: ${model || 'gemini-2.5-flash'} | Bugün Kalan: ${quota.remaining} / ${quota.dailyLimit} istek` : 'API Anahtarı Tanımlayın'}
+            className={`flex items-center space-x-2 px-3 py-2 rounded border text-xs font-mono transition-all ${
               hasApiKey
                 ? "border-emerald-500/30 bg-emerald-950/20 text-emerald-300 hover:border-emerald-500/50 hover:bg-emerald-950/30"
                 : "border-amber-500/50 bg-amber-950/30 text-amber-200 animate-pulse hover:border-amber-400"
@@ -78,9 +78,14 @@ export function Header({ hasApiKey, onOpenSettings, archiveCount, onOpenArchive,
             <div className="flex items-center space-x-1.5">
               <span>{hasApiKey ? "API Aktif" : "API Anahtarı Girin"}</span>
               {hasApiKey && (
-                <span className="text-[10px] text-emerald-400/80 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20">
-                  {quota.remaining.toLocaleString('tr-TR')} Hak
-                </span>
+                <>
+                  <span className="text-[10px] text-[#e6c280] bg-[#e6c280]/10 px-1.5 py-0.2 rounded border border-[#e6c280]/30 font-semibold hidden md:inline">
+                    {model || 'gemini-2.5-flash'}
+                  </span>
+                  <span className="text-[10px] text-emerald-400/80 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20">
+                    {quota.remaining.toLocaleString('tr-TR')} Hak
+                  </span>
+                </>
               )}
             </div>
             <span

@@ -124,7 +124,7 @@ export function LoginScreen({ onLoginSuccess, onGuestContinue }) {
           </div>
         </div>
 
-        {/* Feature Points (Thalamus Mimarisi) */}
+        {/* Bulut & Drive Depolama */}
         <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 space-y-3 text-xs text-neutral-300">
           <div className="flex items-start space-x-2.5">
             <span className="text-[#e6c280] font-bold mt-0.5">•</span>
