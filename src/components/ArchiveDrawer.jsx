@@ -181,7 +181,16 @@ export function ArchiveDrawer({
       for (const item of archives) {
         const gallery = item.savedGallery || [];
         const slideSettings = item.savedSlideSettings || {};
-        await backupPostToDrive(item, gallery, slideSettings, driveToken);
+        const result = await backupPostToDrive(item, gallery, slideSettings, driveToken);
+        if (onUpdateArchiveItem) {
+          onUpdateArchiveItem({
+            ...item,
+            savedToDrive: true,
+            driveBackupDate: new Date().toISOString(),
+            driveFileId: result.fileId,
+            driveWebViewLink: result.webViewLink
+          });
+        }
         count++;
         setDriveStatusMsg(`Yedekleniyor: ${count} / ${archives.length}...`);
       }
@@ -434,11 +443,26 @@ export function ArchiveDrawer({
                       type="button"
                       disabled={syncingId === item.id}
                       onClick={(e) => handleBackupSingleToDrive(item, e)}
-                      title="Google Drive'a Görsellerle Yedekle"
-                      className="p-1.5 rounded hover:bg-white/10 text-neutral-400 hover:text-[#e6c280] transition-colors"
+                      title={
+                        item.savedToDrive
+                          ? `Google Drive'a Yedeklendi (${new Date(item.driveBackupDate || Date.now()).toLocaleDateString('tr-TR')}) - Yeniden Yedeklemek İçin Tıklayın`
+                          : "Google Drive'a Görsellerle Yedekle"
+                      }
+                      className={`relative p-1.5 rounded transition-all ${
+                        item.savedToDrive
+                          ? "text-emerald-400 bg-emerald-950/30 border border-emerald-500/30 hover:bg-emerald-950/50 hover:border-emerald-400"
+                          : "text-neutral-400 hover:bg-white/10 hover:text-[#e6c280]"
+                      }`}
                     >
                       {syncingId === item.id ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin text-[#e6c280]" />
+                      ) : item.savedToDrive ? (
+                        <div className="relative flex items-center justify-center">
+                          <Cloud className="w-3.5 h-3.5 text-emerald-400" />
+                          <span className="absolute -bottom-1 -right-1 bg-emerald-400 text-black rounded-full p-[1px] shadow-sm flex items-center justify-center">
+                            <Check className="w-2 h-2 stroke-[3]" />
+                          </span>
+                        </div>
                       ) : (
                         <CloudUpload className="w-3.5 h-3.5" />
                       )}
