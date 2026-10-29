@@ -393,30 +393,16 @@ export function CarouselStudio({ post, project, gallery, onUpdateGallery, slideS
     let raw = (q || fallback || '').trim().replace(/^["'“]+|["'”]+$/g, '');
     if (!raw) return '';
 
+    // Asla kelime ortasından veya cümlenin yükleminden kesme! Anlamı tam ilk cümleyi eksiksiz koru
     const sentences = raw.match(/[^.!?]+[.!?]+/g);
     if (sentences && sentences.length > 0) {
-      const firstSentence = sentences[0].trim();
-      const words = firstSentence.split(/\s+/);
-      if (words.length >= 4 && words.length <= 14) {
-        return firstSentence;
-      }
-      if (words.length > 14) {
-        return words.slice(0, 12).join(' ') + '.';
-      }
-      if (sentences.length >= 2) {
-        const combined = `${firstSentence} ${sentences[1].trim()}`;
-        if (combined.split(/\s+/).length <= 13) {
-          return combined;
-        }
-      }
-      return firstSentence;
+      return sentences[0].trim();
     }
 
-    const words = raw.split(/\s+/);
-    if (words.length > 12) {
-      return words.slice(0, 12).join(' ') + '.';
+    if (!/[.!?]$/.test(raw)) {
+      raw = raw.replace(/[,;:\s]+$/, '') + '.';
     }
-    return raw.replace(/[,;:\s]+$/, '') + '.';
+    return raw;
   };
 
   // Slide quotes (all 3 slides: 2, 3 and 4) - 2 ila 3 satırı aşmayan net ve vurucu tek cümle
@@ -695,7 +681,7 @@ export function CarouselStudio({ post, project, gallery, onUpdateGallery, slideS
                     </span>
                   </div>
 
-                  <p className="font-serif italic text-sm sm:text-[15px] text-white leading-snug line-clamp-3 min-h-[3.6rem] drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
+                  <p className="font-serif italic text-[14px] sm:text-[15px] text-white leading-relaxed min-h-[4.2rem] drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
                     "{slide1Quote}"
                   </p>
 
@@ -758,7 +744,7 @@ export function CarouselStudio({ post, project, gallery, onUpdateGallery, slideS
                     </span>
                   </div>
 
-                  <p className="font-serif italic text-sm sm:text-[15px] text-white leading-snug line-clamp-3 min-h-[3.6rem] drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
+                  <p className="font-serif italic text-[14px] sm:text-[15px] text-white leading-relaxed min-h-[4.2rem] drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
                     "{slide2Quote}"
                   </p>
 
@@ -821,7 +807,7 @@ export function CarouselStudio({ post, project, gallery, onUpdateGallery, slideS
                     </span>
                   </div>
 
-                  <p className="font-serif italic text-sm sm:text-[15px] text-white leading-snug line-clamp-3 min-h-[3.6rem] drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
+                  <p className="font-serif italic text-[14px] sm:text-[15px] text-white leading-relaxed min-h-[4.2rem] drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
                     "{slide3Quote}"
                   </p>
 

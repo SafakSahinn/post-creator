@@ -34,8 +34,23 @@ ${categoriesDesc}
 
 Çıktı Formatı Kuralları:
 Sadece geçerli bir JSON objesi döndür.
-Instagram carousel slaytlarında görselin nefes alması ve en fazla 2-3 SATIRDA (yaklaşık 10-13 kelime) rahatça okunabilmesi için 'slideQuotes' alanında her slayt için TEK BİR KISA, NET VE VURUCU CÜMLE yaz.
-ÖNEMLİ: Cümle MUTLAKA eksiksiz, noktayla veya ünlemle biten tam bir editoryal tespit olmalıdır. Asla 2. bir cümleye geçme, tek bir vurucu cümleyle bitir. Asla 13 kelimeyi aşma ki slaytta tam 2-3 satırda kalsın, görseli boğmasın ve asla yarım kalmasın. Derinlemesine 3 paragraflık tam editoryal analiz ise 'lore' alanında (Instagram açıklaması için) yer alsın.
+
+1. 'lore' Alanı (Instagram Açıklaması / Caption):
+Yapay zeka metni burada detaylı, zengin ve uzun olmalıdır. 3 dolu paragraftan oluşur ve konunun tüm hikayesini, derin sosyolojisini ve perde arkasını eksiksiz anlatır.
+
+2. 'slideQuotes' Alanı (Görsel Üstü 3 Satırlık Vurucu Kanca Cümleleri):
+Instagram carousel slaytlarının üzerine basılacak metin TAM 3 SATIR UZUNLUĞUNDA (yaklaşık 14-18 kelime), okuyucuyu ekranda tutacak ve kaydırmaya teşvik edecek ultra vurucu, eksiksiz, bağımsız bir editoryal tespittir.
+KRİTİK ANLAM & DİL KURALLARI:
+- Cümle KESİNLİKLE yarım kalmış bir düşünce veya uzun bir paragrafın kopuk bir parçası olmamalıdır!
+- Cümlenin öznesi ve yüklemi tam olmalı; anlamı kendi içinde eksiksiz ve güçlü bir aforizma veya şok edici bir tespit tamamlamalıdır.
+- Tam 3 satırda (14-18 kelime) okunacak şekilde kurgulanmalı, sonuna mutlaka nokta (.) veya ünlem (!) konulmalıdır.
+- Slayt 2 (İkonikleşme): Konunun neden sıradan olmadığını ve arkasındaki şok edici çıkış noktasını 3 satırda özetleyen vurucu tespit.
+- Slayt 3 (Perde Arkası & Statü): Görünmeyen gizli mekanizmayı, statü şifresini veya psikolojik gerçeği ifşa eden 3 satırlık sarsıcı tespit.
+- Slayt 4 (Kültürel Miras & Kapanış): Günümüz dünyasına etkisini özetleyen ve okuyucuyu yorum yapmaya sevk eden 3 satırlık güçlü kapanış tespiti.
+
+Örnek 3 Satırlık Vurucu Cümle Tonu:
+- "Bir nesne yalnızca pahalı olduğu için değil; kime ait olduğunu fısıldadığı için arzu nesnesine dönüşür." (Tam anlam, tam yüklem, tam 3 satır)
+- "Herkes tasarımı konuşurken, asıl devrim kimsenin fark etmediği o tek bir detayda gizliydi." (Tam anlam, tam yüklem, tam 3 satır)
 
 JSON yapısı:
 {
@@ -47,14 +62,14 @@ JSON yapısı:
     "3. Paragraf: Geleceğe etkisi, günümüze mirası veya kapanış çıkarımı."
   ],
   "slideQuotes": [
-    "Slayt 2: Tam 2-3 satıra sığacak, tek bir eksiksiz cümle (10-13 kelime, noktayla biten).",
-    "Slayt 3: Tam 2-3 satıra sığacak, tek bir eksiksiz cümle (10-13 kelime, noktayla biten).",
-    "Slayt 4: Tam 2-3 satıra sığacak, tek bir eksiksiz cümle (10-13 kelime, noktayla biten)."
+    "Slayt 2: Tam 3 satıra sığacak (14-18 kelime), anlamı ve yüklemi eksiksiz, noktayla biten vurucu tespit.",
+    "Slayt 3: Tam 3 satıra sığacak (14-18 kelime), anlamı ve yüklemi eksiksiz, perde arkasını ifşa eden tespit.",
+    "Slayt 4: Tam 3 satıra sığacak (14-18 kelime), anlamı ve yüklemi eksiksiz, kültürel miras ve kapanış tespiti."
   ],
   "visualNote": "Bu içeriğin görseli için Pinterest/Unsplash/Arşiv için en uygun İngilizce estetik arama terimi.",
   "hashtags": ["#etiket1", "#etiket2", "#etiket3", "#etiket4"]
 }
-Önemli: Kesinlikle hiçbir emoji kullanma. Sadece JSON döndür. Slayt cümleleri tam 2-3 satırlık (10-13 kelime) tek ve bitmiş bir cümle olsun.
+Önemli: Kesinlikle hiçbir emoji kullanma. Sadece JSON döndür. Slayt cümlelerinin anlamını asla yarım bırakma.
 `;
 }
 
@@ -64,8 +79,23 @@ Sen, yüksek estetik anlayışına sahip elit bir dijital kültür dergisinin "�
 
 Çıktı Formatı Kuralları:
 Sadece geçerli bir JSON objesi döndür.
-Instagram carousel slaytlarında görselin nefes alması ve en fazla 2-3 SATIRDA (yaklaşık 10-13 kelime) rahatça okunabilmesi için 'slideQuotes' alanında her slayt için TEK BİR KISA, NET VE VURUCU CÜMLE yaz.
-ÖNEMLİ: Cümle MUTLAKA eksiksiz, noktayla veya ünlemle biten tam bir editoryal tespit olmalıdır. Asla 2. bir cümleye geçme, tek bir vurucu cümleyle bitir. Asla 13 kelimeyi aşma ki slaytta tam 2-3 satırda kalsın, görseli boğmasın ve asla yarım kalmasın. Derinlemesine 3 paragraflık tam editoryal analiz ise 'lore' alanında (Instagram açıklaması için) yer alsın.
+
+1. 'lore' Alanı (Instagram Açıklaması / Caption):
+Yapay zeka metni burada detaylı, zengin ve uzun olmalıdır. 3 dolu paragraftan oluşur ve konunun tüm hikayesini, derin sosyolojisini ve perde arkasını eksiksiz anlatır.
+
+2. 'slideQuotes' Alanı (Görsel Üstü 3 Satırlık Vurucu Kanca Cümleleri):
+Instagram carousel slaytlarının üzerine basılacak metin TAM 3 SATIR UZUNLUĞUNDA (yaklaşık 14-18 kelime), okuyucuyu ekranda tutacak ve kaydırmaya teşvik edecek ultra vurucu, eksiksiz, bağımsız bir editoryal tespittir.
+KRİTİK ANLAM & DİL KURALLARI:
+- Cümle KESİNLİKLE yarım kalmış bir düşünce veya uzun bir paragrafın kopuk bir parçası olmamalıdır!
+- Cümlenin öznesi ve yüklemi tam olmalı; anlamı kendi içinde eksiksiz ve güçlü bir aforizma veya şok edici bir tespit tamamlamalıdır.
+- Tam 3 satırda (14-18 kelime) okunacak şekilde kurgulanmalı, sonuna mutlaka nokta (.) veya ünlem (!) konulmalıdır.
+- Slayt 2 (İkonikleşme): Konunun neden sıradan olmadığını ve arkasındaki şok edici çıkış noktasını 3 satırda özetleyen vurucu tespit.
+- Slayt 3 (Statü Şifresi & Perde Arkası): Görünmeyen gizli mekanizmayı, statü şifresini veya psikolojik gerçeği ifşa eden 3 satırlık sarsıcı tespit.
+- Slayt 4 (Kültürel Miras & Kapanış): Günümüz dünyasına etkisini özetleyen ve okuyucuyu yorum yapmaya sevk eden 3 satırlık güçlü kapanış tespiti.
+
+Örnek 3 Satırlık Vurucu Cümle Tonu:
+- "Bir nesne yalnızca pahalı olduğu için değil; kime ait olduğunu fısıldadığı için arzu nesnesine dönüşür." (Tam anlam, tam yüklem, tam 3 satır)
+- "Herkes tasarımı konuşurken, asıl devrim kimsenin fark etmediği o tek bir detayda gizliydi." (Tam anlam, tam yüklem, tam 3 satır)
 
 JSON yapısı:
 {
@@ -77,14 +107,14 @@ JSON yapısı:
     "3. Paragraf: Tüketim çılgınlığı, günümüze mirası ve bıraktığı kültürel iz."
   ],
   "slideQuotes": [
-    "Slayt 2 (İkonikleşme): Tam 2-3 satıra sığacak, tek bir eksiksiz cümle (10-13 kelime, noktayla biten).",
-    "Slayt 3 (Statü Şifresi): Tam 2-3 satıra sığacak, tek bir eksiksiz cümle (10-13 kelime, noktayla biten).",
-    "Slayt 4 (Kültürel Miras & Kapanış): Tam 2-3 satıra sığacak, tek bir eksiksiz cümle (10-13 kelime, noktayla biten)."
+    "Slayt 2 (İkonikleşme): Tam 3 satıra sığacak (14-18 kelime), anlamı ve yüklemi eksiksiz, noktayla biten vurucu tespit.",
+    "Slayt 3 (Statü Şifresi): Tam 3 satıra sığacak (14-18 kelime), anlamı ve yüklemi eksiksiz, perde arkasını ifşa eden tespit.",
+    "Slayt 4 (Kültürel Miras & Kapanış): Tam 3 satıra sığacak (14-18 kelime), anlamı ve yüklemi eksiksiz, kapanış tespiti."
   ],
   "visualNote": "Bu içeriğin arka planı için internetten bulunması gereken en estetik orijinal karenin İngilizce arama terimi.",
   "hashtags": ["#etiket1", "#etiket2", "#etiket3", "#etiket4"]
 }
-Önemli: Kesinlikle hiçbir emoji kullanma. Sadece JSON döndür. Slayt cümleleri tam 2-3 satırlık (10-13 kelime) tek ve bitmiş bir cümle olsun.
+Önemli: Kesinlikle hiçbir emoji kullanma. Sadece JSON döndür. Slayt cümlelerinin anlamını asla yarım bırakma.
 `;
 
 /**
@@ -110,25 +140,15 @@ export async function getAvailableModels(apiKey) {
   }
 }
 
-// Cümle ayıklayıcı (kısa slayt metni fallback'i - tam 2-3 satırlık tek ve eksiksiz cümle)
+// Cümle ayıklayıcı (kısa slayt metni fallback'i - anlamı tam, eksiksiz cümle)
 export function getPunchyExcerpt(text, maxSentences = 1) {
   if (!text) return "";
   const clean = text.trim().replace(/^["'“]+|["'”]+$/g, '');
   const matches = clean.match(/[^.!?]+[.!?]+/g);
   if (matches && matches.length > 0) {
-    const first = matches[0].trim();
-    const words = first.split(/\s+/);
-    if (words.length <= 13) {
-      return first;
-    }
-    return words.slice(0, 12).join(" ") + ".";
+    return matches.slice(0, maxSentences).join(" ").trim();
   }
-  // Noktalama yoksa kelime sınırında kes ve nokta koy
-  const words = clean.split(/\s+/);
-  if (words.length <= 12) {
-    return clean + (/[.!?]$/.test(clean) ? '' : '.');
-  }
-  return words.slice(0, 12).join(" ") + ".";
+  return clean + (/[.!?]$/.test(clean) ? '' : '.');
 }
 
 export async function generateEditorialPost({ apiKey, category, decade, customTopic, model = "gemini-2.5-flash", onProgress, project }) {
@@ -247,20 +267,13 @@ ${project?.filterTypeLabel || 'Filtre / Dönem'}: ${decade}
             getPunchyExcerpt(Array.isArray(parsed.lore) ? (parsed.lore[2] || parsed.lore[0]) : parsed.lore, 1)
           ];
 
-      // Slaytlarda 2-3 satırı aşmayan, eksiksiz, noktayla biten tek cümle garantisi
+      // Slaytlarda anlamı tam, eksiksiz vurucu cümle garantisi (asla yüklem veya kelime kesilmez)
       const slideQuotes = rawSlideQuotes.map((q) => {
         if (!q) return '';
         let s = q.trim().replace(/^["'“]+|["'”]+$/g, '');
         const sentences = s.match(/[^.!?]+[.!?]+/g);
         if (sentences && sentences.length > 0) {
-          const first = sentences[0].trim();
-          const words = first.split(/\s+/);
-          if (words.length <= 13) return first;
-          return words.slice(0, 12).join(' ') + '.';
-        }
-        const words = s.split(/\s+/);
-        if (words.length > 12) {
-          return words.slice(0, 12).join(' ') + '.';
+          return sentences[0].trim();
         }
         if (!/[.!?]$/.test(s)) {
           s = s.replace(/[,;:\s]+$/, '') + '.';
