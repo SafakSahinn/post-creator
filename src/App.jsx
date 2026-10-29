@@ -463,6 +463,10 @@ export function App() {
           setIsGuideOpen(false);
           setIsSettingsOpen(true);
         }}
+        onOpenProjects={() => {
+          setIsGuideOpen(false);
+          setIsProjectModalOpen(true);
+        }}
       />
 
       {/* Multi-Project Manager Modal */}
