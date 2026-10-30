@@ -453,7 +453,7 @@ export function CarouselStudio({
     if (!currentRef) return;
     try {
       setIsExporting(true);
-      const dataUrl = await toPng(currentRef, { quality: 0.98, pixelRatio: 2.5 });
+      const dataUrl = await toPng(currentRef, { quality: 1.0, pixelRatio: 3.0 });
       const link = document.createElement('a');
       const prefix = post?.projectShortCode || 'POST';
       link.download = `${prefix}_${post?.category || 'Post'}_${post?.decade || ''}_Slayt_${activeSlide + 1}.png`;
@@ -510,7 +510,7 @@ export function CarouselStudio({
         if (ref) {
           const prevDisplay = ref.style.display;
           ref.style.display = 'flex';
-          const dataUrl = await toPng(ref, { quality: 0.98, pixelRatio: 2.5 });
+          const dataUrl = await toPng(ref, { quality: 1.0, pixelRatio: 3.0 });
           if (activeSlide !== i) {
             ref.style.display = prevDisplay;
           }
@@ -539,8 +539,8 @@ export function CarouselStudio({
       if (ref) {
         const prevDisplay = ref.style.display;
         ref.style.display = 'flex';
-        // Meta Content Publishing API kesinlikle JPEG formatı şart koşar
-        const dataUrl = await toJpeg(ref, { quality: 0.95, pixelRatio: 2.5, backgroundColor: '#0c0d10' });
+        // Meta Content Publishing API kesinlikle JPEG formatı şart koşar (Tam 1080x1350 & %100 stüdyo kalitesi)
+        const dataUrl = await toJpeg(ref, { quality: 1.0, pixelRatio: 3.0, backgroundColor: '#0c0d10' });
         if (activeSlide !== i) {
           ref.style.display = prevDisplay;
         }

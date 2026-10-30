@@ -121,6 +121,17 @@ export async function ensureJpegDataUrl(dataUrl) {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
+      // Eğer görsel zaten tam 1080x1350 JPEG ise, sıfır kayıp için orijinal %100 stüdyo karesini koru
+      if (
+        typeof dataUrl === 'string' &&
+        dataUrl.startsWith('data:image/jpeg') &&
+        img.naturalWidth === 1080 &&
+        img.naturalHeight === 1350
+      ) {
+        resolve(dataUrl);
+        return;
+      }
+
       // Instagram 4:5 dikey portre standardı: 1080x1350
       const canvas = document.createElement('canvas');
       canvas.width = 1080;
@@ -131,7 +142,7 @@ export async function ensureJpegDataUrl(dataUrl) {
       ctx.fillStyle = '#0c0d10';
       ctx.fillRect(0, 0, 1080, 1350);
       ctx.drawImage(img, 0, 0, 1080, 1350);
-      resolve(canvas.toDataURL('image/jpeg', 0.94));
+      resolve(canvas.toDataURL('image/jpeg', 0.98));
     };
     img.onerror = () => resolve(dataUrl);
     img.src = dataUrl;

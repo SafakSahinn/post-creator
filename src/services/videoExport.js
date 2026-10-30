@@ -64,8 +64,8 @@ export async function exportSlideAsVideo({
     if (videoEl) videoEl.style.visibility = 'hidden';
 
     const overlayDataUrl = await toPng(slideElement, {
-      quality: 0.98,
-      pixelRatio: 2.8,
+      quality: 1.0,
+      pixelRatio: 3.0,
       filter: (node) => node.tagName !== 'VIDEO'
     });
 
@@ -109,7 +109,7 @@ export async function exportSlideAsVideo({
   const stream = canvas.captureStream(30);
   const recorder = new MediaRecorder(stream, {
     mimeType,
-    videoBitsPerSecond: 6000000 // 6 Mbps yüksek kalite
+    videoBitsPerSecond: 10000000 // 10 Mbps Ultra HD stüdyo kalitesi
   });
 
   const recordedChunks = [];
