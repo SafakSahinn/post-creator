@@ -1459,17 +1459,18 @@ export function CarouselStudio({
 
           {/* Tipografi & Yazı Tipi Seçici */}
           <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/10 space-y-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-mono uppercase text-[#e6c280] font-semibold flex items-center space-x-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs font-mono uppercase text-[#e6c280] font-semibold flex items-center space-x-1.5 shrink-0">
                 <Type className="w-3.5 h-3.5 text-[#e6c280]" />
-                <span>Tipografi & Yazı Tipi</span>
-              </span>
-              <span className="text-[10px] font-mono text-neutral-400">
+                <span className="whitespace-nowrap">Tipografi & Yazı Tipi</span>
+              </div>
+              <span className="text-[10px] font-mono text-[#e6c280] bg-[#e6c280]/10 border border-[#e6c280]/20 px-2 py-0.5 rounded-md whitespace-nowrap shrink-0">
                 {currentFontObj.name}
               </span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+            {/* 5 Sabit Kolonlu Segmented Grid */}
+            <div className="grid grid-cols-5 gap-1.5">
               {FONT_OPTIONS.map((f) => {
                 const isSelected = selectedFont === f.id;
                 return (
@@ -1481,22 +1482,17 @@ export function CarouselStudio({
                       setUndoToast(`Yazı tipi: ${f.name}`);
                       setTimeout(() => setUndoToast(null), 1500);
                     }}
-                    className={`p-2 rounded-lg border text-left transition-all cursor-pointer ${
+                    className={`h-14 rounded-xl border flex flex-col items-center justify-center p-1 transition-all cursor-pointer select-none ${
                       isSelected
-                        ? 'border-[#e6c280] bg-[#e6c280]/15 text-white shadow-sm'
-                        : 'border-white/10 bg-black/40 text-neutral-400 hover:text-white hover:border-white/20'
+                        ? 'border-[#e6c280] bg-[#e6c280]/20 text-[#e6c280] font-bold shadow-[0_0_12px_rgba(230,194,128,0.25)] ring-1 ring-[#e6c280]/50'
+                        : 'border-white/10 bg-black/40 text-neutral-400 hover:text-white hover:border-white/25 hover:bg-white/[0.04]'
                     }`}
+                    title={`${f.name} - ${f.label}`}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs">{f.preview}</span>
-                      {isSelected && <Check className="w-3 h-3 text-[#e6c280]" />}
-                    </div>
-                    <div className={`text-xs mt-1 font-bold ${f.fontClass} truncate`}>
+                    <span className="text-xs mb-0.5 leading-none">{f.preview}</span>
+                    <span className={`text-[11px] leading-tight ${f.fontClass} truncate max-w-full`}>
                       {f.label}
-                    </div>
-                    <div className="text-[9px] font-mono text-neutral-500 truncate">
-                      {f.name}
-                    </div>
+                    </span>
                   </button>
                 );
               })}
