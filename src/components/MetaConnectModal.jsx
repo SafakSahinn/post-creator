@@ -208,7 +208,7 @@ export function MetaConnectModal({ isOpen, onClose }) {
                 type="text"
                 value={imgurInput}
                 onChange={(e) => setImgurInput(e.target.value.trim())}
-                placeholder="c73499dc88701e8"
+                placeholder="546c25a59c58ad7"
                 className="w-full bg-[#0a0a0d] border border-white/10 rounded px-3 py-1.5 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-[#e6c280] font-mono"
               />
               <p className="text-[9px] text-neutral-500 font-sans mt-0.5">

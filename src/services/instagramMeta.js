@@ -31,7 +31,11 @@ export function setStoredInstagramAccountId(id) {
 }
 
 export function getStoredImgurClientId() {
-  return localStorage.getItem('lore_imgur_client_id') || DEFAULT_IMGUR_CLIENT_ID;
+  const val = localStorage.getItem('lore_imgur_client_id');
+  if (!val || val === 'c73499dc88701e8') {
+    return DEFAULT_IMGUR_CLIENT_ID;
+  }
+  return val;
 }
 
 export function setStoredImgurClientId(id) {
@@ -94,25 +98,38 @@ export async function fetchInstagramProfile(accessToken = getStoredMetaAccessTok
 }
 
 /**
- * Görseli kesin olarak JPEG formatına ve geçerli DataURL'e dönüştürür.
+ * DataURL'i gerçek binary Blob'a dönüştürür.
+ */
+export function dataUrlToBlob(dataUrl) {
+  const parts = dataUrl.split(',');
+  const mime = parts[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+  const bstr = atob(parts[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new Blob([u8arr], { type: mime });
+}
+
+/**
+ * Görseli kesin olarak 1080x1350 JPEG formatına ve geçerli DataURL'e dönüştürür.
  * Meta Graph API Instagram Publishing SADECE JPEG formatı kabul eder.
  */
 export async function ensureJpegDataUrl(dataUrl) {
-  if (typeof dataUrl === 'string' && dataUrl.startsWith('data:image/jpeg')) {
-    return dataUrl;
-  }
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
+      // Instagram 4:5 dikey portre standardı: 1080x1350
       const canvas = document.createElement('canvas');
-      canvas.width = img.naturalWidth || img.width || 1080;
-      canvas.height = img.naturalHeight || img.height || 1350;
+      canvas.width = 1080;
+      canvas.height = 1350;
       const ctx = canvas.getContext('2d');
       ctx.fillStyle = '#0c0d10';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0);
-      resolve(canvas.toDataURL('image/jpeg', 0.95));
+      ctx.fillRect(0, 0, 1080, 1350);
+      ctx.drawImage(img, 0, 0, 1080, 1350);
+      resolve(canvas.toDataURL('image/jpeg', 0.88));
     };
     img.onerror = () => resolve(dataUrl);
     img.src = dataUrl;
@@ -120,14 +137,15 @@ export async function ensureJpegDataUrl(dataUrl) {
 }
 
 /**
- * Slayt Görselini (DataURL / Base64) Meta'nın indirebilmesi için geçici genel JPEG URL'ine dönüştürür.
+ * Slayt Görselini Meta'nın indirebilmesi için doğrudan genel JPEG URL'ine dönüştürür.
  * 1. Tercih: Yerel Vite sunucu köprüsü (/api/upload-slide)
- * 2. Yedek: Imgur API
+ * 2. Yedek: Imgur API (Binary Blob & güncel Client-ID rotasyonu)
  */
 export async function uploadSlideToPublicUrl(dataUrl, customImgurKey = null) {
   const jpegUrl = await ensureJpegDataUrl(dataUrl);
+  const blob = dataUrlToBlob(jpegUrl);
 
-  // 1. Tercih: Yerel Vite sunucu köprüsü (/api/upload-slide) - Doğrudan ve hızlı
+  // 1. Tercih: Yerel Vite sunucu köprüsü (/api/upload-slide) - Hızlı ve doğrudan
   try {
     const bridgeRes = await fetch('/api/upload-slide', {
       method: 'POST',
@@ -141,34 +159,38 @@ export async function uploadSlideToPublicUrl(dataUrl, customImgurKey = null) {
       }
     }
   } catch (err) {
-    console.warn('Yerel köprü erişilemedi, alternatif deneniyor:', err);
+    console.warn('Yerel köprü erişilemedi, Imgur deneniyor:', err);
   }
 
-  const base64Data = jpegUrl.replace(/^data:image\/\w+;base64,/, '');
-  const clientId = customImgurKey || getStoredImgurClientId() || DEFAULT_IMGUR_CLIENT_ID;
+  // 2. Tercih: Imgur API (Binary Blob ile doğrudan JPEG yükleme)
+  const clientIds = Array.from(new Set([
+    customImgurKey,
+    getStoredImgurClientId(),
+    '546c25a59c58ad7'
+  ].filter(Boolean)));
 
-  // 2. Imgur API Yükleme Denemesi (Doğrudan JPEG Base64)
-  try {
-    const formData = new FormData();
-    formData.append('image', base64Data);
-    formData.append('type', 'base64');
+  for (const cid of clientIds) {
+    try {
+      const formData = new FormData();
+      formData.append('image', blob, `slide_${Date.now()}.jpg`);
 
-    const res = await fetch('https://api.imgur.com/3/image', {
-      method: 'POST',
-      headers: {
-        Authorization: `Client-ID ${clientId}`
-      },
-      body: formData
-    });
+      const res = await fetch('https://api.imgur.com/3/image', {
+        method: 'POST',
+        headers: {
+          Authorization: `Client-ID ${cid}`
+        },
+        body: formData
+      });
 
-    if (res.ok) {
-      const json = await res.json();
-      if (json.data?.link) {
-        return json.data.link.replace(/^http:/, 'https:');
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data?.link) {
+          return json.data.link.replace(/^http:/, 'https:');
+        }
       }
+    } catch (err) {
+      console.warn(`Imgur (${cid}) yüklemesi başarısız:`, err);
     }
-  } catch (err) {
-    console.warn('Imgur yüklemesi başarısız oldu, alternatif deneniyor:', err);
   }
 
   throw new Error('Slayt görseli Meta sunucularının erişebileceği genel bir JPEG bağlantısına dönüştürülemedi.');
