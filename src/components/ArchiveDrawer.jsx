@@ -30,7 +30,7 @@ import {
   requestGoogleDriveAuth
 } from '../services/googleDrive';
 import { getAllProjects } from '../services/projects';
-import { getPunchyExcerpt } from '../services/gemini';
+import { getPunchyExcerpt, formatInstagramCaption } from '../services/gemini';
 
 export function ArchiveDrawer({
   isOpen,
@@ -104,6 +104,7 @@ export function ArchiveDrawer({
       projectName,
       watermark,
       accentColor,
+      formattedCaption: formatInstagramCaption(item),
       slideQuotes: freshQuotes,
       savedSlideSettings: updatedSlideSettings,
       updatedAt: new Date().toISOString()
@@ -181,7 +182,8 @@ export function ArchiveDrawer({
   const handleCopyCaption = async (item, e) => {
     e.stopPropagation();
     try {
-      await navigator.clipboard.writeText(item.formattedCaption);
+      const textToCopy = formatInstagramCaption(item);
+      await navigator.clipboard.writeText(textToCopy);
       setCopiedId(item.id);
       setTimeout(() => setCopiedId(null), 1500);
     } catch (err) {

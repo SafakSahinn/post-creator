@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Copy, Check, Bookmark, BookmarkCheck, ExternalLink, Image as ImageIcon, Sliders } from 'lucide-react';
+import { formatInstagramCaption } from '../services/gemini';
 
 export function OutputView({
   post,
@@ -30,7 +31,8 @@ export function OutputView({
 
   const handleCopyCaption = async () => {
     try {
-      await navigator.clipboard.writeText(post.formattedCaption);
+      const captionText = formatInstagramCaption(post);
+      await navigator.clipboard.writeText(captionText);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
@@ -108,30 +110,30 @@ export function OutputView({
         </div>
       </div>
 
-      {/* 1. GÖNDERİ BAŞLIĞI */}
+      {/* 1. MANŞET BAŞLIK */}
       <div>
         <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-[#e6c280] mb-2">
-          [Gönderi Başlığı]
+          MANŞET BAŞLIK
         </div>
         <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight">
           {post.title}
         </h1>
       </div>
 
-      {/* 2. KANCA (HOOK) */}
+      {/* 2. GİRİŞ & KANCA */}
       <div className="relative pl-5 border-l-2 border-[#e6c280] py-1 bg-white/[0.02] rounded-r-xl pr-4">
         <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-neutral-400 mb-1">
-          Kanca (Hook)
+          GİRİŞ & KANCA
         </div>
         <p className="font-serif italic text-lg sm:text-xl text-[#f3f3f5] leading-snug">
           "{post.hook}"
         </p>
       </div>
 
-      {/* 3. LORE (HİKAYE) - 3 PARAGRAF */}
+      {/* 3. HİKAYE & ANALİZ - 3 PARAGRAF */}
       <div className="space-y-4">
         <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-neutral-400">
-          Lore (Hikaye)
+          HİKAYE & ANALİZ
         </div>
         <div className="space-y-4 text-sm sm:text-base text-neutral-300 font-sans leading-relaxed">
           {Array.isArray(post.lore) ? (
@@ -146,12 +148,12 @@ export function OutputView({
         </div>
       </div>
 
-      {/* 4. KÜRATÖRÜN GÖRSELİ & ARAMA BAĞLANTILARI + STÜDYO KÖPRÜSÜ */}
+      {/* 4. GÖRSEL ARAMA TAVSİYESİ + STÜDYO KÖPRÜSÜ */}
       <div className="p-6 rounded-2xl bg-black/60 border border-white/10 space-y-4">
         <div className="flex items-center justify-between">
           <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-[#e6c280] flex items-center space-x-1.5">
             <ImageIcon className="w-3.5 h-3.5" />
-            <span>Küratörün Görsel Notu (İngilizce Arama Terimi)</span>
+            <span>GÖRSEL ARAMA TAVSİYESİ (İNGİLİZCE)</span>
           </div>
           <button
             type="button"

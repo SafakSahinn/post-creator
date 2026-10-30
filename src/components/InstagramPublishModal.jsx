@@ -20,6 +20,7 @@ import {
   getStoredMetaAccessToken,
   getStoredInstagramAccountId
 } from '../services/instagramMeta';
+import { formatInstagramCaption } from '../services/gemini';
 
 export function InstagramPublishModal({
   isOpen,
@@ -38,7 +39,9 @@ export function InstagramPublishModal({
     tomorrow.setHours(19, 30, 0, 0);
     return tomorrow.toISOString().slice(0, 16);
   });
-  const [customCaption, setCustomCaption] = useState(caption || '');
+  const [customCaption, setCustomCaption] = useState(() => {
+    return formatInstagramCaption(caption || post || '');
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [progressMsg, setProgressMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState(null);
@@ -47,7 +50,7 @@ export function InstagramPublishModal({
   useEffect(() => {
     if (isOpen) {
       setProfile(getStoredMetaProfile());
-      setCustomCaption(caption || post?.formattedCaption || '');
+      setCustomCaption(formatInstagramCaption(caption || post || ''));
       setErrorMsg(null);
       setResultData(null);
       setIsSubmitting(false);

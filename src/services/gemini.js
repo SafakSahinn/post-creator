@@ -151,6 +151,78 @@ export function getPunchyExcerpt(text, maxSentences = 1) {
   return clean + (/[.!?]$/.test(clean) ? '' : '.');
 }
 
+/**
+ * Gerçek Instagram Yayın Metni Formatlayıcı
+ * Geliştirici etiketlerini ([Gönderi Başlığı: ...], Kanca (Hook): vb.) kaldırır.
+ * Instagram akışında tam bir editoryal dergi paylaşımı gibi başlık, kanca, paragraflar ve etiketleri temizce birleştirir.
+ */
+export function cleanRawCaption(text) {
+  if (!text) return '';
+  return text
+    .replace(/\[\s*Gönderi Başlığı:\s*([^\]]+)\]/gi, '$1\n')
+    .replace(/^Kanca\s*\(\s*Hook\s*\)\s*:\s*/gim, '')
+    .replace(/^Lore\s*\(\s*Hikaye\s*\)\s*:\s*/gim, '')
+    .replace(/^Küratörün Görsel Notu:\s*[^\n]+(\n|$)/gim, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+export function formatInstagramCaption(post) {
+  if (!post) return '';
+
+  if (typeof post === 'string') {
+    return cleanRawCaption(post);
+  }
+
+  const title = (post.title || '').trim();
+  const hook = (post.hook || '').trim();
+
+  let loreParagraphs = [];
+  if (Array.isArray(post.lore)) {
+    loreParagraphs = post.lore.map((p) => (typeof p === 'string' ? p.trim() : '')).filter(Boolean);
+  } else if (typeof post.lore === 'string') {
+    loreParagraphs = post.lore.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+  }
+
+  let hashtagsStr = '';
+  if (Array.isArray(post.hashtags)) {
+    hashtagsStr = post.hashtags
+      .filter(Boolean)
+      .map((t) => (t.startsWith('#') ? t : `#${t}`))
+      .join(' ');
+  } else if (typeof post.hashtags === 'string') {
+    hashtagsStr = post.hashtags.trim();
+  }
+
+  if (loreParagraphs.length === 0 && post.formattedCaption) {
+    return cleanRawCaption(post.formattedCaption);
+  }
+
+  const parts = [];
+
+  // 1. Manşet Başlık
+  if (title) {
+    parts.push(title.toUpperCase());
+  }
+
+  // 2. Kanca Cümlesi
+  if (hook) {
+    parts.push(hook);
+  }
+
+  // 3. Hikaye ve Detay Paragrafları
+  if (loreParagraphs.length > 0) {
+    parts.push(loreParagraphs.join('\n\n'));
+  }
+
+  // 4. Ayrım ve Etiketler
+  if (hashtagsStr) {
+    parts.push(`· · ·\n${hashtagsStr}`);
+  }
+
+  return parts.join('\n\n');
+}
+
 export async function generateEditorialPost({ apiKey, category, decade, customTopic, model = "gemini-2.5-flash", onProgress, project }) {
   if (!apiKey?.trim()) {
     throw new Error("Lütfen ayarlardan geçerli bir Gemini API anahtarı girin.");
@@ -281,19 +353,8 @@ ${project?.filterTypeLabel || 'Filtre / Dönem'}: ${decade}
         return s;
       });
 
-      // Instagram Açıklama (Caption) formatı (Tüm detaylı paragraflar buraya gelir)
-      const formattedCaption = `[Gönderi Başlığı: ${parsed.title}]
-
-Kanca (Hook):
-${parsed.hook}
-
-Lore (Hikaye):
-${Array.isArray(parsed.lore) ? parsed.lore.join("\n\n") : parsed.lore}
-
-Küratörün Görsel Notu:
-${parsed.visualNote}
-
-${Array.isArray(parsed.hashtags) ? parsed.hashtags.join(" ") : parsed.hashtags}`;
+      // Gerçek Instagram Açıklama (Caption) formatı (Editoryal Dergi Akışı)
+      const formattedCaption = formatInstagramCaption(parsed);
 
       return {
         ...parsed,
