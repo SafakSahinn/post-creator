@@ -3,7 +3,8 @@ import {
   Download, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Check, Image as ImageIcon, 
   Upload, Trash2, Undo2, Redo2, Sliders, Eye, Sparkles, Layers,
   Sun, ZoomIn, Contrast, MoveVertical, Move, RotateCcw, ShieldOff, ShieldAlert,
-  Bookmark, BookmarkCheck, Video, Play, Edit3, Link as LinkIcon, Globe, Loader2
+  Bookmark, BookmarkCheck, Video, Play, Edit3, Link as LinkIcon, Globe, Loader2,
+  Film, ExternalLink
 } from 'lucide-react';
 import { InstagramIcon } from './Icons';
 import { toPng } from 'html-to-image';
@@ -106,8 +107,9 @@ export function CarouselStudio({
   const [renderedSlideUrls, setRenderedSlideUrls] = useState([]);
   const [isPreparingPublish, setIsPreparingPublish] = useState(false);
 
-  // URL Import State
+  // URL & Search State
   const [showUrlInput, setShowUrlInput] = useState(false);
+  const [showMediaSearch, setShowMediaSearch] = useState(false);
   const [inputUrl, setInputUrl] = useState('');
   const [isDownloadingUrl, setIsDownloadingUrl] = useState(false);
   const [urlError, setUrlError] = useState(null);
@@ -1128,16 +1130,37 @@ export function CarouselStudio({
               </label>
               
               <div className="flex items-center space-x-1.5">
+                {/* Video & Görsel Arama Butonu */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMediaSearch(!showMediaSearch);
+                    if (showUrlInput) setShowUrlInput(false);
+                  }}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-mono flex items-center space-x-1.5 border transition-all cursor-pointer ${
+                    showMediaSearch
+                      ? 'bg-sky-500/20 border-sky-400 text-sky-300 font-bold shadow-sm'
+                      : 'bg-white/5 hover:bg-white/10 border-white/10 text-neutral-300 hover:text-white'
+                  }`}
+                  title="Pexels, Google veya Pinterest üzerinde konuya uygun video ve fotoğraf ara"
+                >
+                  <Video className="w-3 h-3 text-sky-400" />
+                  <span>Video / Görsel Ara</span>
+                </button>
+
                 {/* Pinterest / Web URL ile Ekle */}
                 <button
                   type="button"
-                  onClick={() => setShowUrlInput(!showUrlInput)}
+                  onClick={() => {
+                    setShowUrlInput(!showUrlInput);
+                    if (showMediaSearch) setShowMediaSearch(false);
+                  }}
                   className={`px-2.5 py-1 rounded-lg text-[10px] font-mono flex items-center space-x-1.5 border transition-all cursor-pointer ${
                     showUrlInput
                       ? 'bg-[#e6c280]/20 border-[#e6c280] text-[#e6c280] font-bold shadow-sm'
                       : 'bg-white/5 hover:bg-white/10 border-white/10 text-neutral-300 hover:text-white'
                   }`}
-                  title="Pinterest veya web görsel linki yapıştırarak doğrudan indir"
+                  title="Görsel veya video linki yapıştırarak doğrudan indir"
                 >
                   <LinkIcon className="w-3 h-3 text-[#e6c280]" />
                   <span>URL ile Ekle</span>
@@ -1145,13 +1168,121 @@ export function CarouselStudio({
               </div>
             </div>
 
-            {/* URL İndirme Çekmecesi (Pinterest & Web) */}
+            {/* Video & Görsel Arama Çekmecesi */}
+            {showMediaSearch && (
+              <div className="p-3.5 rounded-xl bg-black/90 border border-sky-500/30 space-y-3 animate-fadeIn shadow-2xl">
+                <div className="flex items-center justify-between text-[11px] font-mono">
+                  <span className="flex items-center space-x-1.5 text-sky-300 font-semibold">
+                    <Video className="w-3.5 h-3.5" />
+                    <span>Arşiv Video & Görsel Arama</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowMediaSearch(false)}
+                    className="text-neutral-500 hover:text-white text-xs font-mono p-0.5 cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {post?.visualNote && (
+                  <div className="flex items-center justify-between bg-white/5 border border-white/10 rounded-lg p-2 text-xs font-mono text-neutral-300">
+                    <span className="truncate pr-2">{post.visualNote}</span>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(post.visualNote);
+                          setUndoToast('Arama terimi kopyalandı!');
+                          setTimeout(() => setUndoToast(null), 1500);
+                        } catch (e) {}
+                      }}
+                      className="text-[10px] text-[#e6c280] hover:underline shrink-0 cursor-pointer"
+                    >
+                      Kopyala
+                    </button>
+                  </div>
+                )}
+
+                <div className="space-y-1.5">
+                  <div className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider flex items-center space-x-1">
+                    <Film className="w-3 h-3 text-sky-400" />
+                    <span>Video Arama (Dikey B-Roll & Sinematik Klip):</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    <a
+                      href={`https://www.pexels.com/search/videos/${encodeURIComponent(post?.visualNote || post?.title || '')}/`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2.5 py-1 rounded bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-[11px] font-mono flex items-center space-x-1 transition-colors"
+                      title="Pexels üzerinde ücretsiz dikey HD video ara"
+                    >
+                      <span>Pexels Video</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                    <a
+                      href={`https://www.google.com/search?tbm=vid&q=${encodeURIComponent(post?.visualNote || post?.title || '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2.5 py-1 rounded bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 text-[11px] font-mono flex items-center space-x-1 transition-colors"
+                      title="Google Videolarda ara"
+                    >
+                      <span>Google Video</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                    <a
+                      href={`https://pixabay.com/videos/search/${encodeURIComponent(post?.visualNote || post?.title || '')}/`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2.5 py-1 rounded bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-[11px] font-mono flex items-center space-x-1 transition-colors"
+                      title="Pixabay üzerinde ücretsiz stok video ara"
+                    >
+                      <span>Pixabay Video</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 pt-1 border-t border-white/5">
+                  <div className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider flex items-center space-x-1">
+                    <ImageIcon className="w-3.5 h-3.5 text-[#e6c280]" />
+                    <span>Fotoğraf & Arşiv Arama:</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    <a
+                      href={`https://www.pinterest.com/search/pins/?q=${encodeURIComponent(post?.visualNote || post?.title || '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2.5 py-1 rounded bg-[#e60023]/15 hover:bg-[#e60023]/25 border border-[#e60023]/30 text-[#ff4f64] text-[11px] font-mono flex items-center space-x-1 transition-colors"
+                    >
+                      <span>Pinterest</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                    <a
+                      href={`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(post?.visualNote || post?.title || '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2.5 py-1 rounded bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 text-blue-300 text-[11px] font-mono flex items-center space-x-1 transition-colors"
+                    >
+                      <span>Google Görseller</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                </div>
+
+                <p className="text-[10px] text-neutral-400 font-sans leading-relaxed">
+                  💡 İndirdiğiniz video veya görsel dosyasını doğrudan bu alana sürükleyip bırakabilir ya da linkini <strong>"URL ile Ekle"</strong> kutusuna yapıştırabilirsiniz.
+                </p>
+              </div>
+            )}
+
+            {/* URL İndirme Çekmecesi (Pinterest, Web, Video) */}
             {showUrlInput && (
               <div className="p-3 rounded-xl bg-black/80 border border-[#e6c280]/40 space-y-2 animate-fadeIn shadow-2xl">
                 <div className="flex items-center justify-between text-[11px] font-mono text-neutral-300">
                   <span className="flex items-center space-x-1.5 text-[#e6c280] font-semibold">
                     <Globe className="w-3.5 h-3.5" />
-                    <span>Pinterest veya Web Görseli İndir</span>
+                    <span>Görsel veya Video URL'si İndir</span>
                   </span>
                   <button
                     type="button"

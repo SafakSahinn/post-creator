@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Copy, Check, Bookmark, BookmarkCheck, ExternalLink, Image as ImageIcon, Sliders } from 'lucide-react';
+import { Copy, Check, Bookmark, BookmarkCheck, ExternalLink, Image as ImageIcon, Sliders, Video, Film } from 'lucide-react';
 import { formatInstagramCaption } from '../services/gemini';
 
 export function OutputView({
@@ -52,6 +52,9 @@ export function OutputView({
 
   const pinterestUrl = `https://www.pinterest.com/search/pins/?q=${encodeURIComponent(post.visualNote)}`;
   const googleImagesUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(post.visualNote)}`;
+  const pexelsVideosUrl = `https://www.pexels.com/search/videos/${encodeURIComponent(post.visualNote)}/`;
+  const googleVideosUrl = `https://www.google.com/search?tbm=vid&q=${encodeURIComponent(post.visualNote)}`;
+  const pixabayVideosUrl = `https://pixabay.com/videos/search/${encodeURIComponent(post.visualNote)}/`;
 
   return (
     <div className="bg-[#121318] border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-8 animate-fadeIn">
@@ -148,12 +151,12 @@ export function OutputView({
         </div>
       </div>
 
-      {/* 4. GÖRSEL ARAMA TAVSİYESİ + STÜDYO KÖPRÜSÜ */}
+      {/* 4. GÖRSEL & VİDEO ARAMA TAVSİYESİ + STÜDYO KÖPRÜSÜ */}
       <div className="p-6 rounded-2xl bg-black/60 border border-white/10 space-y-4">
         <div className="flex items-center justify-between">
           <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-[#e6c280] flex items-center space-x-1.5">
             <ImageIcon className="w-3.5 h-3.5" />
-            <span>GÖRSEL ARAMA TAVSİYESİ (İNGİLİZCE)</span>
+            <span>GÖRSEL & VİDEO ARAMA TAVSİYESİ (İNGİLİZCE)</span>
           </div>
           <button
             type="button"
@@ -169,40 +172,89 @@ export function OutputView({
           {post.visualNote}
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+        <div className="space-y-3 pt-1">
+          {/* Görsel ve Video Platform Butonları */}
           <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400 mr-1 flex items-center space-x-1">
+              <ImageIcon className="w-3 h-3 text-[#e6c280]" />
+              <span>Görsel:</span>
+            </span>
+
             <a
               href={pinterestUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-mono bg-[#e60023]/15 text-[#ff4f64] border border-[#e60023]/30 hover:bg-[#e60023]/25 transition-colors"
-              title="Pinterest'te arama yap (beğendiğin resmi kopyalayıp stüdyoda Ctrl+V yapabilir veya linkini ekleyebilirsin)"
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-mono bg-[#e60023]/15 text-[#ff4f64] border border-[#e60023]/30 hover:bg-[#e60023]/25 transition-colors"
+              title="Pinterest'te fotoğraf ara"
             >
-              <span>Pinterest'te Arşiv Ara</span>
-              <ExternalLink className="w-3.5 h-3.5" />
+              <span>Pinterest</span>
+              <ExternalLink className="w-3 h-3" />
             </a>
 
             <a
               href={googleImagesUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-mono bg-blue-500/15 text-blue-300 border border-blue-500/30 hover:bg-blue-500/25 transition-colors"
-              title="Google Görsellerde arama yap"
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-mono bg-blue-500/15 text-blue-300 border border-blue-500/30 hover:bg-blue-500/25 transition-colors"
+              title="Google Görsellerde fotoğraf ara"
             >
-              <span>Google Görsellerde Ara</span>
-              <ExternalLink className="w-3.5 h-3.5" />
+              <span>Google Görseller</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+
+            <div className="h-4 w-px bg-white/10 mx-1 hidden sm:block" />
+
+            <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400 mr-1 flex items-center space-x-1">
+              <Video className="w-3 h-3 text-sky-400" />
+              <span>Video:</span>
+            </span>
+
+            <a
+              href={pexelsVideosUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-mono bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 transition-colors"
+              title="Pexels'te ücretsiz dikey/yatay HD B-roll video ara"
+            >
+              <Film className="w-3 h-3" />
+              <span>Pexels Video</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+
+            <a
+              href={googleVideosUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-mono bg-purple-500/15 text-purple-300 border border-purple-500/30 hover:bg-purple-500/25 transition-colors"
+              title="Google Videolarda ara"
+            >
+              <span>Google Video</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+
+            <a
+              href={pixabayVideosUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-mono bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 transition-colors"
+              title="Pixabay'de ücretsiz stok video ara"
+            >
+              <span>Pixabay Video</span>
+              <ExternalLink className="w-3 h-3" />
             </a>
           </div>
 
-          {/* Stüdyoya Geçiş Butonu */}
-          <button
-            type="button"
-            onClick={onOpenEditor}
-            className="px-4 py-2 rounded-lg bg-[#e6c280] hover:bg-[#d4b06e] text-black font-semibold text-xs font-mono uppercase tracking-wider transition-all flex items-center space-x-2 shadow-[0_0_15px_rgba(230,194,128,0.2)]"
-          >
-            <Sliders className="w-3.5 h-3.5" />
-            <span>{hasImages ? 'Carousel Slaytlarını Düzenle' : 'Görselleri Yükle & Carousel Düzenle'}</span>
-          </button>
+          {/* Stüdyoya Geçiş Köprüsü */}
+          <div className="pt-2 flex justify-end">
+            <button
+              type="button"
+              onClick={onOpenEditor}
+              className="px-4 py-2 rounded-lg bg-[#e6c280] hover:bg-[#d4b06e] text-black font-semibold text-xs font-mono uppercase tracking-wider transition-all flex items-center space-x-2 shadow-[0_0_15px_rgba(230,194,128,0.2)] cursor-pointer"
+            >
+              <Sliders className="w-3.5 h-3.5" />
+              <span>{hasImages ? 'Carousel Slaytlarını Düzenle' : 'Görselleri Yükle & Carousel Düzenle'}</span>
+            </button>
+          </div>
         </div>
       </div>
 
