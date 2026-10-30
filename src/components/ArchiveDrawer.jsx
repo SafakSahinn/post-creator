@@ -67,7 +67,7 @@ export function ArchiveDrawer({
       || activeProject
       || allProjects[0];
 
-    const watermark = matchProj?.watermark || matchProj?.shortCode || 'L O R E';
+    const watermark = matchProj?.watermark || matchProj?.shortCode || 'LORE';
     const accentColor = matchProj?.accentColor || '#e6c280';
     const projectName = matchProj?.name || 'Lore Magazine';
 

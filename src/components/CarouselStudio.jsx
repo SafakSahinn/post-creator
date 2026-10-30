@@ -580,7 +580,11 @@ export function CarouselStudio({
     );
   }
 
-  const slideLogo = (project?.watermark || project?.shortCode || post.watermark || post.projectShortCode || 'L O R E').trim();
+  let rawLogo = (project?.watermark || project?.shortCode || post.watermark || post.projectShortCode || 'LORE').trim();
+  if (rawLogo === 'L O R E') {
+    rawLogo = 'LORE';
+  }
+  const slideLogo = rawLogo.replace(/\s+/g, '\u00A0');
   const slideAccentColor = project?.accentColor || post.accentColor || '#e6c280';
   const slideTagline = project?.tagline || post.tagline || 'Kültür & Statü Şifreleri';
 
@@ -1025,14 +1029,14 @@ export function CarouselStudio({
                   <SlideBackground media={slideMedia} settings={settings} />
 
                   {/* Top Header */}
-                  <div className="flex items-center justify-between border-b border-white/15 pb-3 relative z-10">
+                  <div className="flex items-center justify-between border-b border-white/15 pb-3 relative z-10 gap-2">
                     <span
-                      className={`${activeFontClass} tracking-[0.25em] text-xs font-bold uppercase drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]`}
+                      className={`${activeFontClass} tracking-[0.25em] text-xs font-bold uppercase drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)] whitespace-nowrap shrink-0 select-none`}
                       style={{ color: slideAccentColor }}
                     >
                       {slideLogo}
                     </span>
-                    <span className="font-mono text-[10px] tracking-wider text-neutral-300 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+                    <span className="font-mono text-[10px] tracking-wider text-neutral-300 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)] whitespace-nowrap shrink-0">
                       {(idx + 1).toString().padStart(2, '0')} / {slideCount.toString().padStart(2, '0')}
                     </span>
                   </div>
