@@ -607,111 +607,128 @@ export function CarouselStudio({
       )}
 
       {/* Header & Global Actions */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-white/10">
-        <div>
-          <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-[#e6c280] flex items-center space-x-1.5">
-            <Layers className="w-3.5 h-3.5" />
-            <span>Birleşik Instagram Carousel & Görsel Stüdyosu</span>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-white/10">
+        <div className="min-w-0">
+          <div className="text-[11px] font-mono uppercase tracking-[0.25em] text-[#e6c280] flex items-center space-x-2">
+            <span className="p-1 rounded-md bg-[#e6c280]/10 border border-[#e6c280]/20 inline-flex items-center justify-center">
+              <Layers className="w-3.5 h-3.5 text-[#e6c280]" />
+            </span>
+            <span className="font-semibold">Birleşik Instagram Carousel & Görsel Stüdyosu</span>
           </div>
-          <p className="text-xs text-neutral-400 font-sans mt-0.5">
-            İstediğiniz slayta istediğiniz görseli atayın, filtreleyin ve tek tıkla Instagram'a indirin.
+          <p className="text-xs text-neutral-400 font-sans mt-1">
+            İstediğiniz slayta görsel atayın, filtreleyin ve tek tıkla Instagram'a indirin ya da planlayın.
           </p>
         </div>
 
-        {/* Undo / Redo & Download buttons */}
-        <div className="flex items-center space-x-2">
-          <button
-            type="button"
-            disabled={historyIndex <= 0}
-            onClick={handleUndo}
-            title="Geri Al (Ctrl + Z)"
-            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white disabled:opacity-30 border border-white/10 transition-colors"
-          >
-            <Undo2 className="w-4 h-4" />
-          </button>
+        {/* Action Toolbar */}
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          {/* Geri / İleri Segmented Control */}
+          <div className="inline-flex items-center rounded-xl bg-white/[0.04] p-1 border border-white/10 h-10 shadow-sm">
+            <button
+              type="button"
+              disabled={historyIndex <= 0}
+              onClick={handleUndo}
+              title="Geri Al (Ctrl + Z)"
+              className="h-full px-2.5 rounded-lg text-neutral-400 hover:text-white hover:bg-white/10 disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-neutral-400 transition-colors flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"
+            >
+              <Undo2 className="w-4 h-4" />
+            </button>
+            <div className="w-px h-4 bg-white/10 mx-0.5" />
+            <button
+              type="button"
+              disabled={historyIndex >= history.length - 1}
+              onClick={handleRedo}
+              title="İleri Al (Ctrl + Y)"
+              className="h-full px-2.5 rounded-lg text-neutral-400 hover:text-white hover:bg-white/10 disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-neutral-400 transition-colors flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"
+            >
+              <Redo2 className="w-4 h-4" />
+            </button>
+          </div>
 
-          <button
-            type="button"
-            disabled={historyIndex >= history.length - 1}
-            onClick={handleRedo}
-            title="İleri Al (Ctrl + Y)"
-            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white disabled:opacity-30 border border-white/10 transition-colors"
-          >
-            <Redo2 className="w-4 h-4" />
-          </button>
-
+          {/* Metinleri Yenile */}
           <button
             type="button"
             onClick={handleRefreshAllQuotesFromLore}
-            className="px-3 py-2 rounded-lg border border-[#e6c280]/40 bg-[#e6c280]/10 hover:bg-[#e6c280]/20 text-[#e6c280] text-xs font-mono transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm"
+            className="h-10 px-3.5 rounded-xl border border-[#e6c280]/30 bg-[#e6c280]/[0.08] hover:bg-[#e6c280]/[0.18] hover:border-[#e6c280]/50 text-[#e6c280] text-xs font-mono tracking-wide transition-all flex items-center space-x-2 shrink-0 cursor-pointer shadow-sm hover:shadow-[0_0_12px_rgba(230,194,128,0.15)] active:scale-[0.98]"
             title="Yapay zeka hikayesinden 3 satırlık tam anlamlı cümleleri çıkar ve tüm slaytlara uygula"
           >
-            <Sparkles className="w-3.5 h-3.5 text-[#e6c280]" />
-            <span>Metinleri Yenile</span>
+            <Sparkles className="w-3.5 h-3.5 text-[#e6c280] shrink-0" />
+            <span className="whitespace-nowrap font-medium">Metinleri Yenile</span>
           </button>
 
+          {/* Arşive Kaydet / Arşivi Güncelle */}
           {onSaveToArchive && (
             <button
               type="button"
               onClick={handleSaveOrUpdate}
-              className={`px-3 py-2 rounded-lg border text-xs font-mono transition-all flex items-center space-x-1.5 cursor-pointer ${
+              className={`h-10 px-3.5 rounded-xl border text-xs font-mono tracking-wide transition-all flex items-center space-x-2 shrink-0 cursor-pointer shadow-sm active:scale-[0.98] ${
                 isSaved
-                  ? 'border-emerald-500/40 bg-emerald-950/30 text-emerald-300 hover:bg-emerald-900/40 hover:border-emerald-400'
-                  : 'border-white/10 bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white'
+                  ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 hover:border-emerald-400/60 shadow-[0_0_12px_rgba(16,185,129,0.15)]'
+                  : 'border-white/10 bg-white/[0.04] hover:bg-white/[0.08] hover:border-white/20 text-neutral-300 hover:text-white'
               }`}
               title={isSaved ? "Metin, görsel veya logo değişikliklerini arşive kaydet / güncelle" : "Görsellerle birlikte yerel arşive kaydet"}
             >
-              {isSaved ? <BookmarkCheck className="w-3.5 h-3.5 text-emerald-400" /> : <Bookmark className="w-3.5 h-3.5 text-[#e6c280]" />}
-              <span>{isSaved ? 'Arşivi Güncelle' : 'Arşive Kaydet'}</span>
+              {isSaved ? (
+                <BookmarkCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              ) : (
+                <Bookmark className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+              )}
+              <span className="whitespace-nowrap font-medium">{isSaved ? 'Arşivi Güncelle' : 'Arşive Kaydet'}</span>
             </button>
           )}
 
+          {/* Slayt X'i İndir */}
           <button
             type="button"
             disabled={isExporting}
             onClick={handleDownloadActiveSlide}
-            className="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 hover:text-white text-xs font-mono transition-all flex items-center space-x-1"
+            className="h-10 px-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 text-neutral-300 hover:text-white text-xs font-mono tracking-wide transition-all flex items-center space-x-2 shrink-0 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed active:scale-[0.98]"
+            title={`Yalnızca seçili olan Slayt ${activeSlide + 1}'i PNG olarak indir`}
           >
-            <Download className="w-3.5 h-3.5" />
-            <span>{isExporting ? 'Aktarılıyor...' : `Slayt ${activeSlide + 1}'i İndir`}</span>
+            <Download className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+            <span className="whitespace-nowrap font-medium">
+              {isExporting ? 'Aktarılıyor...' : `Slayt ${activeSlide + 1}'i İndir`}
+            </span>
           </button>
 
+          {/* Tüm Slaytları İndir (Gold Primary) */}
           <button
             type="button"
             disabled={isExporting}
             onClick={handleDownloadAllSlides}
-            className="px-4 py-2 rounded-lg bg-[#e6c280] hover:bg-[#d4b06e] text-black font-semibold text-xs font-mono uppercase tracking-wider transition-all flex items-center space-x-2 shadow-[0_0_15px_rgba(230,194,128,0.2)]"
+            className="h-10 px-4 rounded-xl bg-[#e6c280] hover:bg-[#ebd29b] text-neutral-950 font-semibold text-xs font-mono tracking-wider uppercase transition-all flex items-center space-x-2 shrink-0 shadow-[0_2px_14px_rgba(230,194,128,0.25)] hover:shadow-[0_4px_20px_rgba(230,194,128,0.4)] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98]"
+            title="Tüm 4 slaytı yüksek çözünürlüklü PNG olarak sırayla indir"
           >
             {downloadSuccess ? (
               <>
-                <Check className="w-3.5 h-3.5" />
-                <span>İndirildi!</span>
+                <Check className="w-4 h-4 stroke-[2.5] text-neutral-950 shrink-0" />
+                <span className="whitespace-nowrap">İNDİRİLDİ!</span>
               </>
             ) : (
               <>
-                <Download className="w-3.5 h-3.5" />
-                <span>Tüm Slaytları İndir (PNG)</span>
+                <Download className="w-4 h-4 stroke-[2.5] text-neutral-950 shrink-0" />
+                <span className="whitespace-nowrap">TÜM SLAYTLARI İNDİR</span>
               </>
             )}
           </button>
 
-          {/* Instagram'da Paylaş / Planla */}
+          {/* Instagram'da Paylaş / Planla (Meta Gradient Primary) */}
           <button
             type="button"
             disabled={isPreparingPublish || isExporting}
             onClick={handleOpenInstagramPublish}
-            className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#e6c280] via-[#f59e0b] to-[#ec4899] hover:opacity-95 text-black font-semibold text-xs font-mono uppercase tracking-wider transition-all flex items-center space-x-2 shadow-[0_0_18px_rgba(236,72,153,0.3)] cursor-pointer"
+            className="h-10 px-4 rounded-xl bg-gradient-to-r from-[#833ab4] via-[#e1306c] to-[#fd1d1d] hover:brightness-110 text-white font-semibold text-xs font-mono tracking-wider uppercase transition-all flex items-center space-x-2 shrink-0 shadow-[0_2px_16px_rgba(225,48,108,0.35)] hover:shadow-[0_4px_22px_rgba(225,48,108,0.5)] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98]"
             title="4 slaytlık carousel gönderisini Instagram'da anında yayınla veya ileri bir tarihe planla"
           >
             {isPreparingPublish ? (
               <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>Hazırlanıyor...</span>
+                <Loader2 className="w-4 h-4 animate-spin text-white shrink-0" />
+                <span className="whitespace-nowrap">HAZIRLANIYOR...</span>
               </>
             ) : (
               <>
-                <InstagramIcon className="w-3.5 h-3.5 text-black" />
-                <span>Instagram'da Paylaş / Planla</span>
+                <InstagramIcon className="w-4 h-4 text-white shrink-0" />
+                <span className="whitespace-nowrap">INSTAGRAM'DA PAYLAŞ</span>
               </>
             )}
           </button>
@@ -720,7 +737,7 @@ export function CarouselStudio({
 
       {/* Slayt Seçici Sekmeler */}
       <div className="flex items-center justify-between border-b border-white/5 pb-2">
-        <div className="flex space-x-2">
+        <div className="flex items-center space-x-2">
           {[
             { idx: 0, label: '01 / Kapak' },
             { idx: 1, label: '02 / Lore I' },
@@ -734,10 +751,10 @@ export function CarouselStudio({
                 key={idx}
                 type="button"
                 onClick={() => setActiveSlide(idx)}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-mono transition-all flex items-center space-x-1.5 ${
+                className={`h-8 px-3.5 rounded-lg text-xs font-mono transition-all flex items-center space-x-2 cursor-pointer ${
                   activeSlide === idx
                     ? 'bg-[#e6c280] text-black font-bold shadow-[0_0_12px_rgba(230,194,128,0.2)]'
-                    : 'bg-white/5 text-neutral-400 hover:text-white border border-white/5'
+                    : 'bg-white/[0.04] text-neutral-400 hover:text-white hover:bg-white/[0.08] border border-white/5'
                 }`}
               >
                 <span>{label}</span>
@@ -755,21 +772,21 @@ export function CarouselStudio({
           })}
         </div>
 
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center space-x-1.5 bg-white/[0.03] p-0.5 rounded-lg border border-white/5">
           <button
             type="button"
             onClick={() => setActiveSlide((prev) => Math.max(0, prev - 1))}
             disabled={activeSlide === 0}
-            className="p-1.5 rounded bg-white/5 text-neutral-300 hover:text-white disabled:opacity-30"
+            className="p-1 rounded text-neutral-400 hover:text-white hover:bg-white/10 disabled:opacity-25 transition-colors cursor-pointer disabled:cursor-not-allowed"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="text-xs font-mono text-neutral-400 px-2">{activeSlide + 1} / 4</span>
+          <span className="text-[11px] font-mono text-neutral-400 px-1 font-semibold">{activeSlide + 1} / 4</span>
           <button
             type="button"
             onClick={() => setActiveSlide((prev) => Math.min(3, prev + 1))}
             disabled={activeSlide === 3}
-            className="p-1.5 rounded bg-white/5 text-neutral-300 hover:text-white disabled:opacity-30"
+            className="p-1 rounded text-neutral-400 hover:text-white hover:bg-white/10 disabled:opacity-25 transition-colors cursor-pointer disabled:cursor-not-allowed"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
