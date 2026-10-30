@@ -14,10 +14,10 @@ import { exportSlideAsVideo } from '../services/videoExport';
 import { InstagramPublishModal } from './InstagramPublishModal';
 
 export const FONT_OPTIONS = [
-  { id: 'serif', name: 'Editoryal Serif', label: 'Playfair', fontClass: 'font-serif', preview: 'Ag' },
+  { id: 'serif', name: 'Editoryal Serif', label: 'Serif', fontClass: 'font-serif', preview: 'Ag' },
   { id: 'cinzel', name: 'Lüks Klasik', label: 'Cinzel', fontClass: 'font-cinzel', preview: 'AG' },
   { id: 'grotesk', name: 'Modern Poster', label: 'Grotesk', fontClass: 'font-grotesk', preview: 'Ag' },
-  { id: 'sans', name: 'Minimalist Sans', label: 'Inter', fontClass: 'font-sans', preview: 'Ag' },
+  { id: 'sans', name: 'Minimalist Sans', label: 'Sans', fontClass: 'font-sans', preview: 'Ag' },
   { id: 'mono', name: 'Arşiv Daktilo', label: 'Mono', fontClass: 'font-mono', preview: 'Ag' },
 ];
 
@@ -1459,14 +1459,9 @@ export function CarouselStudio({
 
           {/* Tipografi & Yazı Tipi Seçici */}
           <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/10 space-y-2.5">
-            <div className="flex items-center justify-between gap-2">
-              <div className="text-xs font-mono uppercase text-[#e6c280] font-semibold flex items-center space-x-1.5 shrink-0">
-                <Type className="w-3.5 h-3.5 text-[#e6c280]" />
-                <span className="whitespace-nowrap">Tipografi & Yazı Tipi</span>
-              </div>
-              <span className="text-[10px] font-mono text-[#e6c280] bg-[#e6c280]/10 border border-[#e6c280]/20 px-2 py-0.5 rounded-md whitespace-nowrap shrink-0">
-                {currentFontObj.name}
-              </span>
+            <div className="flex items-center space-x-1.5 text-xs font-mono uppercase text-[#e6c280] font-semibold">
+              <Type className="w-3.5 h-3.5 text-[#e6c280]" />
+              <span>Tipografi & Yazı Tipi</span>
             </div>
 
             {/* 5 Sabit Kolonlu Segmented Grid */}
@@ -1492,7 +1487,7 @@ export function CarouselStudio({
                     <span className={`text-base leading-none mb-1 font-bold ${f.fontClass}`}>
                       {f.preview}
                     </span>
-                    <span className="text-[10px] font-mono leading-tight tracking-wider truncate max-w-full opacity-80">
+                    <span className="text-[9.5px] font-mono leading-none truncate max-w-full opacity-80">
                       {f.label}
                     </span>
                   </button>
