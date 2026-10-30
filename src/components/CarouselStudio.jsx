@@ -98,6 +98,8 @@ export function CarouselStudio({
   const [isExporting, setIsExporting] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
   const [undoToast, setUndoToast] = useState(null);
+  const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+  const downloadMenuRef = useRef(null);
 
   // Instagram Publishing & Scheduling State
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
@@ -184,7 +186,24 @@ export function CarouselStudio({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleUndo, handleRedo]);
 
-  // Handle Multi-file Upload (Görsel & Video Destekli)
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (downloadMenuRef.current && !downloadMenuRef.current.contains(e.target)) {
+        setShowDownloadMenu(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setShowDownloadMenu(false);
+    };
+    if (showDownloadMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showDownloadMenu]);
   const handleAddFiles = (files) => {
     if (!files || files.length === 0) return;
     const newItems = [];
@@ -619,13 +638,13 @@ export function CarouselStudio({
         </div>
 
         {/* Undo / Redo & Download buttons */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 shrink-0">
           <button
             type="button"
             disabled={historyIndex <= 0}
             onClick={handleUndo}
             title="Geri Al (Ctrl + Z)"
-            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white disabled:opacity-30 border border-white/10 transition-colors"
+            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white disabled:opacity-30 border border-white/10 transition-colors shrink-0"
           >
             <Undo2 className="w-4 h-4" />
           </button>
@@ -635,7 +654,7 @@ export function CarouselStudio({
             disabled={historyIndex >= history.length - 1}
             onClick={handleRedo}
             title="İleri Al (Ctrl + Y)"
-            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white disabled:opacity-30 border border-white/10 transition-colors"
+            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white disabled:opacity-30 border border-white/10 transition-colors shrink-0"
           >
             <Redo2 className="w-4 h-4" />
           </button>
@@ -643,18 +662,18 @@ export function CarouselStudio({
           <button
             type="button"
             onClick={handleRefreshAllQuotesFromLore}
-            className="px-3 py-2 rounded-lg border border-[#e6c280]/40 bg-[#e6c280]/10 hover:bg-[#e6c280]/20 text-[#e6c280] text-xs font-mono transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm"
+            className="px-3 py-2 rounded-lg border border-[#e6c280]/40 bg-[#e6c280]/10 hover:bg-[#e6c280]/20 text-[#e6c280] text-xs font-mono transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm shrink-0"
             title="Yapay zeka hikayesinden 3 satırlık tam anlamlı cümleleri çıkar ve tüm slaytlara uygula"
           >
             <Sparkles className="w-3.5 h-3.5 text-[#e6c280]" />
-            <span>Metinleri Yenile</span>
+            <span className="whitespace-nowrap">Metinleri Yenile</span>
           </button>
 
           {onSaveToArchive && (
             <button
               type="button"
               onClick={handleSaveOrUpdate}
-              className={`px-3 py-2 rounded-lg border text-xs font-mono transition-all flex items-center space-x-1.5 cursor-pointer ${
+              className={`px-3 py-2 rounded-lg border text-xs font-mono transition-all flex items-center space-x-1.5 cursor-pointer shrink-0 ${
                 isSaved
                   ? 'border-emerald-500/40 bg-emerald-950/30 text-emerald-300 hover:bg-emerald-900/40 hover:border-emerald-400'
                   : 'border-white/10 bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white'
@@ -662,56 +681,90 @@ export function CarouselStudio({
               title={isSaved ? "Metin, görsel veya logo değişikliklerini arşive kaydet / güncelle" : "Görsellerle birlikte yerel arşive kaydet"}
             >
               {isSaved ? <BookmarkCheck className="w-3.5 h-3.5 text-emerald-400" /> : <Bookmark className="w-3.5 h-3.5 text-[#e6c280]" />}
-              <span>{isSaved ? 'Arşivi Güncelle' : 'Arşive Kaydet'}</span>
+              <span className="whitespace-nowrap">{isSaved ? 'Arşivi Güncelle' : 'Arşive Kaydet'}</span>
             </button>
           )}
 
-          <button
-            type="button"
-            disabled={isExporting}
-            onClick={handleDownloadActiveSlide}
-            className="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 hover:text-white text-xs font-mono transition-all flex items-center space-x-1"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>{isExporting ? 'Aktarılıyor...' : `Slayt ${activeSlide + 1}'i İndir`}</span>
-          </button>
+          {/* İndir Dropdown Menüsü */}
+          <div className="relative shrink-0" ref={downloadMenuRef}>
+            <button
+              type="button"
+              disabled={isExporting}
+              onClick={() => setShowDownloadMenu((prev) => !prev)}
+              className="px-4 py-2 rounded-lg bg-[#e6c280] hover:bg-[#d4b06e] text-black font-semibold text-xs font-mono uppercase tracking-wider transition-all flex items-center space-x-1.5 shadow-[0_0_15px_rgba(230,194,128,0.2)] cursor-pointer disabled:opacity-40"
+              title="Slaytları PNG olarak indir"
+            >
+              {downloadSuccess ? (
+                <>
+                  <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span className="whitespace-nowrap">İndirildi!</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-3.5 h-3.5" />
+                  <span className="whitespace-nowrap">{isExporting ? 'Aktarılıyor...' : 'İndir'}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showDownloadMenu ? 'rotate-180' : ''}`} />
+                </>
+              )}
+            </button>
 
-          <button
-            type="button"
-            disabled={isExporting}
-            onClick={handleDownloadAllSlides}
-            className="px-4 py-2 rounded-lg bg-[#e6c280] hover:bg-[#d4b06e] text-black font-semibold text-xs font-mono uppercase tracking-wider transition-all flex items-center space-x-2 shadow-[0_0_15px_rgba(230,194,128,0.2)]"
-          >
-            {downloadSuccess ? (
-              <>
-                <Check className="w-3.5 h-3.5" />
-                <span>İndirildi!</span>
-              </>
-            ) : (
-              <>
-                <Download className="w-3.5 h-3.5" />
-                <span>Tüm Slaytları İndir (PNG)</span>
-              </>
+            {/* Dropdown Seçenekleri */}
+            {showDownloadMenu && (
+              <div className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-[#14151a] border border-white/15 shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+                <button
+                  type="button"
+                  disabled={isExporting}
+                  onClick={() => {
+                    setShowDownloadMenu(false);
+                    handleDownloadActiveSlide();
+                  }}
+                  className="w-full text-left px-3 py-2.5 rounded-lg text-xs font-mono text-neutral-200 hover:text-white hover:bg-white/10 transition-colors flex items-center justify-between group cursor-pointer"
+                >
+                  <div className="flex items-center space-x-2">
+                    <Download className="w-3.5 h-3.5 text-neutral-400 group-hover:text-white" />
+                    <span className="whitespace-nowrap">Slayt {activeSlide + 1}'i İndir</span>
+                  </div>
+                  <span className="text-[10px] text-neutral-500 uppercase font-sans">PNG</span>
+                </button>
+
+                <div className="h-px bg-white/10 my-1" />
+
+                <button
+                  type="button"
+                  disabled={isExporting}
+                  onClick={() => {
+                    setShowDownloadMenu(false);
+                    handleDownloadAllSlides();
+                  }}
+                  className="w-full text-left px-3 py-2.5 rounded-lg text-xs font-mono text-[#e6c280] hover:text-black hover:bg-[#e6c280] transition-colors flex items-center justify-between font-semibold group cursor-pointer"
+                >
+                  <div className="flex items-center space-x-2">
+                    <Download className="w-3.5 h-3.5" />
+                    <span className="whitespace-nowrap">Tüm Slaytları İndir</span>
+                  </div>
+                  <span className="text-[10px] uppercase font-sans opacity-80">(4 PNG)</span>
+                </button>
+              </div>
             )}
-          </button>
+          </div>
 
-          {/* Instagram'da Paylaş / Planla */}
+          {/* Paylaş / Planla */}
           <button
             type="button"
             disabled={isPreparingPublish || isExporting}
             onClick={handleOpenInstagramPublish}
-            className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#e6c280] via-[#f59e0b] to-[#ec4899] hover:opacity-95 text-black font-semibold text-xs font-mono uppercase tracking-wider transition-all flex items-center space-x-2 shadow-[0_0_18px_rgba(236,72,153,0.3)] cursor-pointer"
+            className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#e6c280] via-[#f59e0b] to-[#ec4899] hover:opacity-95 text-black font-semibold text-xs font-mono uppercase tracking-wider transition-all flex items-center space-x-2 shadow-[0_0_18px_rgba(236,72,153,0.3)] cursor-pointer shrink-0 disabled:opacity-40"
             title="4 slaytlık carousel gönderisini Instagram'da anında yayınla veya ileri bir tarihe planla"
           >
             {isPreparingPublish ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>Hazırlanıyor...</span>
+                <span className="whitespace-nowrap">Hazırlanıyor...</span>
               </>
             ) : (
               <>
                 <InstagramIcon className="w-3.5 h-3.5 text-black" />
-                <span>Instagram'da Paylaş / Planla</span>
+                <span className="whitespace-nowrap">Paylaş / Planla</span>
               </>
             )}
           </button>
