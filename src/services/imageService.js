@@ -6,6 +6,53 @@
  * 4. Yapay Zeka Editoryal Fotoğraf Üretimi (Flux AI)
  */
 
+export function getStoredGoogleCseKey() {
+  return localStorage.getItem('lore_google_cse_key') || '';
+}
+
+export function setStoredGoogleCseKey(key) {
+  if (key) {
+    localStorage.setItem('lore_google_cse_key', key.trim());
+  } else {
+    localStorage.removeItem('lore_google_cse_key');
+  }
+}
+
+export function getStoredGoogleCseCx() {
+  return localStorage.getItem('lore_google_cse_cx') || '';
+}
+
+export function setStoredGoogleCseCx(cx) {
+  if (cx) {
+    localStorage.setItem('lore_google_cse_cx', cx.trim());
+  } else {
+    localStorage.removeItem('lore_google_cse_cx');
+  }
+}
+
+/**
+ * Google Custom Search Engine (CSE) API - Doğrudan Resmi Google Görseller Arama
+ */
+export async function searchGoogleImages(query, apiKey, cx, count = 4) {
+  if (!apiKey || !cx) return [];
+  try {
+    const endpoint = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(
+      query
+    )}&searchType=image&num=${count}`;
+    const res = await fetch(endpoint);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.items || []).map((item) => ({
+      url: item.link,
+      title: item.title || query,
+      source: 'Google Görseller'
+    }));
+  } catch (err) {
+    console.warn('Google Görseller API hatası:', err);
+    return [];
+  }
+}
+
 export function getStoredPexelsKey() {
   return localStorage.getItem('lore_pexels_api_key') || '';
 }
@@ -191,38 +238,47 @@ export function getAiGeneratedImageUrl(prompt, seed = Math.floor(Math.random() *
 }
 
 /**
- * Gönderi için Akıllı Görsel Getirme Motoru
- * Sırasıyla: Pexels (varsa) -> Unsplash (varsa) -> Wikimedia Arşivi -> AI Fotoğraf
- * Bulunan 4 görseli indirip galeri öğelerine dönüştürür.
+ * Gönderi için Gerçek Fotoğraf Getirme Motoru (%100 Gerçek Arşivler, Sıfır AI Çizimi)
+ * Sırasıyla: Google Görseller (varsa) -> Pexels (varsa) -> Unsplash (varsa) -> Wikimedia Kültür & Tarih Arşivleri
+ * Bulunan ilk 4 gerçek görseli indirip galeri öğelerine dönüştürür.
  */
 export async function autoFetchImagesForPost(post, onProgress) {
   if (!post) throw new Error('Gönderi bulunamadı.');
 
+  const googleKey = getStoredGoogleCseKey();
+  const googleCx = getStoredGoogleCseCx();
   const pexelsKey = getStoredPexelsKey();
   const unsplashKey = getStoredUnsplashKey();
 
   const searchQuery = post.visualNote || `${post.category} ${post.decade} ${post.title}`;
 
-  if (onProgress) onProgress('Fotoğraf ve kültür arşivleri taranıyor...');
+  if (onProgress) onProgress('Gerçek fotoğraf ve kültür arşivleri taranıyor...');
 
   let candidates = [];
 
-  // 1. Pexels Denemesi
-  if (pexelsKey) {
-    if (onProgress) onProgress('Pexels arşivinden portre fotoğraflar aranıyor...');
-    candidates = await searchPexelsImages(searchQuery, pexelsKey, 4);
+  // 1. Google Görseller (CSE) Denemesi (Resmi Google Images Arama)
+  if (googleKey && googleCx) {
+    if (onProgress) onProgress("Google Görseller'den ilk 4 fotoğraf taranıyor...");
+    candidates = await searchGoogleImages(searchQuery, googleKey, googleCx, 4);
   }
 
-  // 2. Unsplash Denemesi
+  // 2. Pexels Gerçek Fotoğraf Denemesi
+  if (candidates.length < 4 && pexelsKey) {
+    if (onProgress) onProgress('Pexels arşivinden portre fotoğraflar aranıyor...');
+    const pexelsResults = await searchPexelsImages(searchQuery, pexelsKey, 4 - candidates.length);
+    candidates = [...candidates, ...pexelsResults];
+  }
+
+  // 3. Unsplash Gerçek Editoryal Fotoğraf Denemesi
   if (candidates.length < 4 && unsplashKey) {
     if (onProgress) onProgress('Unsplash arşivinden editoryal fotoğraflar aranıyor...');
     const unsplashResults = await searchUnsplashImages(searchQuery, unsplashKey, 4 - candidates.length);
     candidates = [...candidates, ...unsplashResults];
   }
 
-  // 3. Wikimedia Commons Kültür & Tarih Arşivi (Ücretsiz & Sıfır Anahtar)
+  // 4. Wikimedia Commons Gerçek Tarih & Kültür Arşivi (Ücretsiz & Sıfır Anahtar)
   if (candidates.length < 4) {
-    if (onProgress) onProgress('Kültür ve tarih arşivleri taranıyor...');
+    if (onProgress) onProgress('Kültür ve tarih arşivlerinden gerçek fotoğraflar taranıyor...');
     const wikimediaResults = await searchArchivalImages(searchQuery, 4 - candidates.length);
     candidates = [...candidates, ...wikimediaResults];
 
@@ -232,25 +288,17 @@ export async function autoFetchImagesForPost(post, onProgress) {
       const moreWiki = await searchArchivalImages(fallbackQuery, 4 - candidates.length);
       candidates = [...candidates, ...moreWiki];
     }
-  }
 
-  // 4. Eğer hala 4 görsel tamamlanmadıysa, eksik kalanları Yapay Zeka Editoryal Fotoğraf ile tamamla
-  const neededAi = 4 - candidates.length;
-  if (neededAi > 0) {
-    if (onProgress) onProgress('Eksik kareler için yapay zeka editoryal fotoğrafları hazırlanıyor...');
-    for (let i = 0; i < neededAi; i++) {
-      const seed = Math.floor(Math.random() * 999999);
-      const aiUrl = getAiGeneratedImageUrl(`${post.title} ${post.category} ${post.decade}`, seed);
-      candidates.push({
-        url: aiUrl,
-        title: `AI Editoryal Kare ${i + 1}`,
-        source: 'AI Flux'
-      });
+    // Başlık anahtar kelimeleriyle ek arama
+    if (candidates.length < 4 && post.title) {
+      const cleanTitleWords = post.title.replace(/[^\w\s]/gi, '').split(/\s+/).slice(0, 3).join(' ');
+      const titleWiki = await searchArchivalImages(cleanTitleWords, 4 - candidates.length);
+      candidates = [...candidates, ...titleWiki];
     }
   }
 
   // Görselleri yerel DataURL'e dönüştür (IndexedDB için hazır hale getir)
-  if (onProgress) onProgress('Görseller indiriliyor ve optimize ediliyor...');
+  if (onProgress) onProgress('Gerçek fotoğraflar indiriliyor ve optimize ediliyor...');
 
   const finalGalleryItems = [];
   for (let i = 0; i < candidates.length && i < 4; i++) {
@@ -263,7 +311,7 @@ export async function autoFetchImagesForPost(post, onProgress) {
         name: item.title || `Slayt ${i + 1} Görseli`,
         type: 'image',
         mimeType: 'image/jpeg',
-        source: item.source
+        source: item.source || 'Arşiv'
       });
     } catch (err) {
       console.warn(`Görsel ${i + 1} dönüştürülemedi:`, err);
@@ -271,7 +319,7 @@ export async function autoFetchImagesForPost(post, onProgress) {
   }
 
   if (finalGalleryItems.length === 0) {
-    throw new Error('Uygun görsel bulunamadı veya indirilemedi. Lütfen URL yapıştırıcıyı kullanın.');
+    throw new Error('Arşivlerde doğrudan eşleşen fotoğraf bulunamadı. Lütfen Pinterest veya web görsel linkini yapıştırarak ekleyin.');
   }
 
   return finalGalleryItems;

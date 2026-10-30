@@ -6,7 +6,11 @@ import {
   getStoredPexelsKey,
   setStoredPexelsKey,
   getStoredUnsplashKey,
-  setStoredUnsplashKey
+  setStoredUnsplashKey,
+  getStoredGoogleCseKey,
+  setStoredGoogleCseKey,
+  getStoredGoogleCseCx,
+  setStoredGoogleCseCx
 } from '../services/imageService';
 
 export function SettingsModal({ isOpen, onClose, apiKey, onSaveApiKey, model, onSaveModel }) {
@@ -19,12 +23,16 @@ export function SettingsModal({ isOpen, onClose, apiKey, onSaveApiKey, model, on
   const [quotaStats, setQuotaStats] = useState(() => getQuotaStats());
   const [pexelsKey, setPexelsKey] = useState(() => getStoredPexelsKey());
   const [unsplashKey, setUnsplashKey] = useState(() => getStoredUnsplashKey());
+  const [googleCseKey, setGoogleCseKey] = useState(() => getStoredGoogleCseKey());
+  const [googleCseCx, setGoogleCseCx] = useState(() => getStoredGoogleCseCx());
 
   useEffect(() => {
     if (isOpen) {
       setQuotaStats(getQuotaStats());
       setPexelsKey(getStoredPexelsKey());
       setUnsplashKey(getStoredUnsplashKey());
+      setGoogleCseKey(getStoredGoogleCseKey());
+      setGoogleCseCx(getStoredGoogleCseCx());
     }
   }, [isOpen]);
 
@@ -39,6 +47,8 @@ export function SettingsModal({ isOpen, onClose, apiKey, onSaveApiKey, model, on
     onSaveModel(tempModel);
     setStoredPexelsKey(pexelsKey);
     setStoredUnsplashKey(unsplashKey);
+    setStoredGoogleCseKey(googleCseKey);
+    setStoredGoogleCseCx(googleCseCx);
     setTestResult({ success: true, message: 'Ayarlar ve API Anahtarları kaydedildi!' });
     setTimeout(() => {
       onClose();
@@ -72,6 +82,8 @@ export function SettingsModal({ isOpen, onClose, apiKey, onSaveApiKey, model, on
       setTempModel(best.id);
       setStoredPexelsKey(pexelsKey);
       setStoredUnsplashKey(unsplashKey);
+      setStoredGoogleCseKey(googleCseKey);
+      setStoredGoogleCseCx(googleCseCx);
 
       setTestResult({
         success: true,
@@ -314,6 +326,37 @@ export function SettingsModal({ isOpen, onClose, apiKey, onSaveApiKey, model, on
                   placeholder="563492ad6f91700001000001..."
                   className="w-full bg-[#0a0a0d] border border-white/10 rounded px-2.5 py-1.5 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-[#e6c280] font-mono"
                 />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400 mb-0.5">
+                  <span>Google Custom Search API Key (Doğrudan Google Görseller):</span>
+                  <a
+                    href="https://developers.google.com/custom-search/v1/overview"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#e6c280] hover:underline flex items-center space-x-0.5"
+                  >
+                    <span>Google Cloud</span>
+                    <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    value={googleCseKey}
+                    onChange={(e) => setGoogleCseKey(e.target.value.trim())}
+                    placeholder="Google API Key..."
+                    className="w-full bg-[#0a0a0d] border border-white/10 rounded px-2.5 py-1.5 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-[#e6c280] font-mono"
+                  />
+                  <input
+                    type="text"
+                    value={googleCseCx}
+                    onChange={(e) => setGoogleCseCx(e.target.value.trim())}
+                    placeholder="Search Engine ID (cx)..."
+                    className="w-full bg-[#0a0a0d] border border-white/10 rounded px-2.5 py-1.5 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-[#e6c280] font-mono"
+                  />
+                </div>
               </div>
 
               <div>
