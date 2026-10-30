@@ -12,7 +12,10 @@ import {
   ShieldCheck,
   Sparkles,
   Layers,
-  Edit3
+  Edit3,
+  Maximize2,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { InstagramIcon } from './Icons';
 import {
@@ -47,6 +50,22 @@ export function InstagramPublishModal({
   const [progressMsg, setProgressMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState(null);
   const [resultData, setResultData] = useState(null);
+  const [zoomedSlideIndex, setZoomedSlideIndex] = useState(null);
+
+  useEffect(() => {
+    if (zoomedSlideIndex === null) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setZoomedSlideIndex(null);
+      } else if (e.key === 'ArrowLeft') {
+        setZoomedSlideIndex((prev) => (prev > 0 ? prev - 1 : slideDataUrls.length - 1));
+      } else if (e.key === 'ArrowRight') {
+        setZoomedSlideIndex((prev) => (prev < slideDataUrls.length - 1 ? prev + 1 : 0));
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [zoomedSlideIndex, slideDataUrls.length]);
 
   useEffect(() => {
     if (isOpen) {
@@ -332,12 +351,27 @@ export function InstagramPublishModal({
 
                 <div className="grid grid-cols-4 gap-2">
                   {slideDataUrls.map((url, idx) => (
-                    <div key={idx} className="relative aspect-[4/5] rounded-lg border border-white/10 overflow-hidden bg-black/60 shadow-md">
-                      <img src={url} alt={`Slayt ${idx + 1}`} className="w-full h-full object-cover" />
-                      <div className="absolute top-1 left-1 bg-black/80 text-[9px] font-mono px-1 rounded text-white font-bold">
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setZoomedSlideIndex(idx)}
+                      className="relative aspect-[4/5] rounded-lg border border-white/10 overflow-hidden bg-black/60 shadow-md group cursor-pointer hover:border-[#e6c280] hover:scale-[1.03] transition-all text-left focus:outline-none focus:ring-1 focus:ring-[#e6c280]"
+                      title={`Slayt ${idx + 1} - Büyütmek için tıklayın`}
+                    >
+                      <img
+                        src={url}
+                        alt={`Slayt ${idx + 1}`}
+                        className="w-full h-full object-cover group-hover:opacity-90 transition-opacity"
+                      />
+                      <div className="absolute top-1 left-1 bg-black/80 text-[9px] font-mono px-1.5 py-0.5 rounded text-white font-bold border border-white/10">
                         {idx + 1}
                       </div>
-                    </div>
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <span className="p-1.5 rounded-full bg-black/80 text-[#e6c280] shadow border border-[#e6c280]/40">
+                          <Maximize2 className="w-3.5 h-3.5" />
+                        </span>
+                      </div>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -423,6 +457,109 @@ export function InstagramPublishModal({
         </div>
 
       </div>
+
+      {/* Full-Screen Zoom Lightbox Overlay */}
+      {zoomedSlideIndex !== null && slideDataUrls[zoomedSlideIndex] && (
+        <div
+          className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-md flex flex-col items-center justify-between p-4 sm:p-6 animate-fadeIn"
+          onClick={() => setZoomedSlideIndex(null)}
+        >
+          {/* Top Bar */}
+          <div
+            className="w-full max-w-4xl flex items-center justify-between text-neutral-300 font-mono text-xs z-10 py-1"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center space-x-2">
+              <span className="text-white font-bold bg-white/10 px-2.5 py-1 rounded-md border border-white/15">
+                Slayt {zoomedSlideIndex + 1} / {slideDataUrls.length}
+              </span>
+              <span className="text-[#e6c280] hidden sm:inline text-[11px]">
+                1080x1350 Portre · En Üst Çözünürlük
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setZoomedSlideIndex(null)}
+              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white transition-all cursor-pointer flex items-center space-x-1"
+            >
+              <X className="w-5 h-5" />
+              <span className="text-[11px] pr-1 hidden sm:inline">Kapat (Esc)</span>
+            </button>
+          </div>
+
+          {/* Main Enlarged Image */}
+          <div
+            className="relative flex-1 flex items-center justify-center max-w-full my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Prev Button */}
+            {slideDataUrls.length > 1 && (
+              <button
+                type="button"
+                onClick={() =>
+                  setZoomedSlideIndex((prev) =>
+                    prev > 0 ? prev - 1 : slideDataUrls.length - 1
+                  )
+                }
+                className="absolute left-2 sm:-left-16 p-2 sm:p-3 rounded-full bg-black/75 hover:bg-[#e6c280] text-white hover:text-black border border-white/20 hover:border-[#e6c280] transition-all cursor-pointer shadow-xl z-10"
+                title="Önceki Slayt (Sol Ok)"
+              >
+                <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+              </button>
+            )}
+
+            <img
+              src={slideDataUrls[zoomedSlideIndex]}
+              alt={`Slayt ${zoomedSlideIndex + 1}`}
+              className="max-h-[80vh] max-w-[85vw] w-auto aspect-[4/5] object-contain rounded-xl border border-white/20 shadow-[0_0_35px_rgba(0,0,0,0.95)]"
+            />
+
+            {/* Next Button */}
+            {slideDataUrls.length > 1 && (
+              <button
+                type="button"
+                onClick={() =>
+                  setZoomedSlideIndex((prev) =>
+                    prev < slideDataUrls.length - 1 ? prev + 1 : 0
+                  )
+                }
+                className="absolute right-2 sm:-right-16 p-2 sm:p-3 rounded-full bg-black/75 hover:bg-[#e6c280] text-white hover:text-black border border-white/20 hover:border-[#e6c280] transition-all cursor-pointer shadow-xl z-10"
+                title="Sonraki Slayt (Sağ Ok)"
+              >
+                <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+              </button>
+            )}
+          </div>
+
+          {/* Bottom Thumbnail Strip */}
+          <div
+            className="flex items-center space-x-2 pt-2 z-10 overflow-x-auto max-w-full py-1"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {slideDataUrls.map((thumbUrl, tIdx) => (
+              <button
+                key={tIdx}
+                type="button"
+                onClick={() => setZoomedSlideIndex(tIdx)}
+                className={`relative w-10 sm:w-11 h-12 sm:h-14 rounded-md overflow-hidden border transition-all cursor-pointer ${
+                  tIdx === zoomedSlideIndex
+                    ? 'border-[#e6c280] ring-2 ring-[#e6c280]/60 scale-105'
+                    : 'border-white/20 opacity-50 hover:opacity-100 hover:border-white/50'
+                }`}
+              >
+                <img
+                  src={thumbUrl}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute bottom-0 inset-x-0 bg-black/80 text-[8px] font-mono text-center text-white font-bold">
+                  {tIdx + 1}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>,
     document.body
   );

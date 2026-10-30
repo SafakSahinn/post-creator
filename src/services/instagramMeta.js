@@ -126,10 +126,12 @@ export async function ensureJpegDataUrl(dataUrl) {
       canvas.width = 1080;
       canvas.height = 1350;
       const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
       ctx.fillStyle = '#0c0d10';
       ctx.fillRect(0, 0, 1080, 1350);
       ctx.drawImage(img, 0, 0, 1080, 1350);
-      resolve(canvas.toDataURL('image/jpeg', 0.88));
+      resolve(canvas.toDataURL('image/jpeg', 0.94));
     };
     img.onerror = () => resolve(dataUrl);
     img.src = dataUrl;
