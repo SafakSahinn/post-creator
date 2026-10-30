@@ -4,13 +4,22 @@ import {
   Upload, Trash2, Undo2, Redo2, Sliders, Eye, Sparkles, Layers,
   Sun, ZoomIn, Contrast, MoveVertical, Move, RotateCcw, ShieldOff, ShieldAlert,
   Bookmark, BookmarkCheck, Video, Play, Edit3, Link as LinkIcon, Globe, Loader2,
-  Film, ExternalLink
+  Film, ExternalLink, Plus, Type
 } from 'lucide-react';
 import { InstagramIcon } from './Icons';
 import { toPng } from 'html-to-image';
 import { getPunchyExcerpt } from '../services/gemini';
 import { convertUrlToDataUrl } from '../services/imageService';
+import { exportSlideAsVideo } from '../services/videoExport';
 import { InstagramPublishModal } from './InstagramPublishModal';
+
+export const FONT_OPTIONS = [
+  { id: 'serif', name: 'Editoryal Serif', label: 'Playfair', fontClass: 'font-serif', preview: 'Aa' },
+  { id: 'cinzel', name: 'Lüks Klasik', label: 'Cinzel', fontClass: 'font-cinzel', preview: '🏛️' },
+  { id: 'grotesk', name: 'Modern Poster', label: 'Grotesk', fontClass: 'font-grotesk', preview: '⚡' },
+  { id: 'sans', name: 'Minimalist Sans', label: 'Inter', fontClass: 'font-sans', preview: '✦' },
+  { id: 'mono', name: 'Arşiv Daktilo', label: 'Mono', fontClass: 'font-mono', preview: '⌨️' },
+];
 
 const FILTERS = [
   { id: 'none', name: 'Orijinal', filterStyle: '' },
@@ -95,12 +104,29 @@ export function CarouselStudio({
   isSaved,
   onOpenMetaConnect
 }) {
-  const [activeSlide, setActiveSlide] = useState(0); // 0, 1, 2, 3
+  const [activeSlide, setActiveSlide] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
   const [undoToast, setUndoToast] = useState(null);
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const downloadMenuRef = useRef(null);
+  const [isRenderingVideo, setIsRenderingVideo] = useState(false);
+
+  // Dynamic Slide Count (2 ila 10 slayt arası)
+  const [slideCount, setSlideCount] = useState(() => {
+    if (slideSettings && typeof slideSettings === 'object') {
+      const keys = Object.keys(slideSettings).map(Number).filter((n) => !isNaN(n));
+      if (keys.length > 0) return Math.max(4, Math.max(...keys) + 1);
+    }
+    return 4;
+  });
+
+  // Typography & Font Selector
+  const [selectedFont, setSelectedFont] = useState(() => {
+    return post?.fontFamily || project?.fontFamily || 'serif';
+  });
+  const currentFontObj = FONT_OPTIONS.find((f) => f.id === selectedFont) || FONT_OPTIONS[0];
+  const activeFontClass = currentFontObj.fontClass;
 
   // Instagram Publishing & Scheduling State
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
@@ -119,15 +145,10 @@ export function CarouselStudio({
   const [historyIndex, setHistoryIndex] = useState(-1);
 
   const fileInputRef = useRef(null);
-
-  const slideRef0 = useRef(null);
-  const slideRef1 = useRef(null);
-  const slideRef2 = useRef(null);
-  const slideRef3 = useRef(null);
-  const slideRefs = [slideRef0, slideRef1, slideRef2, slideRef3];
+  const slideRefsMap = useRef({});
 
   // Current Slide Settings
-  const currentSettings = slideSettings?.[activeSlide] || INITIAL_SLIDE_SETTINGS[activeSlide];
+  const currentSettings = slideSettings?.[activeSlide] || INITIAL_SLIDE_SETTINGS[0];
 
   // Push state to history
   const pushStateToHistory = useCallback((newSettings, newGallery) => {
@@ -426,9 +447,9 @@ export function CarouselStudio({
     pushStateToHistory(updatedSettings, updatedGallery);
   };
 
-  // Export Active Slide
+  // Export Active Slide (PNG)
   const handleDownloadActiveSlide = async () => {
-    const currentRef = slideRefs[activeSlide]?.current;
+    const currentRef = slideRefsMap.current[activeSlide];
     if (!currentRef) return;
     try {
       setIsExporting(true);
@@ -447,14 +468,52 @@ export function CarouselStudio({
     }
   };
 
-  // Export All 4 Slides
+  // Export Active Slide as Video (MP4 / WebM Reel)
+  const handleDownloadActiveSlideAsVideo = async () => {
+    const currentRef = slideRefsMap.current[activeSlide];
+    if (!currentRef) return;
+    try {
+      setIsExporting(true);
+      setIsRenderingVideo(true);
+      setUndoToast('Video hazırlanıyor (%10)...');
+
+      const prefix = post?.projectShortCode || 'POST';
+      const filename = `${prefix}_${post?.category || 'Post'}_Slayt_${activeSlide + 1}.mp4`;
+
+      await exportSlideAsVideo({
+        slideElement: currentRef,
+        durationSeconds: 6,
+        filename,
+        onProgress: (percent, msg) => {
+          setUndoToast(msg);
+        }
+      });
+
+      setUndoToast('Video başarıyla indirildi!');
+      setTimeout(() => setUndoToast(null), 3000);
+    } catch (err) {
+      console.error('Video dışa aktarma hatası:', err);
+      setUndoToast('Video oluşturulamadı: ' + (err.message || 'Hata'));
+      setTimeout(() => setUndoToast(null), 3000);
+    } finally {
+      setIsExporting(false);
+      setIsRenderingVideo(false);
+    }
+  };
+
+  // Export All Slides (PNG)
   const handleDownloadAllSlides = async () => {
     try {
       setIsExporting(true);
-      for (let i = 0; i < slideRefs.length; i++) {
-        const ref = slideRefs[i]?.current;
+      for (let i = 0; i < slideCount; i++) {
+        const ref = slideRefsMap.current[i];
         if (ref) {
+          const prevDisplay = ref.style.display;
+          ref.style.display = 'flex';
           const dataUrl = await toPng(ref, { quality: 0.98, pixelRatio: 2.5 });
+          if (activeSlide !== i) {
+            ref.style.display = prevDisplay;
+          }
           const link = document.createElement('a');
           const prefix = post?.projectShortCode || 'POST';
           link.download = `${prefix}_${post?.category || 'Post'}_${post?.decade || ''}_Slayt_${i + 1}.png`;
@@ -475,8 +534,8 @@ export function CarouselStudio({
   // Slaytların temiz PNG DataURL dizisini üretir (Meta / Instagram Paylaşımı İçin)
   const getRenderedSlideDataUrls = async () => {
     const urls = [];
-    for (let i = 0; i < slideRefs.length; i++) {
-      const ref = slideRefs[i]?.current;
+    for (let i = 0; i < slideCount; i++) {
+      const ref = slideRefsMap.current[i];
       if (ref) {
         const prevDisplay = ref.style.display;
         ref.style.display = 'flex';
@@ -540,16 +599,27 @@ export function CarouselStudio({
     return raw;
   };
 
-  const p1 = Array.isArray(post.lore) ? post.lore[0] : (typeof post.lore === 'string' ? post.lore.split(/\n\s*\n/)[0] : '');
-  const p2 = Array.isArray(post.lore) ? (post.lore[1] || post.lore[0]) : (typeof post.lore === 'string' ? (post.lore.split(/\n\s*\n/)[1] || post.lore.split(/\n\s*\n/)[0]) : '');
-  const p3 = Array.isArray(post.lore) ? (post.lore[2] || post.lore[0]) : (typeof post.lore === 'string' ? (post.lore.split(/\n\s*\n/)[2] || post.lore.split(/\n\s*\n/)[0]) : '');
+  const loreParagraphs = Array.isArray(post.lore) 
+    ? post.lore 
+    : typeof post.lore === 'string' 
+    ? post.lore.split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean)
+    : [];
 
-  // Slide quotes (all 3 slides: 2, 3 and 4) - 2 ila 3 satırı aşmayan net ve vurucu tek cümle
-  const slide1Quote = slideSettings?.[1]?.customQuote ?? (post.slideQuotes?.[0] ? formatQuote(post.slideQuotes[0]) : getPunchyExcerpt(p1, 1));
-  const slide2Quote = slideSettings?.[2]?.customQuote ?? (post.slideQuotes?.[1] ? formatQuote(post.slideQuotes[1]) : getPunchyExcerpt(p2, 1));
-  const slide3Quote = slideSettings?.[3]?.customQuote ?? (post.slideQuotes?.[2] ? formatQuote(post.slideQuotes[2]) : getPunchyExcerpt(p3, 1));
+  const getQuoteForSlide = (slideIdx) => {
+    if (slideIdx <= 0) return '';
+    if (slideSettings?.[slideIdx]?.customQuote !== null && slideSettings?.[slideIdx]?.customQuote !== undefined) {
+      return slideSettings[slideIdx].customQuote;
+    }
+    const loreIdx = slideIdx - 1;
+    if (post.slideQuotes && post.slideQuotes[loreIdx]) {
+      return formatQuote(post.slideQuotes[loreIdx]);
+    }
+    const targetPara = loreParagraphs[loreIdx] || loreParagraphs[loreIdx % Math.max(1, loreParagraphs.length)] || '';
+    return getPunchyExcerpt(targetPara, 1);
+  };
 
   const handleSaveOrUpdate = () => {
+    const allQuotes = Array.from({ length: Math.max(1, slideCount - 1) }).map((_, i) => getQuoteForSlide(i + 1));
     const updatedPost = {
       ...post,
       projectId: project?.id || post.projectId || 'lore-magazine',
@@ -557,7 +627,9 @@ export function CarouselStudio({
       projectShortCode: project?.shortCode || post.projectShortCode || 'LORE',
       watermark: slideLogo,
       accentColor: slideAccentColor,
-      slideQuotes: [slide1Quote, slide2Quote, slide3Quote],
+      fontFamily: selectedFont,
+      slideCount,
+      slideQuotes: allQuotes,
       savedGallery: gallery,
       savedSlideSettings: slideSettings
     };
@@ -569,43 +641,81 @@ export function CarouselStudio({
   };
 
   const handleRefreshAllQuotesFromLore = () => {
-    const q1 = getPunchyExcerpt(p1, 1);
-    const q2 = getPunchyExcerpt(p2, 1);
-    const q3 = getPunchyExcerpt(p3, 1);
-
-    const updatedSettings = {
-      ...slideSettings,
-      1: { ...(slideSettings[1] || {}), customQuote: q1 },
-      2: { ...(slideSettings[2] || {}), customQuote: q2 },
-      3: { ...(slideSettings[3] || {}), customQuote: q3 }
-    };
+    const updatedSettings = { ...slideSettings };
+    for (let i = 1; i < slideCount; i++) {
+      const loreIdx = i - 1;
+      const targetPara = loreParagraphs[loreIdx] || loreParagraphs[loreIdx % Math.max(1, loreParagraphs.length)] || '';
+      const q = getPunchyExcerpt(targetPara, 1);
+      updatedSettings[i] = {
+        ...(updatedSettings[i] || INITIAL_SLIDE_SETTINGS[0]),
+        customQuote: q
+      };
+    }
     onUpdateSlideSettings(updatedSettings);
     pushStateToHistory(updatedSettings, gallery);
-
-    const updatedPost = {
-      ...post,
-      projectId: project?.id || post.projectId || 'lore-magazine',
-      projectName: project?.name || post.projectName || 'Lore Magazine',
-      projectShortCode: project?.shortCode || post.projectShortCode || 'LORE',
-      watermark: slideLogo,
-      accentColor: slideAccentColor,
-      slideQuotes: [q1, q2, q3],
-      savedGallery: gallery,
-      savedSlideSettings: updatedSettings
-    };
-    if (onSaveToArchive) {
-      onSaveToArchive(updatedPost);
-    }
-    setUndoToast('Slayt metinleri 3 satırlık tam cümlelere yenilendi ve kaydedildi!');
+    setUndoToast('Tüm slayt metinleri hikayeden yenilendi!');
     setTimeout(() => setUndoToast(null), 2500);
   };
 
   const handleRefreshSingleQuote = (slideIdx) => {
     if (slideIdx <= 0) return;
-    const targetPara = slideIdx === 1 ? p1 : slideIdx === 2 ? p2 : p3;
+    const loreIdx = slideIdx - 1;
+    const targetPara = loreParagraphs[loreIdx] || loreParagraphs[loreIdx % Math.max(1, loreParagraphs.length)] || '';
     const freshQuote = getPunchyExcerpt(targetPara, 1);
     handleUpdateSlideProperty('customQuote', freshQuote);
     setUndoToast(`Slayt ${slideIdx + 1} metni yenilendi!`);
+    setTimeout(() => setUndoToast(null), 2000);
+  };
+
+  const handleAddSlide = () => {
+    if (slideCount >= 10) {
+      setUndoToast('Instagram carouselleri maksimum 10 slayt olabilir.');
+      setTimeout(() => setUndoToast(null), 2000);
+      return;
+    }
+    const newIdx = slideCount;
+    const updatedSettings = {
+      ...slideSettings,
+      [newIdx]: {
+        imageId: null,
+        filter: 'none',
+        vignette: 75,
+        zoom: 105,
+        brightness: 100,
+        showText: true,
+        textOffsetY: 0,
+        offsetX: 0,
+        offsetY: 0,
+        customQuote: null
+      }
+    };
+    onUpdateSlideSettings(updatedSettings);
+    pushStateToHistory(updatedSettings, gallery);
+    setSlideCount(slideCount + 1);
+    setActiveSlide(newIdx);
+    setUndoToast(`Slayt ${newIdx + 1} eklendi! Toplam: ${slideCount + 1} slayt`);
+    setTimeout(() => setUndoToast(null), 2000);
+  };
+
+  const handleRemoveSlide = (idxToRemove) => {
+    if (slideCount <= 2) {
+      setUndoToast('Minimum 2 slayt bulunmalıdır.');
+      setTimeout(() => setUndoToast(null), 2000);
+      return;
+    }
+    const updatedSettings = {};
+    let newIdx = 0;
+    for (let i = 0; i < slideCount; i++) {
+      if (i !== idxToRemove) {
+        updatedSettings[newIdx] = slideSettings?.[i] || INITIAL_SLIDE_SETTINGS[0];
+        newIdx++;
+      }
+    }
+    onUpdateSlideSettings(updatedSettings);
+    pushStateToHistory(updatedSettings, gallery);
+    setSlideCount(slideCount - 1);
+    setActiveSlide((prev) => Math.min(prev, slideCount - 2));
+    setUndoToast(`Slayt ${idxToRemove + 1} kaldırıldı.`);
     setTimeout(() => setUndoToast(null), 2000);
   };
 
@@ -694,12 +804,17 @@ export function CarouselStudio({
               disabled={isExporting}
               onClick={() => setShowDownloadMenu((prev) => !prev)}
               className="px-4 py-2 rounded-lg bg-[#e6c280] hover:bg-[#d4b06e] text-black font-semibold text-xs font-mono uppercase tracking-wider transition-all flex items-center space-x-1.5 shadow-[0_0_15px_rgba(230,194,128,0.2)] cursor-pointer disabled:opacity-40"
-              title="Slaytları PNG olarak indir"
+              title="Slaytları PNG veya MP4 video olarak indir"
             >
               {downloadSuccess ? (
                 <>
                   <Check className="w-3.5 h-3.5 stroke-[2.5]" />
                   <span className="whitespace-nowrap">İndirildi!</span>
+                </>
+              ) : isRenderingVideo ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-black" />
+                  <span className="whitespace-nowrap">Video Hazırlanıyor...</span>
                 </>
               ) : (
                 <>
@@ -712,7 +827,7 @@ export function CarouselStudio({
 
             {/* Dropdown Seçenekleri */}
             {showDownloadMenu && (
-              <div className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-[#14151a] border border-white/15 shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+              <div className="absolute right-0 top-full mt-2 w-64 rounded-xl bg-[#14151a] border border-white/15 shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
                 <button
                   type="button"
                   disabled={isExporting}
@@ -744,7 +859,27 @@ export function CarouselStudio({
                     <Download className="w-3.5 h-3.5" />
                     <span className="whitespace-nowrap">Tüm Slaytları İndir</span>
                   </div>
-                  <span className="text-[10px] uppercase font-sans opacity-80">(4 PNG)</span>
+                  <span className="text-[10px] uppercase font-sans opacity-80">({slideCount} PNG)</span>
+                </button>
+
+                <div className="h-px bg-white/10 my-1" />
+
+                {/* Video Olarak İndir (Reel / MP4) */}
+                <button
+                  type="button"
+                  disabled={isExporting}
+                  onClick={() => {
+                    setShowDownloadMenu(false);
+                    handleDownloadActiveSlideAsVideo();
+                  }}
+                  className="w-full text-left px-3 py-2.5 rounded-lg text-xs font-mono text-sky-300 hover:text-white hover:bg-sky-950/40 border border-transparent hover:border-sky-500/30 transition-colors flex items-center justify-between group cursor-pointer"
+                  title="Slaytı 1080x1350 video (Reel / MP4) olarak dışa aktar"
+                >
+                  <div className="flex items-center space-x-2">
+                    <Film className="w-3.5 h-3.5 text-sky-400" />
+                    <span className="whitespace-nowrap">Slaytı Video İndir</span>
+                  </div>
+                  <span className="text-[10px] uppercase font-sans text-sky-400 font-bold bg-sky-950/60 px-1.5 py-0.5 rounded border border-sky-500/30">MP4 REEL</span>
                 </button>
               </div>
             )}
@@ -774,25 +909,23 @@ export function CarouselStudio({
       </div>
 
       {/* Slayt Seçici Sekmeler */}
-      <div className="flex items-center justify-between border-b border-white/5 pb-2">
-        <div className="flex space-x-2">
-          {[
-            { idx: 0, label: '01 / Kapak' },
-            { idx: 1, label: '02 / Lore I' },
-            { idx: 2, label: '03 / Lore II' },
-            { idx: 3, label: '04 / Sonuç' },
-          ].map(({ idx, label }) => {
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-2">
+        <div className="flex flex-wrap items-center gap-1.5">
+          {Array.from({ length: slideCount }).map((_, idx) => {
             const media = getImageForSlide(idx);
             const isVid = media && (media.type === 'video' || media.dataUrl?.startsWith('data:video'));
+            const isCover = idx === 0;
+            const isClosing = idx === slideCount - 1;
+            const label = isCover ? '01 / Kapak' : isClosing ? `${(idx + 1).toString().padStart(2, '0')} / Kapanış` : `${(idx + 1).toString().padStart(2, '0')} / Lore ${idx}`;
             return (
               <button
                 key={idx}
                 type="button"
                 onClick={() => setActiveSlide(idx)}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-mono transition-all flex items-center space-x-1.5 ${
+                className={`h-8 px-3 rounded-lg text-xs font-mono transition-all flex items-center space-x-1.5 cursor-pointer ${
                   activeSlide === idx
                     ? 'bg-[#e6c280] text-black font-bold shadow-[0_0_12px_rgba(230,194,128,0.2)]'
-                    : 'bg-white/5 text-neutral-400 hover:text-white border border-white/5'
+                    : 'bg-white/[0.04] text-neutral-400 hover:text-white hover:bg-white/[0.08] border border-white/5'
                 }`}
               >
                 <span>{label}</span>
@@ -808,26 +941,52 @@ export function CarouselStudio({
               </button>
             );
           })}
+
+          {slideCount < 10 && (
+            <button
+              type="button"
+              onClick={handleAddSlide}
+              className="h-8 px-2.5 rounded-lg text-xs font-mono border border-dashed border-white/20 text-neutral-400 hover:text-[#e6c280] hover:border-[#e6c280]/50 hover:bg-[#e6c280]/10 transition-all flex items-center space-x-1 cursor-pointer"
+              title="Yeni slayt ekle (Maksimum 10 slayt)"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Slayt Ekle</span>
+            </button>
+          )}
         </div>
 
-        <div className="flex items-center space-x-1">
-          <button
-            type="button"
-            onClick={() => setActiveSlide((prev) => Math.max(0, prev - 1))}
-            disabled={activeSlide === 0}
-            className="p-1.5 rounded bg-white/5 text-neutral-300 hover:text-white disabled:opacity-30"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <span className="text-xs font-mono text-neutral-400 px-2">{activeSlide + 1} / 4</span>
-          <button
-            type="button"
-            onClick={() => setActiveSlide((prev) => Math.min(3, prev + 1))}
-            disabled={activeSlide === 3}
-            className="p-1.5 rounded bg-white/5 text-neutral-300 hover:text-white disabled:opacity-30"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
+        <div className="flex items-center space-x-2">
+          {slideCount > 2 && activeSlide > 0 && (
+            <button
+              type="button"
+              onClick={() => handleRemoveSlide(activeSlide)}
+              className="h-8 px-2.5 rounded-lg text-[11px] font-mono text-red-400 hover:text-red-300 hover:bg-red-950/30 border border-red-500/20 hover:border-red-500/40 transition-colors flex items-center space-x-1 cursor-pointer"
+              title={`Slayt ${activeSlide + 1}'i kaldır`}
+            >
+              <Trash2 className="w-3 h-3" />
+              <span>Slaytı Sil</span>
+            </button>
+          )}
+
+          <div className="flex items-center space-x-1 bg-white/[0.03] p-0.5 rounded-lg border border-white/5">
+            <button
+              type="button"
+              onClick={() => setActiveSlide((prev) => Math.max(0, prev - 1))}
+              disabled={activeSlide === 0}
+              className="p-1 rounded text-neutral-400 hover:text-white hover:bg-white/10 disabled:opacity-25 transition-colors cursor-pointer disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-[11px] font-mono text-neutral-400 px-1 font-semibold">{activeSlide + 1} / {slideCount}</span>
+            <button
+              type="button"
+              onClick={() => setActiveSlide((prev) => Math.min(slideCount - 1, prev + 1))}
+              disabled={activeSlide === slideCount - 1}
+              className="p-1 rounded text-neutral-400 hover:text-white hover:bg-white/10 disabled:opacity-25 transition-colors cursor-pointer disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -843,266 +1002,147 @@ export function CarouselStudio({
               currentSettings.imageId ? (isDraggingMedia ? 'cursor-grabbing' : 'cursor-grab') : ''
             }`}
           >
-            
-            {/* SLIDE 0: COVER */}
-            <div
-              ref={slideRef0}
-              style={{
-                width: '380px',
-                height: '475px',
-                display: activeSlide === 0 ? 'flex' : 'none'
-              }}
-              className="bg-[#0b0c10] text-white p-7 flex flex-col justify-between relative overflow-hidden font-sans"
-            >
-              {/* Background Archival Photo or Video */}
-              <SlideBackground media={getImageForSlide(0)} settings={slideSettings?.[0]} />
+            {Array.from({ length: slideCount }).map((_, idx) => {
+              const isCover = idx === 0;
+              const isClosing = idx === slideCount - 1;
+              const settings = slideSettings?.[idx] || INITIAL_SLIDE_SETTINGS[0];
+              const quote = getQuoteForSlide(idx);
+              const slideMedia = getImageForSlide(idx);
 
-              {/* Top Header */}
-              <div className="flex items-center justify-between border-b border-white/15 pb-3 relative z-10">
-                <span
-                  className="font-serif tracking-[0.25em] text-xs font-bold uppercase drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]"
-                  style={{ color: slideAccentColor }}
-                >
-                  {slideLogo}
-                </span>
-                <span className="font-mono text-[10px] tracking-wider text-neutral-300 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
-                  01 / 04
-                </span>
-              </div>
-
-              {/* Main Text Content: Sits directly at the bottom with pb-3 */}
-              {(slideSettings?.[0]?.showText ?? true) && (
-                <div 
+              return (
+                <div
+                  key={idx}
+                  ref={(el) => (slideRefsMap.current[idx] = el)}
                   style={{
-                    transform: `translateY(${slideSettings?.[0]?.textOffsetY || 0}px)`
+                    width: '380px',
+                    height: '475px',
+                    display: activeSlide === idx ? 'flex' : 'none'
                   }}
-                  className="space-y-3 mt-auto pb-3 relative z-10 transition-transform duration-75"
+                  className="bg-[#0b0c10] text-white p-7 flex flex-col justify-between relative overflow-hidden font-sans"
                 >
-                  <div
-                    className="text-[9px] font-mono tracking-[0.2em] uppercase font-semibold drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]"
-                    style={{ color: slideAccentColor }}
-                  >
-                    {slideTagline}
-                  </div>
-                  <h2 className="font-serif text-2xl font-black leading-tight tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]">
-                    {post.title}
-                  </h2>
-                  <div className="w-10 h-[1.5px]" style={{ backgroundColor: slideAccentColor }} />
-                  <p className="font-serif italic text-xs text-neutral-200 leading-relaxed drop-shadow-[0_1px_5px_rgba(0,0,0,0.9)]">
-                    "{post.hook}"
-                  </p>
-                </div>
-              )}
+                  {/* Background Archival Photo or Video */}
+                  <SlideBackground media={slideMedia} settings={settings} />
 
-              {/* Bottom Footer: pt-3 to mirror the pb-3 above the line */}
-              <div className="flex items-center justify-between pt-3 border-t border-white/15 text-[9px] font-mono text-neutral-400 relative z-10">
-                <span>EDİTORYAL ARŞİV</span>
-                <span>KAYDIR &rarr;</span>
-              </div>
-            </div>
-
-            {/* SLIDE 1: LORE PART 1 (2. Sayfa) */}
-            <div
-              ref={slideRef1}
-              style={{
-                width: '380px',
-                height: '475px',
-                display: activeSlide === 1 ? 'flex' : 'none'
-              }}
-              className="bg-[#0b0c10] text-white p-7 flex flex-col justify-between relative overflow-hidden font-sans"
-            >
-              {/* Background Archival Photo or Video */}
-              <SlideBackground media={getImageForSlide(1)} settings={slideSettings?.[1]} />
-
-              {/* Top Header */}
-              <div className="flex items-center justify-between border-b border-white/15 pb-3 relative z-10">
-                <span
-                  className="font-serif tracking-[0.25em] text-xs font-bold uppercase drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]"
-                  style={{ color: slideAccentColor }}
-                >
-                  {slideLogo}
-                </span>
-                <span className="font-mono text-[10px] tracking-wider text-neutral-300 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
-                  02 / 04
-                </span>
-              </div>
-
-              {/* Main Text Content: Sits directly at bottom with pb-3 */}
-              {(slideSettings?.[1]?.showText ?? true) && (
-                <div 
-                  style={{
-                    transform: `translateY(${slideSettings?.[1]?.textOffsetY || 0}px)`
-                  }}
-                  className="space-y-3 mt-auto pb-3 relative z-10 transition-transform duration-75"
-                >
-                  <div className="flex items-center space-x-2">
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: slideAccentColor }} />
+                  {/* Top Header */}
+                  <div className="flex items-center justify-between border-b border-white/15 pb-3 relative z-10">
                     <span
-                      className="text-[9px] font-mono tracking-widest uppercase font-semibold"
+                      className={`${activeFontClass} tracking-[0.25em] text-xs font-bold uppercase drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]`}
                       style={{ color: slideAccentColor }}
                     >
-                      01 / İkonikleşme & Giriş
+                      {slideLogo}
+                    </span>
+                    <span className="font-mono text-[10px] tracking-wider text-neutral-300 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+                      {(idx + 1).toString().padStart(2, '0')} / {slideCount.toString().padStart(2, '0')}
                     </span>
                   </div>
 
-                  <p className="font-serif italic text-[14px] sm:text-[15px] text-white leading-relaxed min-h-[4.2rem] drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
-                    "{slide1Quote}"
-                  </p>
-
-                  <div className="flex items-center space-x-1.5 text-[9px] font-mono text-neutral-300">
-                    <span style={{ color: slideAccentColor }}>&bull;</span>
-                    <span>Popüler kültürün gizli şifreleri</span>
-                    <span style={{ color: slideAccentColor }}>&rarr;</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Bottom Footer: pt-3 to mirror the pb-3 above the line */}
-              <div className="flex items-center justify-between pt-3 border-t border-white/15 text-[9px] font-mono text-neutral-400 relative z-10">
-                <span className="truncate max-w-[200px]">{post.title}</span>
-                <span>KAYDIR &rarr;</span>
-              </div>
-            </div>
-
-            {/* SLIDE 2: LORE PART 2 (3. Sayfa) */}
-            <div
-              ref={slideRef2}
-              style={{
-                width: '380px',
-                height: '475px',
-                display: activeSlide === 2 ? 'flex' : 'none'
-              }}
-              className="bg-[#0b0c10] text-white p-7 flex flex-col justify-between relative overflow-hidden font-sans"
-            >
-              {/* Background Archival Photo or Video */}
-              <SlideBackground media={getImageForSlide(2)} settings={slideSettings?.[2]} />
-
-              {/* Top Header */}
-              <div className="flex items-center justify-between border-b border-white/15 pb-3 relative z-10">
-                <span
-                  className="font-serif tracking-[0.25em] text-xs font-bold uppercase drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]"
-                  style={{ color: slideAccentColor }}
-                >
-                  {slideLogo}
-                </span>
-                <span className="font-mono text-[10px] tracking-wider text-neutral-300 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
-                  03 / 04
-                </span>
-              </div>
-
-              {/* Main Text Content: Sits directly at bottom with pb-3 */}
-              {(slideSettings?.[2]?.showText ?? true) && (
-                <div 
-                  style={{
-                    transform: `translateY(${slideSettings?.[2]?.textOffsetY || 0}px)`
-                  }}
-                  className="space-y-3 mt-auto pb-3 relative z-10 transition-transform duration-75"
-                >
-                  <div className="flex items-center space-x-2">
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: slideAccentColor }} />
-                    <span
-                      className="text-[9px] font-mono tracking-widest uppercase font-semibold"
-                      style={{ color: slideAccentColor }}
+                  {/* Main Text Content */}
+                  {(settings.showText ?? true) && (
+                    <div
+                      style={{
+                        transform: `translateY(${settings.textOffsetY || 0}px)`
+                      }}
+                      className="space-y-3 mt-auto pb-3 relative z-10 transition-transform duration-75"
                     >
-                      02 / Statü Şifresi & Perde Arkası
-                    </span>
-                  </div>
+                      {isCover ? (
+                        <>
+                          <div
+                            className="text-[9px] font-mono tracking-[0.2em] uppercase font-semibold drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]"
+                            style={{ color: slideAccentColor }}
+                          >
+                            {slideTagline}
+                          </div>
+                          <h2 className={`${activeFontClass} text-2xl font-black leading-tight tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]`}>
+                            {post.title}
+                          </h2>
+                          <div className="w-10 h-[1.5px]" style={{ backgroundColor: slideAccentColor }} />
+                          <p className={`${activeFontClass} italic text-xs text-neutral-200 leading-relaxed drop-shadow-[0_1px_5px_rgba(0,0,0,0.9)]`}>
+                            "{post.hook}"
+                          </p>
+                        </>
+                      ) : isClosing ? (
+                        <>
+                          <div className="flex items-center space-x-2">
+                            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: slideAccentColor }} />
+                            <span
+                              className="text-[9px] font-mono tracking-widest uppercase font-semibold"
+                              style={{ color: slideAccentColor }}
+                            >
+                              0{idx} / Kültürel Miras & Kapanış
+                            </span>
+                          </div>
 
-                  <p className="font-serif italic text-[14px] sm:text-[15px] text-white leading-relaxed min-h-[4.2rem] drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
-                    "{slide2Quote}"
-                  </p>
+                          <p className={`${activeFontClass} italic text-[14px] sm:text-[15px] text-white leading-relaxed min-h-[4.2rem] drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]`}>
+                            "{quote}"
+                          </p>
 
-                  <div className="flex items-center space-x-1.5 text-[9px] font-mono text-neutral-300">
-                    <span style={{ color: slideAccentColor }}>&bull;</span>
-                    <span>Detaylı hikaye açıklamada</span>
-                    <span style={{ color: slideAccentColor }}>&darr;</span>
+                          <div className="flex items-center space-x-1.5 text-[9px] font-mono text-neutral-300">
+                            <span style={{ color: slideAccentColor }}>&bull;</span>
+                            <span>Bu detayı biliyor muydunuz? Görüşlerinizi yazın</span>
+                            <span style={{ color: slideAccentColor }}>&darr;</span>
+                          </div>
+
+                          {/* Hashtags */}
+                          <div className="flex flex-wrap gap-1 pt-0.5">
+                            {post.hashtags?.slice(0, 3).map((tag, i) => (
+                              <span key={i} className="text-[8.5px] font-mono text-neutral-200 bg-white/10 px-2 py-0.5 rounded border border-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-center space-x-2">
+                            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: slideAccentColor }} />
+                            <span
+                              className="text-[9px] font-mono tracking-widest uppercase font-semibold"
+                              style={{ color: slideAccentColor }}
+                            >
+                              0{idx} / {idx === 1 ? 'İkonikleşme & Giriş' : idx === 2 ? 'Statü Şifresi & Perde Arkası' : `Lore Bölüm ${idx}`}
+                            </span>
+                          </div>
+
+                          <p className={`${activeFontClass} italic text-[14px] sm:text-[15px] text-white leading-relaxed min-h-[4.2rem] drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]`}>
+                            "{quote}"
+                          </p>
+
+                          <div className="flex items-center space-x-1.5 text-[9px] font-mono text-neutral-300">
+                            <span style={{ color: slideAccentColor }}>&bull;</span>
+                            <span>Detaylı hikaye açıklamada</span>
+                            <span style={{ color: slideAccentColor }}>&darr;</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Bottom Footer */}
+                  <div className="flex items-center justify-between pt-3 border-t border-white/15 text-[9px] font-mono text-neutral-400 relative z-10">
+                    {isCover ? (
+                      <>
+                        <span>EDİTORYAL ARŞİV</span>
+                        <span>KAYDIR &rarr;</span>
+                      </>
+                    ) : isClosing ? (
+                      <>
+                        <span className="text-[#e6c280]">KAYDET · PAYLAŞ</span>
+                        <span className="text-[#e6c280]">@{post?.projectShortCode ? `${post.projectShortCode.toUpperCase()}` : 'POSTCREATOR'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="truncate max-w-[200px]">{post.title}</span>
+                        <span>KAYDIR &rarr;</span>
+                      </>
+                    )}
                   </div>
                 </div>
-              )}
-
-              {/* Bottom Footer: pt-3 to mirror the pb-3 above the line */}
-              <div className="flex items-center justify-between pt-3 border-t border-white/15 text-[9px] font-mono text-neutral-400 relative z-10">
-                <span>DÖNEM: {post.decade}</span>
-                <span>KAYDIR &rarr;</span>
-              </div>
-            </div>
-
-            {/* SLIDE 3: OUTRO / CLOSING (4. Sayfa) */}
-            <div
-              ref={slideRef3}
-              style={{
-                width: '380px',
-                height: '475px',
-                display: activeSlide === 3 ? 'flex' : 'none'
-              }}
-              className="bg-[#0b0c10] text-white p-7 flex flex-col justify-between relative overflow-hidden font-sans"
-            >
-              {/* Background Archival Photo or Video */}
-              <SlideBackground media={getImageForSlide(3)} settings={slideSettings?.[3]} />
-
-              {/* Top Header */}
-              <div className="flex items-center justify-between border-b border-white/15 pb-3 relative z-10">
-                <span
-                  className="font-serif tracking-[0.25em] text-xs font-bold uppercase drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]"
-                  style={{ color: slideAccentColor }}
-                >
-                  {slideLogo}
-                </span>
-                <span className="font-mono text-[10px] tracking-wider text-neutral-300 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
-                  04 / 04
-                </span>
-              </div>
-
-              {/* Main Content: Sits directly at bottom with pb-3 matching the line distance! */}
-              {(slideSettings?.[3]?.showText ?? true) && (
-                <div 
-                  style={{
-                    transform: `translateY(${slideSettings?.[3]?.textOffsetY || 0}px)`
-                  }}
-                  className="space-y-3 mt-auto pb-3 relative z-10 transition-transform duration-75"
-                >
-                  <div className="flex items-center space-x-2">
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: slideAccentColor }} />
-                    <span
-                      className="text-[9px] font-mono tracking-widest uppercase font-semibold"
-                      style={{ color: slideAccentColor }}
-                    >
-                      03 / Kültürel Miras & Kapanış
-                    </span>
-                  </div>
-
-                  <p className="font-serif italic text-[14px] sm:text-[15px] text-white leading-relaxed min-h-[4.2rem] drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
-                    "{slide3Quote}"
-                  </p>
-
-                  <div className="flex items-center space-x-1.5 text-[9px] font-mono text-neutral-300">
-                    <span style={{ color: slideAccentColor }}>&bull;</span>
-                    <span>Bu detayı biliyor muydunuz? Görüşlerinizi yazın</span>
-                    <span style={{ color: slideAccentColor }}>&darr;</span>
-                  </div>
-
-                  {/* Hashtags: Eski zarif, küçük yapısında sadece bir tık daha belirgin */}
-                  <div className="flex flex-wrap gap-1 pt-0.5">
-                    {post.hashtags?.slice(0, 3).map((tag, i) => (
-                      <span key={i} className="text-[8.5px] font-mono text-neutral-200 bg-white/10 px-2 py-0.5 rounded border border-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Bottom Footer: pt-3 to mirror the pb-3 above the line */}
-              <div className="flex items-center justify-between pt-3 border-t border-white/15 text-[9px] font-mono text-[#e6c280] relative z-10">
-                <span>KAYDET · PAYLAŞ</span>
-                <span>@{post?.projectShortCode ? `${post.projectShortCode.toUpperCase()}` : 'POSTCREATOR'}</span>
-              </div>
-            </div>
-
+              );
+            })}
           </div>
 
           <div className="text-[10px] font-mono text-neutral-500 mt-3 flex items-center space-x-2">
-            <span>Slayt {activeSlide + 1} / 4</span>
+            <span>Slayt {activeSlide + 1} / {slideCount}</span>
             <span>·</span>
             <span>Instagram 4:5 Portre (1080x1350)</span>
             {currentSettings.imageId && (
@@ -1115,7 +1155,6 @@ export function CarouselStudio({
               </>
             )}
           </div>
-
         </div>
 
         {/* RIGHT COLUMN: MULTI-IMAGE TRAY & SLIDE CONTROLS (5 Cols) */}
@@ -1418,6 +1457,52 @@ export function CarouselStudio({
             </p>
           </div>
 
+          {/* Tipografi & Yazı Tipi Seçici */}
+          <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/10 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-mono uppercase text-[#e6c280] font-semibold flex items-center space-x-1.5">
+                <Type className="w-3.5 h-3.5 text-[#e6c280]" />
+                <span>Tipografi & Yazı Tipi</span>
+              </span>
+              <span className="text-[10px] font-mono text-neutral-400">
+                {currentFontObj.name}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+              {FONT_OPTIONS.map((f) => {
+                const isSelected = selectedFont === f.id;
+                return (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedFont(f.id);
+                      setUndoToast(`Yazı tipi: ${f.name}`);
+                      setTimeout(() => setUndoToast(null), 1500);
+                    }}
+                    className={`p-2 rounded-lg border text-left transition-all cursor-pointer ${
+                      isSelected
+                        ? 'border-[#e6c280] bg-[#e6c280]/15 text-white shadow-sm'
+                        : 'border-white/10 bg-black/40 text-neutral-400 hover:text-white hover:border-white/20'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs">{f.preview}</span>
+                      {isSelected && <Check className="w-3 h-3 text-[#e6c280]" />}
+                    </div>
+                    <div className={`text-xs mt-1 font-bold ${f.fontClass} truncate`}>
+                      {f.label}
+                    </div>
+                    <div className="text-[9px] font-mono text-neutral-500 truncate">
+                      {f.name}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* 2. Aktif Slayt Ayarları */}
           <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 space-y-4">
             <div className="flex items-center justify-between">
@@ -1534,15 +1619,15 @@ export function CarouselStudio({
                 </div>
                 <textarea
                   rows={2}
-                  value={currentSettings.customQuote ?? (activeSlide === 1 ? slide1Quote : activeSlide === 2 ? slide2Quote : slide3Quote)}
+                  value={currentSettings.customQuote ?? getQuoteForSlide(activeSlide)}
                   onChange={(e) => handleUpdateSlideProperty('customQuote', e.target.value)}
                   placeholder="2-3 satırlık vurucu bir editoryal tespit girin..."
-                  className="w-full bg-black/60 border border-white/10 rounded-lg p-2 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-[#e6c280] font-serif italic"
+                  className={`w-full bg-black/60 border border-white/10 rounded-lg p-2 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-[#e6c280] ${activeFontClass} italic`}
                 />
                 <div className="flex justify-between items-center text-[9px] font-mono text-neutral-500">
-                  <span>En net okuma için 10-13 kelimelik tek cümle</span>
+                  <span>En net okuma için 10-15 kelimelik tek cümle</span>
                   <span>
-                    {(currentSettings.customQuote ?? (activeSlide === 1 ? slide1Quote : activeSlide === 2 ? slide2Quote : slide3Quote)).split(/\s+/).filter(Boolean).length} kelime
+                    {(currentSettings.customQuote ?? getQuoteForSlide(activeSlide)).split(/\s+/).filter(Boolean).length} kelime
                   </span>
                 </div>
               </div>
