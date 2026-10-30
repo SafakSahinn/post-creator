@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Copy, Check, Bookmark, BookmarkCheck, ExternalLink, Image as ImageIcon, Sliders, Upload, Sparkles, Loader2 } from 'lucide-react';
+import { Copy, Check, Bookmark, BookmarkCheck, ExternalLink, Image as ImageIcon, Sliders } from 'lucide-react';
 
 export function OutputView({
   post,
@@ -7,10 +7,7 @@ export function OutputView({
   isSaved,
   onOpenEditor,
   hasImages,
-  model,
-  onAutoFetchImages,
-  isAutoFetchingImages,
-  autoFetchProgress
+  model
 }) {
   const [copied, setCopied] = useState(false);
   const [copiedQuery, setCopiedQuery] = useState(false);
@@ -172,47 +169,26 @@ export function OutputView({
 
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
           <div className="flex flex-wrap items-center gap-2">
-            {/* 1-Click Otomatik Görsel Getirici & İndirici */}
-            <button
-              type="button"
-              disabled={isAutoFetchingImages}
-              onClick={() => onAutoFetchImages && onAutoFetchImages(post)}
-              className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-lg text-xs font-mono bg-gradient-to-r from-[#e6c280]/20 via-[#e6c280]/30 to-[#e6c280]/20 text-[#e6c280] border border-[#e6c280]/50 hover:bg-[#e6c280]/35 transition-all font-bold shadow-[0_0_15px_rgba(230,194,128,0.15)] cursor-pointer disabled:opacity-50"
-              title="Küratörün arama notuna göre 4 slaytın fotoğraflarını arşivlerden ve yapay zekadan otomatik bulur, indirir ve stüdyoya yerleştirir"
-            >
-              {isAutoFetchingImages ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>{autoFetchProgress || 'Görseller İndiriliyor...'}</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-3.5 h-3.5 text-[#e6c280]" />
-                  <span>✨ 4 Slayta Otomatik Görsel İndir & Yerleştir</span>
-                </>
-              )}
-            </button>
-
             <a
               href={pinterestUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-mono bg-[#e60023]/15 text-[#ff4f64] border border-[#e60023]/30 hover:bg-[#e60023]/25 transition-colors"
-              title="Pinterest'te arama yap (beğendiğin resmi kopyalayıp stüdyoda Ctrl+V yapabilirsin)"
+              className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-mono bg-[#e60023]/15 text-[#ff4f64] border border-[#e60023]/30 hover:bg-[#e60023]/25 transition-colors"
+              title="Pinterest'te arama yap (beğendiğin resmi kopyalayıp stüdyoda Ctrl+V yapabilir veya linkini ekleyebilirsin)"
             >
-              <span>Pinterest</span>
-              <ExternalLink className="w-3 h-3" />
+              <span>Pinterest'te Arşiv Ara</span>
+              <ExternalLink className="w-3.5 h-3.5" />
             </a>
 
             <a
               href={googleImagesUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-mono bg-blue-500/15 text-blue-300 border border-blue-500/30 hover:bg-blue-500/25 transition-colors"
+              className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-mono bg-blue-500/15 text-blue-300 border border-blue-500/30 hover:bg-blue-500/25 transition-colors"
               title="Google Görsellerde arama yap"
             >
-              <span>Google Görseller</span>
-              <ExternalLink className="w-3 h-3" />
+              <span>Google Görsellerde Ara</span>
+              <ExternalLink className="w-3.5 h-3.5" />
             </a>
           </div>
 
@@ -223,7 +199,7 @@ export function OutputView({
             className="px-4 py-2 rounded-lg bg-[#e6c280] hover:bg-[#d4b06e] text-black font-semibold text-xs font-mono uppercase tracking-wider transition-all flex items-center space-x-2 shadow-[0_0_15px_rgba(230,194,128,0.2)]"
           >
             <Sliders className="w-3.5 h-3.5" />
-            <span>{hasImages ? 'Carousel Slaytlarını Düzenle' : 'Stüdyoya Geç'}</span>
+            <span>{hasImages ? 'Carousel Slaytlarını Düzenle' : 'Görselleri Yükle & Carousel Düzenle'}</span>
           </button>
         </div>
       </div>

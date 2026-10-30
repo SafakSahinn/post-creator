@@ -28,7 +28,6 @@ import {
   deleteArchiveFromDb,
   clearAllArchivesFromDb
 } from './services/archiveDb';
-import { autoFetchImagesForPost } from './services/imageService';
 import { AlertCircle, FileText, Layers, Sparkles, Key } from 'lucide-react';
 
 export function App() {
@@ -348,39 +347,6 @@ export function App() {
     ? archives.some((a) => a.id === currentPost.id || a.title === currentPost.title)
     : false;
 
-  // Otomatik Görsel Getirme Motoru (Kültür & Tarih Arşivleri, Web & Yapay Zeka)
-  const [isAutoFetchingImages, setIsAutoFetchingImages] = useState(false);
-  const [autoFetchProgress, setAutoFetchProgress] = useState('');
-
-  const handleAutoFetchImages = async (targetPost = currentPost) => {
-    if (!targetPost) return;
-    setIsAutoFetchingImages(true);
-    setAutoFetchProgress('Kültür ve fotoğraf arşivleri taranıyor...');
-    try {
-      const items = await autoFetchImagesForPost(targetPost, (msg) => setAutoFetchProgress(msg));
-      if (items && items.length > 0) {
-        const updatedGallery = [...gallery, ...items];
-        setGallery(updatedGallery);
-
-        const newSlideSettings = {
-          ...slideSettings,
-          0: { ...(slideSettings[0] || {}), imageId: items[0]?.id || slideSettings[0]?.imageId },
-          1: { ...(slideSettings[1] || {}), imageId: items[1]?.id || items[0]?.id || slideSettings[1]?.imageId },
-          2: { ...(slideSettings[2] || {}), imageId: items[2]?.id || items[0]?.id || slideSettings[2]?.imageId },
-          3: { ...(slideSettings[3] || {}), imageId: items[3]?.id || items[0]?.id || slideSettings[3]?.imageId }
-        };
-        setSlideSettings(newSlideSettings);
-        setActiveTab('studio');
-      }
-    } catch (err) {
-      console.error('Otomatik görsel getirme hatası:', err);
-      alert(err.message || 'Görseller getirilemedi.');
-    } finally {
-      setIsAutoFetchingImages(false);
-      setAutoFetchProgress('');
-    }
-  };
-
   // Giriş Kapısı (Login Gate)
   if (!isAuthenticated) {
     return (
@@ -542,9 +508,6 @@ export function App() {
                 onOpenEditor={() => setActiveTab('studio')}
                 hasImages={gallery.length > 0}
                 model={model}
-                onAutoFetchImages={handleAutoFetchImages}
-                isAutoFetchingImages={isAutoFetchingImages}
-                autoFetchProgress={autoFetchProgress}
               />
             ) : (
               <CarouselStudio
@@ -556,9 +519,6 @@ export function App() {
                 onUpdateSlideSettings={setSlideSettings}
                 onSaveToArchive={handleSaveToArchive}
                 isSaved={isCurrentPostSaved}
-                onAutoFetchImages={handleAutoFetchImages}
-                isAutoFetchingImages={isAutoFetchingImages}
-                autoFetchProgress={autoFetchProgress}
               />
             )}
 

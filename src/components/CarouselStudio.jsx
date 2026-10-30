@@ -89,10 +89,7 @@ export function CarouselStudio({
   slideSettings,
   onUpdateSlideSettings,
   onSaveToArchive,
-  isSaved,
-  onAutoFetchImages,
-  isAutoFetchingImages,
-  autoFetchProgress
+  isSaved
 }) {
   const [activeSlide, setActiveSlide] = useState(0); // 0, 1, 2, 3
   const [isExporting, setIsExporting] = useState(false);
@@ -1017,35 +1014,14 @@ export function CarouselStudio({
               </label>
               
               <div className="flex items-center space-x-1.5">
-                {/* 1-Click Otomatik Görsel Bul & 4 Slayta Yerleştir */}
-                <button
-                  type="button"
-                  disabled={isAutoFetchingImages}
-                  onClick={() => onAutoFetchImages && onAutoFetchImages(post)}
-                  className="px-2.5 py-1 rounded-lg bg-[#e6c280]/15 hover:bg-[#e6c280]/25 text-[#e6c280] border border-[#e6c280]/40 text-[10px] font-mono flex items-center space-x-1 transition-all disabled:opacity-50 cursor-pointer shadow-sm"
-                  title="Kültür arşivlerinden ve yapay zekadan 4 slayta uygun fotoğrafları otomatik bulup yerleştir"
-                >
-                  {isAutoFetchingImages ? (
-                    <>
-                      <Loader2 className="w-3 h-3 animate-spin text-[#e6c280]" />
-                      <span>{autoFetchProgress || 'İndiriliyor...'}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-3 h-3 text-[#e6c280]" />
-                      <span>Otomatik Görsel Bul</span>
-                    </>
-                  )}
-                </button>
-
                 {/* Pinterest / Web URL ile Ekle */}
                 <button
                   type="button"
                   onClick={() => setShowUrlInput(!showUrlInput)}
-                  className={`px-2 py-1 rounded-lg text-[10px] font-mono flex items-center space-x-1 border transition-all cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-mono flex items-center space-x-1.5 border transition-all cursor-pointer ${
                     showUrlInput
-                      ? 'bg-white/20 border-white text-white'
-                      : 'bg-white/5 hover:bg-white/10 border-white/10 text-neutral-300'
+                      ? 'bg-[#e6c280]/20 border-[#e6c280] text-[#e6c280] font-bold shadow-sm'
+                      : 'bg-white/5 hover:bg-white/10 border-white/10 text-neutral-300 hover:text-white'
                   }`}
                   title="Pinterest veya web görsel linki yapıştırarak doğrudan indir"
                 >

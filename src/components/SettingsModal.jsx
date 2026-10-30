@@ -1,17 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Key, ExternalLink, Check, AlertCircle, ShieldCheck, Cpu, Gauge, Zap, RotateCcw, Image as ImageIcon } from 'lucide-react';
+import { X, Key, ExternalLink, Check, AlertCircle, ShieldCheck, Cpu, Gauge, Zap, RotateCcw } from 'lucide-react';
 import { getAvailableModels } from '../services/gemini';
 import { getQuotaStats, resetQuotaStats } from '../services/apiQuota';
-import {
-  getStoredPexelsKey,
-  setStoredPexelsKey,
-  getStoredUnsplashKey,
-  setStoredUnsplashKey,
-  getStoredGoogleCseKey,
-  setStoredGoogleCseKey,
-  getStoredGoogleCseCx,
-  setStoredGoogleCseCx
-} from '../services/imageService';
 
 export function SettingsModal({ isOpen, onClose, apiKey, onSaveApiKey, model, onSaveModel }) {
   const [tempKey, setTempKey] = useState(apiKey || '');
@@ -21,18 +11,10 @@ export function SettingsModal({ isOpen, onClose, apiKey, onSaveApiKey, model, on
   const [detectedModels, setDetectedModels] = useState([]);
   const [testResult, setTestResult] = useState(null); // { success: bool, message: string }
   const [quotaStats, setQuotaStats] = useState(() => getQuotaStats());
-  const [pexelsKey, setPexelsKey] = useState(() => getStoredPexelsKey());
-  const [unsplashKey, setUnsplashKey] = useState(() => getStoredUnsplashKey());
-  const [googleCseKey, setGoogleCseKey] = useState(() => getStoredGoogleCseKey());
-  const [googleCseCx, setGoogleCseCx] = useState(() => getStoredGoogleCseCx());
 
   useEffect(() => {
     if (isOpen) {
       setQuotaStats(getQuotaStats());
-      setPexelsKey(getStoredPexelsKey());
-      setUnsplashKey(getStoredUnsplashKey());
-      setGoogleCseKey(getStoredGoogleCseKey());
-      setGoogleCseCx(getStoredGoogleCseCx());
     }
   }, [isOpen]);
 
@@ -45,11 +27,7 @@ export function SettingsModal({ isOpen, onClose, apiKey, onSaveApiKey, model, on
     }
     onSaveApiKey(tempKey.trim());
     onSaveModel(tempModel);
-    setStoredPexelsKey(pexelsKey);
-    setStoredUnsplashKey(unsplashKey);
-    setStoredGoogleCseKey(googleCseKey);
-    setStoredGoogleCseCx(googleCseCx);
-    setTestResult({ success: true, message: 'Ayarlar ve API Anahtarları kaydedildi!' });
+    setTestResult({ success: true, message: 'API Anahtarı kaydedildi!' });
     setTimeout(() => {
       onClose();
     }, 600);
@@ -80,10 +58,6 @@ export function SettingsModal({ isOpen, onClose, apiKey, onSaveApiKey, model, on
       onSaveApiKey(tempKey.trim());
       onSaveModel(best.id);
       setTempModel(best.id);
-      setStoredPexelsKey(pexelsKey);
-      setStoredUnsplashKey(unsplashKey);
-      setStoredGoogleCseKey(googleCseKey);
-      setStoredGoogleCseCx(googleCseCx);
 
       setTestResult({
         success: true,
@@ -286,100 +260,6 @@ export function SettingsModal({ isOpen, onClose, apiKey, onSaveApiKey, model, on
                 placeholder="Örn: gemini-3.8-flash"
                 className="w-full bg-[#0a0a0d] border border-white/10 rounded px-2.5 py-1 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-[#e6c280] font-mono"
               />
-            </div>
-          </div>
-
-          {/* Görsel ve Fotoğraf Servisleri (Opsiyonel) */}
-          <div className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-mono uppercase tracking-wider text-neutral-300 flex items-center space-x-1.5 font-semibold">
-                <ImageIcon className="w-3.5 h-3.5 text-[#e6c280]" />
-                <span>Fotoğraf & Arşiv Servisleri (Opsiyonel)</span>
-              </span>
-              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-emerald-950/40 text-emerald-400 border border-emerald-500/30">
-                Wikimedia & AI Aktif
-              </span>
-            </div>
-
-            <p className="text-[10px] text-neutral-400 leading-relaxed font-sans">
-              Uygulama varsayılan olarak <strong>Wikimedia Kültür Arşivleri</strong> ve <strong>Yapay Zeka (Flux)</strong> ile anahtarsız ücretsiz çalışır. Milyonlarca ek dikey editoryal fotoğraf için Pexels veya Unsplash anahtarınızı isteğe bağlı ekleyebilirsiniz.
-            </p>
-
-            <div className="space-y-2 pt-1">
-              <div>
-                <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400 mb-0.5">
-                  <span>Pexels API Anahtarı (Ücretsiz 20.000 istek/ay):</span>
-                  <a
-                    href="https://www.pexels.com/api/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[#e6c280] hover:underline flex items-center space-x-0.5"
-                  >
-                    <span>Ücretsiz Al</span>
-                    <ExternalLink className="w-2.5 h-2.5" />
-                  </a>
-                </div>
-                <input
-                  type="text"
-                  value={pexelsKey}
-                  onChange={(e) => setPexelsKey(e.target.value.trim())}
-                  placeholder="563492ad6f91700001000001..."
-                  className="w-full bg-[#0a0a0d] border border-white/10 rounded px-2.5 py-1.5 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-[#e6c280] font-mono"
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400 mb-0.5">
-                  <span>Google Custom Search API Key (Doğrudan Google Görseller):</span>
-                  <a
-                    href="https://developers.google.com/custom-search/v1/overview"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[#e6c280] hover:underline flex items-center space-x-0.5"
-                  >
-                    <span>Google Cloud</span>
-                    <ExternalLink className="w-2.5 h-2.5" />
-                  </a>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="text"
-                    value={googleCseKey}
-                    onChange={(e) => setGoogleCseKey(e.target.value.trim())}
-                    placeholder="Google API Key..."
-                    className="w-full bg-[#0a0a0d] border border-white/10 rounded px-2.5 py-1.5 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-[#e6c280] font-mono"
-                  />
-                  <input
-                    type="text"
-                    value={googleCseCx}
-                    onChange={(e) => setGoogleCseCx(e.target.value.trim())}
-                    placeholder="Search Engine ID (cx)..."
-                    className="w-full bg-[#0a0a0d] border border-white/10 rounded px-2.5 py-1.5 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-[#e6c280] font-mono"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400 mb-0.5">
-                  <span>Unsplash Access Key (Ücretsiz 50 istek/saat):</span>
-                  <a
-                    href="https://unsplash.com/developers"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[#e6c280] hover:underline flex items-center space-x-0.5"
-                  >
-                    <span>Ücretsiz Al</span>
-                    <ExternalLink className="w-2.5 h-2.5" />
-                  </a>
-                </div>
-                <input
-                  type="text"
-                  value={unsplashKey}
-                  onChange={(e) => setUnsplashKey(e.target.value.trim())}
-                  placeholder="Client-ID..."
-                  className="w-full bg-[#0a0a0d] border border-white/10 rounded px-2.5 py-1.5 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-[#e6c280] font-mono"
-                />
-              </div>
             </div>
           </div>
 
