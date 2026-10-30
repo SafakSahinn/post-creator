@@ -750,13 +750,13 @@ export function CarouselStudio({
             )}
           </div>
 
-          {/* Paylaş / Planla */}
+          {/* Paylaş */}
           <button
             type="button"
             disabled={isPreparingPublish || isExporting}
             onClick={handleOpenInstagramPublish}
             className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#e6c280] via-[#f59e0b] to-[#ec4899] hover:opacity-95 text-black font-semibold text-xs font-mono uppercase tracking-wider transition-all flex items-center space-x-2 shadow-[0_0_18px_rgba(236,72,153,0.3)] cursor-pointer shrink-0 disabled:opacity-40"
-            title="4 slaytlık carousel gönderisini Instagram'da anında yayınla veya ileri bir tarihe planla"
+            title="Carousel gönderisini Instagram'da yayınla veya planla"
           >
             {isPreparingPublish ? (
               <>
@@ -766,7 +766,7 @@ export function CarouselStudio({
             ) : (
               <>
                 <InstagramIcon className="w-3.5 h-3.5 text-black" />
-                <span className="whitespace-nowrap">Paylaş / Planla</span>
+                <span className="whitespace-nowrap">Paylaş</span>
               </>
             )}
           </button>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   Calendar,
@@ -55,7 +56,13 @@ export function InstagramPublishModal({
       setResultData(null);
       setIsSubmitting(false);
       setProgressMsg('');
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
     }
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [isOpen, caption, post]);
 
   if (!isOpen) return null;
@@ -108,9 +115,9 @@ export function InstagramPublishModal({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-[#121318] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto shadow-2xl animate-fadeIn text-neutral-200">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-sm flex items-start justify-center p-3 sm:p-6 pt-4 sm:pt-8 overflow-y-auto">
+      <div className="bg-[#121318] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto shadow-2xl animate-fadeIn text-neutral-200 my-2 sm:my-0">
         
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-white/10 sticky top-0 bg-[#121318] z-10">
@@ -416,6 +423,7 @@ export function InstagramPublishModal({
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
