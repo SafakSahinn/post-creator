@@ -14,11 +14,11 @@ import { exportSlideAsVideo } from '../services/videoExport';
 import { InstagramPublishModal } from './InstagramPublishModal';
 
 export const FONT_OPTIONS = [
-  { id: 'serif', name: 'Editoryal Serif', label: 'Playfair', fontClass: 'font-serif', preview: 'Aa' },
-  { id: 'cinzel', name: 'Lüks Klasik', label: 'Cinzel', fontClass: 'font-cinzel', preview: '🏛️' },
-  { id: 'grotesk', name: 'Modern Poster', label: 'Grotesk', fontClass: 'font-grotesk', preview: '⚡' },
-  { id: 'sans', name: 'Minimalist Sans', label: 'Inter', fontClass: 'font-sans', preview: '✦' },
-  { id: 'mono', name: 'Arşiv Daktilo', label: 'Mono', fontClass: 'font-mono', preview: '⌨️' },
+  { id: 'serif', name: 'Editoryal Serif', label: 'Playfair', fontClass: 'font-serif', preview: 'Ag' },
+  { id: 'cinzel', name: 'Lüks Klasik', label: 'Cinzel', fontClass: 'font-cinzel', preview: 'AG' },
+  { id: 'grotesk', name: 'Modern Poster', label: 'Grotesk', fontClass: 'font-grotesk', preview: 'Ag' },
+  { id: 'sans', name: 'Minimalist Sans', label: 'Inter', fontClass: 'font-sans', preview: 'Ag' },
+  { id: 'mono', name: 'Arşiv Daktilo', label: 'Mono', fontClass: 'font-mono', preview: 'Ag' },
 ];
 
 const FILTERS = [
@@ -1489,8 +1489,10 @@ export function CarouselStudio({
                     }`}
                     title={`${f.name} - ${f.label}`}
                   >
-                    <span className="text-xs mb-0.5 leading-none">{f.preview}</span>
-                    <span className={`text-[11px] leading-tight ${f.fontClass} truncate max-w-full`}>
+                    <span className={`text-base leading-none mb-1 font-bold ${f.fontClass}`}>
+                      {f.preview}
+                    </span>
+                    <span className="text-[10px] font-mono leading-tight tracking-wider truncate max-w-full opacity-80">
                       {f.label}
                     </span>
                   </button>

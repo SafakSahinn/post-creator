@@ -1,5 +1,35 @@
 @import "tailwindcss";
 
+@theme {
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-cinzel: "Cinzel", Georgia, serif;
+  --font-grotesk: "Space Grotesk", system-ui, sans-serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+/* Explicit font family utilities to guarantee Tailwind v4 overrides */
+.font-serif {
+  font-family: "Playfair Display", Georgia, serif !important;
+}
+
+.font-cinzel {
+  font-family: "Cinzel", Georgia, serif !important;
+  letter-spacing: 0.03em;
+}
+
+.font-grotesk {
+  font-family: "Space Grotesk", system-ui, -apple-system, sans-serif !important;
+}
+
+.font-sans {
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
+.font-mono {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+}
+
 @layer base {
   body {
     background-color: #0c0d10;
