@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Key, Bookmark, Sparkles, HelpCircle, Activity, LogOut, Cloud, Layers, PlusCircle } from 'lucide-react';
+import { InstagramIcon } from './Icons';
 import { getQuotaStats } from '../services/apiQuota';
+import { getStoredMetaProfile } from '../services/instagramMeta';
 
 function PostCreatorLogo() {
   return (
@@ -57,12 +59,17 @@ export function Header({
   model,
   activeProject,
   onOpenProjects,
-  onResetWorkspace
+  onResetWorkspace,
+  onOpenMetaModal
 }) {
   const [quota, setQuota] = useState(() => getQuotaStats());
+  const [metaProfile, setMetaProfile] = useState(() => getStoredMetaProfile());
 
   useEffect(() => {
-    const handleUpdate = () => setQuota(getQuotaStats());
+    const handleUpdate = () => {
+      setQuota(getQuotaStats());
+      setMetaProfile(getStoredMetaProfile());
+    };
     window.addEventListener('lore_quota_updated', handleUpdate);
     window.addEventListener('storage', handleUpdate);
     return () => {
@@ -156,6 +163,23 @@ export function Header({
                 {archiveCount}
               </span>
             )}
+          </button>
+
+          {/* Meta / Instagram Connect */}
+          <button
+            onClick={onOpenMetaModal}
+            title={metaProfile ? `@${metaProfile.username} (Instagram Bağlı) - Ayarlar için tıklayın` : 'Meta / Instagram Otomatik Paylaşım & Zamanlama Bağla'}
+            className={`flex items-center space-x-1.5 px-3 py-2 rounded border text-xs font-mono transition-all cursor-pointer ${
+              metaProfile
+                ? 'border-pink-500/40 bg-pink-950/25 text-pink-300 hover:border-pink-400 hover:bg-pink-950/40'
+                : 'border-white/10 text-neutral-300 hover:text-white hover:border-white/20'
+            }`}
+          >
+            <InstagramIcon className={`w-3.5 h-3.5 ${metaProfile ? 'text-pink-400' : 'text-neutral-400'}`} />
+            <span className="hidden md:inline">
+              {metaProfile ? `@${metaProfile.username}` : 'Instagram'}
+            </span>
+            {metaProfile && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]" />}
           </button>
 
           {/* API Key Status & Quota Display */}

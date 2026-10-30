@@ -5,9 +5,11 @@ import {
   Sun, ZoomIn, Contrast, MoveVertical, Move, RotateCcw, ShieldOff, ShieldAlert,
   Bookmark, BookmarkCheck, Video, Play, Edit3, Link as LinkIcon, Globe, Loader2
 } from 'lucide-react';
+import { InstagramIcon } from './Icons';
 import { toPng } from 'html-to-image';
 import { getPunchyExcerpt } from '../services/gemini';
 import { convertUrlToDataUrl } from '../services/imageService';
+import { InstagramPublishModal } from './InstagramPublishModal';
 
 const FILTERS = [
   { id: 'none', name: 'Orijinal', filterStyle: '' },
@@ -89,12 +91,18 @@ export function CarouselStudio({
   slideSettings,
   onUpdateSlideSettings,
   onSaveToArchive,
-  isSaved
+  isSaved,
+  onOpenMetaConnect
 }) {
   const [activeSlide, setActiveSlide] = useState(0); // 0, 1, 2, 3
   const [isExporting, setIsExporting] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
   const [undoToast, setUndoToast] = useState(null);
+
+  // Instagram Publishing & Scheduling State
+  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
+  const [renderedSlideUrls, setRenderedSlideUrls] = useState([]);
+  const [isPreparingPublish, setIsPreparingPublish] = useState(false);
 
   // URL Import State
   const [showUrlInput, setShowUrlInput] = useState(false);
@@ -443,6 +451,38 @@ export function CarouselStudio({
     }
   };
 
+  // Slaytların temiz PNG DataURL dizisini üretir (Meta / Instagram Paylaşımı İçin)
+  const getRenderedSlideDataUrls = async () => {
+    const urls = [];
+    for (let i = 0; i < slideRefs.length; i++) {
+      const ref = slideRefs[i]?.current;
+      if (ref) {
+        const prevDisplay = ref.style.display;
+        ref.style.display = 'flex';
+        const dataUrl = await toPng(ref, { quality: 0.95, pixelRatio: 2.5 });
+        if (activeSlide !== i) {
+          ref.style.display = prevDisplay;
+        }
+        urls.push(dataUrl);
+      }
+    }
+    return urls;
+  };
+
+  const handleOpenInstagramPublish = async () => {
+    setIsPreparingPublish(true);
+    try {
+      const urls = await getRenderedSlideDataUrls();
+      setRenderedSlideUrls(urls);
+      setIsPublishModalOpen(true);
+    } catch (err) {
+      console.error('Slaytlar hazırlanamadı:', err);
+      alert('Slayt görselleri hazırlanırken bir hata oluştu.');
+    } finally {
+      setIsPreparingPublish(false);
+    }
+  };
+
   if (!post) {
     return (
       <div className="bg-[#121318] border border-white/5 rounded-2xl p-12 text-center flex flex-col items-center justify-center min-h-[480px]">
@@ -651,6 +691,27 @@ export function CarouselStudio({
               <>
                 <Download className="w-3.5 h-3.5" />
                 <span>Tüm Slaytları İndir (PNG)</span>
+              </>
+            )}
+          </button>
+
+          {/* Instagram'da Paylaş / Planla */}
+          <button
+            type="button"
+            disabled={isPreparingPublish || isExporting}
+            onClick={handleOpenInstagramPublish}
+            className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#e6c280] via-[#f59e0b] to-[#ec4899] hover:opacity-95 text-black font-semibold text-xs font-mono uppercase tracking-wider transition-all flex items-center space-x-2 shadow-[0_0_18px_rgba(236,72,153,0.3)] cursor-pointer"
+            title="4 slaytlık carousel gönderisini Instagram'da anında yayınla veya ileri bir tarihe planla"
+          >
+            {isPreparingPublish ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Hazırlanıyor...</span>
+              </>
+            ) : (
+              <>
+                <InstagramIcon className="w-3.5 h-3.5 text-black" />
+                <span>Instagram'da Paylaş / Planla</span>
               </>
             )}
           </button>
@@ -1545,6 +1606,19 @@ export function CarouselStudio({
         </div>
 
       </div>
+
+      {/* Instagram Content Publishing & Scheduling Modal */}
+      <InstagramPublishModal
+        isOpen={isPublishModalOpen}
+        onClose={() => setIsPublishModalOpen(false)}
+        post={post}
+        slideDataUrls={renderedSlideUrls}
+        caption={post?.formattedCaption || ''}
+        onOpenMetaConnect={() => {
+          setIsPublishModalOpen(false);
+          if (onOpenMetaConnect) onOpenMetaConnect();
+        }}
+      />
 
     </div>
   );

@@ -8,6 +8,7 @@ import { ArchiveDrawer } from './components/ArchiveDrawer';
 import { GuideModal } from './components/GuideModal';
 import { ProjectModal } from './components/ProjectModal';
 import { LoginScreen } from './components/LoginScreen';
+import { MetaConnectModal } from './components/MetaConnectModal';
 import { generateEditorialPost } from './services/gemini';
 import {
   getAllProjects,
@@ -120,6 +121,7 @@ export function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [isMetaModalOpen, setIsMetaModalOpen] = useState(false);
 
   // Sync archives to localStorage for quick fallback
   useEffect(() => {
@@ -373,6 +375,7 @@ export function App() {
         activeProject={activeProject}
         onOpenProjects={() => setIsProjectModalOpen(true)}
         onResetWorkspace={handleResetWorkspace}
+        onOpenMetaModal={() => setIsMetaModalOpen(true)}
       />
 
       {/* Main Workspace */}
@@ -519,6 +522,7 @@ export function App() {
                 onUpdateSlideSettings={setSlideSettings}
                 onSaveToArchive={handleSaveToArchive}
                 isSaved={isCurrentPostSaved}
+                onOpenMetaConnect={() => setIsMetaModalOpen(true)}
               />
             )}
 
@@ -595,6 +599,12 @@ export function App() {
           const newActive = getActiveProject();
           handleSwitchProject(newActive);
         }}
+      />
+
+      {/* Meta / Instagram Connect Modal */}
+      <MetaConnectModal
+        isOpen={isMetaModalOpen}
+        onClose={() => setIsMetaModalOpen(false)}
       />
 
     </div>
