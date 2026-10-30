@@ -3,7 +3,7 @@
  * Resmi Instagram Content Publishing API Entegrasyonu (Carousel & Scheduled Posts)
  */
 
-const DEFAULT_IMGUR_CLIENT_ID = 'c73499dc88701e8'; // Ücretsiz genel Client-ID
+const DEFAULT_IMGUR_CLIENT_ID = '546c25a59c58ad7'; // Aktif Client-ID
 const META_API_VERSION = 'v19.0';
 
 export function getStoredMetaAccessToken() {
@@ -94,15 +94,60 @@ export async function fetchInstagramProfile(accessToken = getStoredMetaAccessTok
 }
 
 /**
- * Slayt Görselini (DataURL / Base64) Meta'nın indirebilmesi için geçici genel URL'e dönüştürür.
- * 1. Tercih: Imgur API
- * 2. Yedek: Ücretsiz genel dosya sunucusu
+ * Görseli kesin olarak JPEG formatına ve geçerli DataURL'e dönüştürür.
+ * Meta Graph API Instagram Publishing SADECE JPEG formatı kabul eder.
+ */
+export async function ensureJpegDataUrl(dataUrl) {
+  if (typeof dataUrl === 'string' && dataUrl.startsWith('data:image/jpeg')) {
+    return dataUrl;
+  }
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth || img.width || 1080;
+      canvas.height = img.naturalHeight || img.height || 1350;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#0c0d10';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL('image/jpeg', 0.95));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
+/**
+ * Slayt Görselini (DataURL / Base64) Meta'nın indirebilmesi için geçici genel JPEG URL'ine dönüştürür.
+ * 1. Tercih: Yerel Vite sunucu köprüsü (/api/upload-slide)
+ * 2. Yedek: Imgur API
  */
 export async function uploadSlideToPublicUrl(dataUrl, customImgurKey = null) {
-  const base64Data = dataUrl.replace(/^data:image\/\w+;base64,/, '');
-  const clientId = customImgurKey || getStoredImgurClientId();
+  const jpegUrl = await ensureJpegDataUrl(dataUrl);
 
-  // 1. Imgur API Yükleme Denemesi
+  // 1. Tercih: Yerel Vite sunucu köprüsü (/api/upload-slide) - Doğrudan ve hızlı
+  try {
+    const bridgeRes = await fetch('/api/upload-slide', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dataUrl: jpegUrl })
+    });
+    if (bridgeRes.ok) {
+      const json = await bridgeRes.json();
+      if (json?.url) {
+        return json.url;
+      }
+    }
+  } catch (err) {
+    console.warn('Yerel köprü erişilemedi, alternatif deneniyor:', err);
+  }
+
+  const base64Data = jpegUrl.replace(/^data:image\/\w+;base64,/, '');
+  const clientId = customImgurKey || getStoredImgurClientId() || DEFAULT_IMGUR_CLIENT_ID;
+
+  // 2. Imgur API Yükleme Denemesi (Doğrudan JPEG Base64)
   try {
     const formData = new FormData();
     formData.append('image', base64Data);
@@ -126,29 +171,7 @@ export async function uploadSlideToPublicUrl(dataUrl, customImgurKey = null) {
     console.warn('Imgur yüklemesi başarısız oldu, alternatif deneniyor:', err);
   }
 
-  // 2. Yedek: tmpfiles.org ücretsiz genel sunucu
-  try {
-    const blob = await (await fetch(dataUrl)).blob();
-    const fd = new FormData();
-    fd.append('file', blob, `slide_${Date.now()}.png`);
-
-    const res = await fetch('https://tmpfiles.org/api/v1/upload', {
-      method: 'POST',
-      body: fd
-    });
-
-    if (res.ok) {
-      const json = await res.json();
-      if (json.data?.url) {
-        // tmpfiles.org/1234/file.png -> tmpfiles.org/dl/1234/file.png (Doğrudan görsel indirme URL'i)
-        return json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-      }
-    }
-  } catch (err) {
-    console.warn('Tmpfiles yüklemesi başarısız:', err);
-  }
-
-  throw new Error('Slayt görseli Meta sunucularının erişebileceği genel bir bağlantıya dönüştürülemedi.');
+  throw new Error('Slayt görseli Meta sunucularının erişebileceği genel bir JPEG bağlantısına dönüştürülemedi.');
 }
 
 /**

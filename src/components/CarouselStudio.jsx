@@ -7,7 +7,7 @@ import {
   Film, ExternalLink, Plus, Type
 } from 'lucide-react';
 import { InstagramIcon } from './Icons';
-import { toPng } from 'html-to-image';
+import { toPng, toJpeg } from 'html-to-image';
 import { getPunchyExcerpt } from '../services/gemini';
 import { convertUrlToDataUrl } from '../services/imageService';
 import { exportSlideAsVideo } from '../services/videoExport';
@@ -531,7 +531,7 @@ export function CarouselStudio({
     }
   };
 
-  // Slaytların temiz PNG DataURL dizisini üretir (Meta / Instagram Paylaşımı İçin)
+  // Slaytların temiz JPEG DataURL dizisini üretir (Meta / Instagram Paylaşımı SADECE JPEG kabul eder)
   const getRenderedSlideDataUrls = async () => {
     const urls = [];
     for (let i = 0; i < slideCount; i++) {
@@ -539,7 +539,8 @@ export function CarouselStudio({
       if (ref) {
         const prevDisplay = ref.style.display;
         ref.style.display = 'flex';
-        const dataUrl = await toPng(ref, { quality: 0.95, pixelRatio: 2.5 });
+        // Meta Content Publishing API kesinlikle JPEG formatı şart koşar
+        const dataUrl = await toJpeg(ref, { quality: 0.95, pixelRatio: 2.5, backgroundColor: '#0c0d10' });
         if (activeSlide !== i) {
           ref.style.display = prevDisplay;
         }
