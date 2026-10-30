@@ -3,10 +3,11 @@ import {
   Download, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Check, Image as ImageIcon, 
   Upload, Trash2, Undo2, Redo2, Sliders, Eye, Sparkles, Layers,
   Sun, ZoomIn, Contrast, MoveVertical, Move, RotateCcw, ShieldOff, ShieldAlert,
-  Bookmark, BookmarkCheck, Video, Play, Edit3
+  Bookmark, BookmarkCheck, Video, Play, Edit3, Link as LinkIcon, Globe, Loader2
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { getPunchyExcerpt } from '../services/gemini';
+import { convertUrlToDataUrl } from '../services/imageService';
 
 const FILTERS = [
   { id: 'none', name: 'Orijinal', filterStyle: '' },
@@ -80,11 +81,29 @@ const INITIAL_SLIDE_SETTINGS = {
   3: { imageId: null, filter: 'none', vignette: 75, zoom: 105, brightness: 100, showText: true, textOffsetY: 0, offsetX: 0, offsetY: 0, customQuote: null },
 };
 
-export function CarouselStudio({ post, project, gallery, onUpdateGallery, slideSettings, onUpdateSlideSettings, onSaveToArchive, isSaved }) {
+export function CarouselStudio({
+  post,
+  project,
+  gallery,
+  onUpdateGallery,
+  slideSettings,
+  onUpdateSlideSettings,
+  onSaveToArchive,
+  isSaved,
+  onAutoFetchImages,
+  isAutoFetchingImages,
+  autoFetchProgress
+}) {
   const [activeSlide, setActiveSlide] = useState(0); // 0, 1, 2, 3
   const [isExporting, setIsExporting] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
   const [undoToast, setUndoToast] = useState(null);
+
+  // URL Import State
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [inputUrl, setInputUrl] = useState('');
+  const [isDownloadingUrl, setIsDownloadingUrl] = useState(false);
+  const [urlError, setUrlError] = useState(null);
 
   // History Stack for CTRL+Z Undo / Redo
   const [history, setHistory] = useState([]);
@@ -202,7 +221,50 @@ export function CarouselStudio({ post, project, gallery, onUpdateGallery, slideS
     });
   };
 
-  // Clipboard Paste Support (Görsel & Video)
+  // URL üzerinden Pinterest veya Web Görseli İndirip Galeriye ve Aktif Slayta Ekleme
+  const handleImportFromUrl = async (targetUrl = inputUrl) => {
+    const clean = (targetUrl || '').trim();
+    if (!clean) return;
+    setIsDownloadingUrl(true);
+    setUrlError(null);
+    try {
+      const dataUrl = await convertUrlToDataUrl(clean);
+      const isVideo = /\.(mp4|webm|mov|ogg)$/i.test(clean);
+      const newItem = {
+        id: (isVideo ? 'vid_' : 'img_') + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+        dataUrl,
+        name: 'Web Görseli ' + (gallery.length + 1),
+        type: isVideo ? 'video' : 'image',
+        mimeType: isVideo ? 'video/mp4' : 'image/jpeg'
+      };
+
+      const updatedGallery = [...gallery, newItem];
+      onUpdateGallery(updatedGallery);
+
+      // Aktif slayta ata
+      const updatedSettings = {
+        ...slideSettings,
+        [activeSlide]: {
+          ...currentSettings,
+          imageId: newItem.id
+        }
+      };
+      onUpdateSlideSettings(updatedSettings);
+      pushStateToHistory(updatedSettings, updatedGallery);
+
+      setInputUrl('');
+      setShowUrlInput(false);
+      setUndoToast(`Görsel indirildi ve Slayt ${activeSlide + 1}'e yerleştirildi!`);
+      setTimeout(() => setUndoToast(null), 2500);
+    } catch (err) {
+      console.error('URL görseli indirilemedi:', err);
+      setUrlError('Görsel indirilemedi. Lütfen bağlantıyı kontrol edin veya resmi kopyalayıp Ctrl+V yapın.');
+    } finally {
+      setIsDownloadingUrl(false);
+    }
+  };
+
+  // Clipboard Paste Support (Görsel, Video & Yapıştırılan Görsel URL'leri)
   const handlePaste = (e) => {
     const items = e.clipboardData?.items;
     if (items) {
@@ -215,6 +277,22 @@ export function CarouselStudio({ post, project, gallery, onUpdateGallery, slideS
       }
       if (filesToUpload.length > 0) {
         handleAddFiles(filesToUpload);
+        return;
+      }
+    }
+
+    // Metin olarak kopyalanmış bir görsel URL'si ise otomatik indir
+    const pastedText = e.clipboardData?.getData('text');
+    if (pastedText && (pastedText.startsWith('http://') || pastedText.startsWith('https://'))) {
+      if (
+        /\.(jpg|jpeg|png|webp|avif|gif)(\?.*)?$/i.test(pastedText.trim()) ||
+        pastedText.includes('pinimg.com') ||
+        pastedText.includes('googleusercontent.com') ||
+        pastedText.includes('wikimedia.org') ||
+        pastedText.includes('unsplash.com') ||
+        pastedText.includes('pexels.com')
+      ) {
+        handleImportFromUrl(pastedText.trim());
       }
     }
   };
@@ -932,15 +1010,108 @@ export function CarouselStudio({ post, project, gallery, onUpdateGallery, slideS
           
           {/* 1. Medya Havuzu / Tray (Foto & Video) */}
           <div className="space-y-2.5">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <label className="text-xs font-mono uppercase tracking-wider text-neutral-300 flex items-center space-x-1.5">
                 <ImageIcon className="w-3.5 h-3.5 text-[#e6c280]" />
                 <span>Medya Havuzu ({gallery.length})</span>
               </label>
-              <span className="text-[10px] font-mono text-neutral-500">
-                Slayt {activeSlide + 1} için tıkla
-              </span>
+              
+              <div className="flex items-center space-x-1.5">
+                {/* 1-Click Otomatik Görsel Bul & 4 Slayta Yerleştir */}
+                <button
+                  type="button"
+                  disabled={isAutoFetchingImages}
+                  onClick={() => onAutoFetchImages && onAutoFetchImages(post)}
+                  className="px-2.5 py-1 rounded-lg bg-[#e6c280]/15 hover:bg-[#e6c280]/25 text-[#e6c280] border border-[#e6c280]/40 text-[10px] font-mono flex items-center space-x-1 transition-all disabled:opacity-50 cursor-pointer shadow-sm"
+                  title="Kültür arşivlerinden ve yapay zekadan 4 slayta uygun fotoğrafları otomatik bulup yerleştir"
+                >
+                  {isAutoFetchingImages ? (
+                    <>
+                      <Loader2 className="w-3 h-3 animate-spin text-[#e6c280]" />
+                      <span>{autoFetchProgress || 'İndiriliyor...'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3 h-3 text-[#e6c280]" />
+                      <span>Otomatik Görsel Bul</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Pinterest / Web URL ile Ekle */}
+                <button
+                  type="button"
+                  onClick={() => setShowUrlInput(!showUrlInput)}
+                  className={`px-2 py-1 rounded-lg text-[10px] font-mono flex items-center space-x-1 border transition-all cursor-pointer ${
+                    showUrlInput
+                      ? 'bg-white/20 border-white text-white'
+                      : 'bg-white/5 hover:bg-white/10 border-white/10 text-neutral-300'
+                  }`}
+                  title="Pinterest veya web görsel linki yapıştırarak doğrudan indir"
+                >
+                  <LinkIcon className="w-3 h-3 text-[#e6c280]" />
+                  <span>URL ile Ekle</span>
+                </button>
+              </div>
             </div>
+
+            {/* URL İndirme Çekmecesi (Pinterest & Web) */}
+            {showUrlInput && (
+              <div className="p-3 rounded-xl bg-black/80 border border-[#e6c280]/40 space-y-2 animate-fadeIn shadow-2xl">
+                <div className="flex items-center justify-between text-[11px] font-mono text-neutral-300">
+                  <span className="flex items-center space-x-1.5 text-[#e6c280] font-semibold">
+                    <Globe className="w-3.5 h-3.5" />
+                    <span>Pinterest veya Web Görseli İndir</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowUrlInput(false);
+                      setUrlError(null);
+                    }}
+                    className="text-neutral-500 hover:text-white text-xs font-mono p-0.5"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="flex space-x-1.5">
+                  <input
+                    type="url"
+                    value={inputUrl}
+                    onChange={(e) => setInputUrl(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleImportFromUrl()}
+                    placeholder="https://i.pinimg.com/... veya https://..."
+                    className="flex-1 bg-black/60 border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#e6c280] font-mono"
+                  />
+                  <button
+                    type="button"
+                    disabled={isDownloadingUrl || !inputUrl.trim()}
+                    onClick={() => handleImportFromUrl()}
+                    className="px-3 py-1.5 rounded-lg bg-[#e6c280] hover:bg-[#d4b06e] text-black font-semibold text-xs font-mono transition-all disabled:opacity-40 flex items-center space-x-1 shrink-0 cursor-pointer shadow-md"
+                  >
+                    {isDownloadingUrl ? (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <span>İndiriliyor...</span>
+                      </>
+                    ) : (
+                      <span>İndir & Slayta Ekle</span>
+                    )}
+                  </button>
+                </div>
+
+                {urlError && (
+                  <div className="text-[10px] text-red-400 font-mono bg-red-950/30 p-1.5 rounded border border-red-500/20">
+                    {urlError}
+                  </div>
+                )}
+
+                <p className="text-[10px] text-neutral-400 font-sans leading-relaxed pt-0.5">
+                  💡 <strong>En Pratik Yol:</strong> Pinterest veya Google Görseller'de beğendiğiniz görsele sağ tıklayıp <em>"Resmi Kopyala"</em> dedikten sonra doğrudan bu sayfada <kbd className="bg-white/10 px-1 py-0.5 rounded text-[9px] font-mono text-[#e6c280]">Ctrl + V</kbd> yaparsanız indirme linkine gerek kalmadan anında eklenir!
+                </p>
+              </div>
+            )}
 
             <input
               ref={fileInputRef}
