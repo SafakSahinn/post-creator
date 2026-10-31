@@ -14,7 +14,8 @@ import {
   CheckCircle2,
   Loader2,
   RefreshCw,
-  ExternalLink
+  ExternalLink,
+  BookOpen
 } from 'lucide-react';
 import {
   getStoredDriveToken,
@@ -41,7 +42,8 @@ export function ArchiveDrawer({
   onClearAll,
   onUpdateArchiveItem,
   activeProject,
-  onBatchUpdateArchives
+  onBatchUpdateArchives,
+  onOpenMagazine
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [copiedId, setCopiedId] = useState(null);
@@ -482,6 +484,24 @@ export function ArchiveDrawer({
               {driveStatusMsg}
             </div>
           )}
+        </div>
+
+        {/* 90's Magazine Mode Trigger */}
+        <div className="pt-3">
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              if (onOpenMagazine) onOpenMagazine();
+            }}
+            className="w-full py-2 px-3 rounded-lg bg-red-950/25 border border-red-500/40 text-red-300 hover:bg-red-950/50 hover:text-white transition-all text-xs font-mono font-bold flex items-center justify-center space-x-2 shadow-sm cursor-pointer"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-red-400" />
+            <span>90'lar Dergisi Formatında Oku</span>
+            <span className="text-[9px] px-1 py-0.2 rounded bg-red-600 text-white font-black uppercase tracking-wider">
+              Mag
+            </span>
+          </button>
         </div>
 
         {/* Search */}

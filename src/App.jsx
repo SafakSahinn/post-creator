@@ -9,6 +9,7 @@ import { GuideModal } from './components/GuideModal';
 import { ProjectModal } from './components/ProjectModal';
 import { LoginScreen } from './components/LoginScreen';
 import { MetaConnectModal } from './components/MetaConnectModal';
+import { MagazineModal } from './components/MagazineModal';
 import { generateEditorialPost } from './services/gemini';
 import {
   getAllProjects,
@@ -122,6 +123,7 @@ export function App() {
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [isMetaModalOpen, setIsMetaModalOpen] = useState(false);
+  const [isMagazineOpen, setIsMagazineOpen] = useState(false);
 
   // Sync archives to localStorage for quick fallback
   useEffect(() => {
@@ -376,6 +378,7 @@ export function App() {
         onOpenProjects={() => setIsProjectModalOpen(true)}
         onResetWorkspace={handleResetWorkspace}
         onOpenMetaModal={() => setIsMetaModalOpen(true)}
+        onOpenMagazine={() => setIsMagazineOpen(true)}
       />
 
       {/* Main Workspace */}
@@ -523,6 +526,7 @@ export function App() {
                 onSaveToArchive={handleSaveToArchive}
                 isSaved={isCurrentPostSaved}
                 onOpenMetaConnect={() => setIsMetaModalOpen(true)}
+                onOpenMagazine={() => setIsMagazineOpen(true)}
               />
             )}
 
@@ -561,6 +565,7 @@ export function App() {
         onUpdateArchiveItem={handleUpdateArchiveItem}
         activeProject={activeProject}
         onBatchUpdateArchives={handleBatchUpdateArchives}
+        onOpenMagazine={() => setIsMagazineOpen(true)}
       />
 
       <GuideModal
@@ -609,6 +614,19 @@ export function App() {
       <MetaConnectModal
         isOpen={isMetaModalOpen}
         onClose={() => setIsMetaModalOpen(false)}
+      />
+
+      {/* 90's Editorial Magazine Reader Modal */}
+      <MagazineModal
+        isOpen={isMagazineOpen}
+        onClose={() => setIsMagazineOpen(false)}
+        archives={archives}
+        activeProject={activeProject}
+        onLoadPostToStudio={(p) => {
+          handleLoadPostFromArchive(p);
+          setIsMagazineOpen(false);
+        }}
+        onUpdateArchiveItem={handleUpdateArchiveItem}
       />
 
     </div>

@@ -4,7 +4,7 @@ import {
   Upload, Trash2, Undo2, Redo2, Sliders, Eye, Sparkles, Layers,
   Sun, ZoomIn, Contrast, MoveVertical, Move, RotateCcw, ShieldOff, ShieldAlert,
   Bookmark, BookmarkCheck, Video, Play, Edit3, Link as LinkIcon, Globe, Loader2,
-  Film, ExternalLink, Plus, Type
+  Film, ExternalLink, Plus, Type, BookOpen
 } from 'lucide-react';
 import { InstagramIcon } from './Icons';
 import { toPng, toJpeg } from 'html-to-image';
@@ -102,7 +102,8 @@ export function CarouselStudio({
   onUpdateSlideSettings,
   onSaveToArchive,
   isSaved,
-  onOpenMetaConnect
+  onOpenMetaConnect,
+  onOpenMagazine
 }) {
   const [activeSlide, setActiveSlide] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
@@ -910,6 +911,19 @@ export function CarouselStudio({
               </>
             )}
           </button>
+
+          {/* 90'lar Dergisi Modu */}
+          {onOpenMagazine && (
+            <button
+              type="button"
+              onClick={onOpenMagazine}
+              className="px-3 py-2 rounded-lg border border-red-500/40 bg-red-950/25 hover:bg-red-950/45 text-red-300 hover:text-white text-xs font-mono font-bold transition-all flex items-center space-x-1.5 cursor-pointer shrink-0"
+              title="Bu gönderiyi ve tüm arşivi 90'lar Editoryal Dergisi ve temiz fotoğraflar eşliğinde oku"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-red-400" />
+              <span className="hidden sm:inline">90'lar Dergisi</span>
+            </button>
+          )}
         </div>
       </div>
 

@@ -386,3 +386,80 @@ ${project?.filterTypeLabel || 'Filtre / Dönem'}: ${decade}
     lastError?.message || "İçerik üretilemedi. Lütfen API anahtarınızı kontrol edin."
   );
 }
+
+/**
+ * 90'lar Editoryal Dergi Formatı İçin Derinlemesine Kültürel Analiz ve Arşiv Notları Üretir
+ * Instagram'a sığmayan detaylı perde arkası, tasarım sosyolojisi, tarihi anekdotlar ve dipnotları içerir.
+ */
+export async function generateDeepMagazineEssay({ post, project, apiKey, model = 'gemini-2.5-flash' }) {
+  const activeKey = apiKey || getStoredApiKey();
+  if (!activeKey) {
+    throw new Error('Lütfen Gemini API anahtarınızı tanımlayın.');
+  }
+
+  const prompt = `
+Rol: 1990'ların kült İngiliz ve İtalyan editoryal dergilerinin (The Face, Ray Gun, Dazed, Vogue Italia) Baş Editörü ve Kültür Tarihçisi.
+Konu: "${post.title || post.conceptTitle}"
+Kategori / Dönem: ${post.category || 'Kültür'} - ${post.period || "90'lar"}
+Mevcut Instagram Özeti: ${(post.lore || []).join(' ')}
+
+Görev:
+Bu konu için Instagram slaytlarına ve karakter sınırlarına SIĞMAYAN, dergi okuyucusuna derin kültürel tatmin sunacak 90'lar ruhunda bir "Özel Dergi Dosyası" hazırla.
+
+JSON Formatında Sadece Aşağıdaki Yapıyı Döndür:
+{
+  "subtitle": "90'lar editoryal dergisi tarzında çarpıcı, edebi bir alt başlık",
+  "deepEssay": [
+    "1. Paragraf: Konunun 90'lardaki çıkış noktası, alt kültürdeki yeri ve dönemin ruhunu nasıl yakaladığı.",
+    "2. Paragraf: Tasarım, sinema veya moda arkasındaki gizli mekanizma; neden sıradan bir trend değil bir kırılma noktası olduğu.",
+    "3. Paragraf: Bugünün dijital dünyasından geriye bakıldığında bu konunun bıraktığı analog tortu ve kültürel miras."
+  ],
+  "pullQuote": "Sayfanın ortasına büyük harflerle basılacak, 1990'lar dergi estetiğinde ultra vurucu ve sarsıcı bir aforizma veya alıntı.",
+  "culturalTrivia": [
+    { "label": "Tarihi Dönüm Noktası", "detail": "Konuyla ilgili spesifik bir yıl, olay, skandal veya kırılma anı." },
+    { "label": "Kilit İsimler & Arka Plan", "detail": "İlgili yönetmen, tasarımcı, mimar veya alt kültür hareketi." },
+    { "label": "Analog Estetik & Teknik Detay", "detail": "Kullanılan malzeme, 35mm film estetiği, tipografi veya üretim sırrı." },
+    { "label": "Popüler Kültür Yankısı", "detail": "90'lar gençliği, kulüpleri veya sokak modasındaki somut karşılığı." }
+  ],
+  "curatorNote": "Fotoğraf küratörünün 1-2 cümlelik estetik değerlendirmesi ve kadraj notu."
+}
+`;
+
+  const modelsToTry = [
+    model,
+    'gemini-2.5-flash',
+    'gemini-2.5-flash-lite',
+    'gemini-2.0-flash'
+  ];
+  const uniqueModels = Array.from(new Set(modelsToTry));
+
+  for (const mod of uniqueModels) {
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${mod}:generateContent?key=${activeKey}`;
+    try {
+      recordApiRequest();
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.8,
+            responseMimeType: 'application/json'
+          }
+        })
+      });
+
+      if (!res.ok) continue;
+      const data = await res.json();
+      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!rawText) continue;
+
+      const parsed = JSON.parse(rawText.replace(/```json/g, '').replace(/```/g, '').trim());
+      return parsed;
+    } catch (e) {
+      console.warn(`Dergi derinlik üretimi ${mod} ile başarısız:`, e);
+    }
+  }
+
+  throw new Error('Dergi makalesi üretilemedi. Lütfen bağlantınızı ve API anahtarınızı kontrol edin.');
+}

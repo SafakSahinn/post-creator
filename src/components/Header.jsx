@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Key, Bookmark, Sparkles, HelpCircle, Activity, LogOut, Cloud, Layers, PlusCircle } from 'lucide-react';
+import { Key, Bookmark, Sparkles, HelpCircle, Activity, LogOut, Cloud, Layers, PlusCircle, BookOpen } from 'lucide-react';
 import { InstagramIcon } from './Icons';
 import { getQuotaStats } from '../services/apiQuota';
 import { getStoredMetaProfile } from '../services/instagramMeta';
@@ -60,7 +60,8 @@ export function Header({
   activeProject,
   onOpenProjects,
   onResetWorkspace,
-  onOpenMetaModal
+  onOpenMetaModal,
+  onOpenMagazine
 }) {
   const [quota, setQuota] = useState(() => getQuotaStats());
   const [metaProfile, setMetaProfile] = useState(() => getStoredMetaProfile());
@@ -163,6 +164,19 @@ export function Header({
                 {archiveCount}
               </span>
             )}
+          </button>
+
+          {/* 90's Editorial Magazine Mode */}
+          <button
+            onClick={onOpenMagazine}
+            title="Gönderileri 90'lar Editoryal Dergisi ve Temiz Fotoğraf Formatında Oku"
+            className="flex items-center space-x-1.5 px-3 py-2 rounded border border-red-500/40 bg-red-950/25 text-red-300 hover:text-white hover:border-red-400 hover:bg-red-950/40 transition-all text-xs font-mono shadow-[0_0_12px_rgba(239,68,68,0.15)] cursor-pointer"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-red-400" />
+            <span className="font-semibold">90'lar Dergisi</span>
+            <span className="text-[9px] px-1 py-0.2 rounded bg-red-600 text-white font-black uppercase tracking-wider">
+              Mag
+            </span>
           </button>
 
           {/* Meta / Instagram Connect */}

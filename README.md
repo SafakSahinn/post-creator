@@ -47,15 +47,22 @@ Yüksek estetik anlayışına sahip popüler kültür, teknoloji, sinema, gastro
 * **Thalamus Mimarisi:** Google OAuth 2.0 (`drive.file` izniyle) tüm gönderiler ve slayt görselleri kullanıcının kendi Google Drive'ındaki `Post Creator` klasörüne yedeklenir. Sıfır üçüncü taraf sunucu depolaması; %100 veri gizliliği.
 * **IndexedDB Yerel Depolama:** İnternet bağlantısı kesilse bile üretilen tüm gönderiler ve yüksek çözünürlüklü görseller tarayıcının yerel veritabanında saklanır.
 
-### 8. ⌨️ Klavye Kısayolları & Hızlı Erişim
+### 8. 📰 90'lar Editoryal Dergi Modu (Magazine Reader & Lookbook)
+* **1990'lar Kapak Tasarımı:** *Ray Gun*, *The Face* ve *Vogue Italia* estetiğinde retro tipografi, baş manşet, fiyat etiketi (`120.000 TL / $4.50`), ISSN barkodu ve tam sayfa kapak fotoğrafı.
+* **Temiz Orijinal Fotoğraf Plakaları:** Instagram slaytlarındaki bindirme metinler yerine, sistemde yüklü olan orijinal yüksek çözünürlüklü 35mm fotoğraflar yazısız temiz plaka olarak sergilenir; altına fotoğraf dipnotları (`Şekil 1.1`), kadraj açıklamaları ve slayt alıntıları dizilir.
+* **Instagram Ötesi Kültürel Derinlik (Dossier):** Instagram kısıtlamalarına sığmayan tarihi arka plan, 2-sütunlu editoryal makale, Drop-Cap (büyük baş harf), alıntı kutusu (*Pull-Quote*), Instagram yayın damgası ve Gemini destekli derin kültürel dosya analizi.
+* **Kağıt & Gece Baskısı Teması:** 90'lar nostaljik kuşe/gazete kağıdı dokusu ile koyu gece baskısı arasında geçiş.
+* **Yazdırılabilir / PDF İhracı:** Tüm sayıyı veya seçili makaleleri tek tıkla A4 / Dergi formatında PDF olarak kaydetme ve yazdırma.
+
+### 9. ⌨️ Klavye Kısayolları & Hızlı Erişim
 | Kısayol | İşlev |
 | :--- | :--- |
 | `/` | Arşivde anında arama kutusuna odaklan |
 | `Ctrl + Z` | Stüdyo değişikliklerini geri al |
 | `Ctrl + Y` | Geri alınan değişiklikleri ileri al |
 | `Ctrl + Enter` | Seçili parametrelerle yeni içerik üret |
-| `←` / `→` | Lightbox modunda önceki/sonraki slayta geç |
-| `Esc` | Açık olan modal veya lightbox'ı kapat |
+| `←` / `→` | Dergi ve Lightbox modunda sayfa / slayt çevir |
+| `Esc` | Açık olan modal, dergi veya lightbox'ı kapat |
 
 ---
 

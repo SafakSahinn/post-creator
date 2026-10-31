@@ -323,6 +323,17 @@ export function GuideModal({ isOpen, onClose, onOpenSettings, onOpenProjects, on
                 </p>
               </div>
 
+              {/* General Step 5: 90'lar Editoryal Dergi Modu */}
+              <div className="p-4 rounded-xl bg-white/[0.02] border border-red-500/20 bg-red-950/10 space-y-2">
+                <div className="flex items-center space-x-2.5 text-red-400 font-mono text-xs font-semibold">
+                  <BookOpen className="w-4 h-4 text-red-400" />
+                  <span>5. 90'lar Editoryal Dergisi (Kapak, Temiz Fotoğraflar & AI Derinlik)</span>
+                </div>
+                <p className="text-xs text-neutral-300 leading-relaxed font-sans">
+                  Üst menüdeki <strong>"90'lar Dergisi"</strong> butonuna tıklayarak ürettiğiniz ve Instagram'da paylaştığınız tüm gönderileri retro 1990'lar dergi formatında (The Face / Ray Gun estetiğinde) okuyabilirsiniz. Instagram slaytlarının üzerindeki yazılar yerine, sistemde yüklü olan <strong>yazısız, temiz 35mm arşiv fotoğrafları</strong> sergilenir; altlarında fotoğraf notları ve Instagram'a sığmayan <strong>derin kültürel analizler (Dossier)</strong> yer alır. Tek tıkla PDF olarak yazdırabilirsiniz.
+                </p>
+              </div>
+
             </div>
           )}
         </div>
