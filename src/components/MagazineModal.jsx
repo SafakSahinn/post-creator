@@ -28,6 +28,8 @@ import { saveArchiveToDb } from '../services/archiveDb';
 
 /**
  * Gönderinin temiz, üzerine yazı basılmamış orijinal fotoğraflarını ayıklar.
+ * Mükerrer görselleri (örn. kapak ve kapanış slaytında aynı görselin tekrarını)
+ * otomatik temizler, her kadrajın benzersiz olmasını garanti eder.
  */
 function extractCleanPhotos(post) {
   if (!post) return [];
@@ -43,16 +45,31 @@ function extractCleanPhotos(post) {
   );
 
   const photos = [];
+  const seenUrls = new Set();
+
   for (let i = 0; i < slideCount; i++) {
     const imgId = settings[i]?.imageId;
     const galleryMatch = gallery.find((g) => g.id === imgId);
-    const url = galleryMatch?.dataUrl || thumbs[i] || gallery[i]?.dataUrl || null;
+    let url = galleryMatch?.dataUrl || thumbs[i] || gallery[i]?.dataUrl || null;
     
-    if (url) {
+    // Eğer bu görsel URL'si daha önce kullanılmışsa (örn. 1. kapak görseli son slaytta tekrar edildiyse):
+    if (url && seenUrls.has(url)) {
+      // Galeride henüz eklenmemiş alternatif temiz fotoğraf var mı ara
+      const unusedGalleryItem = gallery.find((g) => g.dataUrl && !seenUrls.has(g.dataUrl));
+      if (unusedGalleryItem) {
+        url = unusedGalleryItem.dataUrl;
+      } else {
+        // Alternatif benzersiz görsel yoksa mükerrer görseli listeye ekleme
+        url = null;
+      }
+    }
+
+    if (url && !seenUrls.has(url)) {
+      seenUrls.add(url);
       photos.push({
-        index: i,
+        index: photos.length,
         url,
-        title: i === 0 ? (post.title || 'Kapak Görseli') : `Slayt #${i + 1}`,
+        title: photos.length === 0 ? (post.title || 'Kapak Görseli') : `Slayt #${i + 1}`,
         quote: settings[i]?.customQuote || post.slideQuotes?.[i - 1] || '',
         idea: post.visualIdeas?.[i] || post.visualIdeas?.[i - 1] || '90\'lar editoryal fotoğraf arşivi.',
         filter: settings[i]?.filter || 'normal'
@@ -60,14 +77,32 @@ function extractCleanPhotos(post) {
     }
   }
 
+  // Galeride kalan ve henüz listeye girmemiş başka temiz fotoğraflar varsa ekle
+  if (photos.length < gallery.length) {
+    gallery.forEach((g) => {
+      if (g.dataUrl && !seenUrls.has(g.dataUrl)) {
+        seenUrls.add(g.dataUrl);
+        photos.push({
+          index: photos.length,
+          url: g.dataUrl,
+          title: `Arşiv Kadraj #${photos.length + 1}`,
+          quote: '',
+          idea: '90\'lar editoryal negatif arşiv görseli.',
+          filter: 'normal'
+        });
+      }
+    });
+  }
+
   // Yedek: thumbs veya gallery'den doğrudan doldur
   if (photos.length === 0) {
     thumbs.forEach((t, idx) => {
-      if (t) {
+      if (t && !seenUrls.has(t)) {
+        seenUrls.add(t);
         photos.push({
-          index: idx,
+          index: photos.length,
           url: t,
-          title: idx === 0 ? post.title : `Slayt #${idx + 1}`,
+          title: photos.length === 0 ? post.title : `Slayt #${idx + 1}`,
           quote: post.slideQuotes?.[idx - 1] || '',
           idea: post.visualIdeas?.[idx] || 'Arşiv görseli.',
           filter: 'normal'
@@ -898,16 +933,28 @@ export function MagazineModal({
                     <span>TEMİZ 35MM ARŞİV GÖRSELİ (4:5 DİKEY)</span>
                   </div>
 
-                  {/* Main Clean Photography Hero Plate (Tam Gönderi Boyutu - Instagram 4:5 Oranı) */}
+                  {/* Main Clean Photography Hero Plate (Boşlukları Otomatik Kapatan Full Editoryal Plaka) */}
                   {cleanPhotos.length > 0 ? (
-                    <div className="relative border-4 border-black/90 p-2 sm:p-2.5 bg-white shadow-xl flex flex-col shrink-0 max-w-[390px] sm:max-w-[420px] mx-auto w-full">
+                    <div className="relative border-4 border-black/90 p-2 sm:p-2.5 bg-white shadow-xl flex flex-col shrink-0 max-w-[440px] sm:max-w-[480px] mx-auto w-full">
                       
-                      {/* Tam Gönderi Boyutu (Instagram 4:5 Dikey Oranı) - Üstü Asla Kesilmez */}
+                      {/* Boşlukları Otomatik Kapatan 4:5 Dikey Görsel Alanı */}
                       <div className="w-full aspect-[4/5] bg-neutral-950 overflow-hidden relative shrink-0 flex items-center justify-center border border-black/10">
+                        
+                        {/* Otomatik Boşluk Kapatıcı & Atmosferik Dolgu Katmanı */}
+                        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                          <img
+                            src={cleanPhotos[selectedPhotoIndex]?.url || cleanPhotos[0]?.url}
+                            alt=""
+                            className="w-full h-full object-cover blur-2xl opacity-35 scale-125 filter contrast-125 brightness-75"
+                          />
+                          <div className="absolute inset-0 bg-black/20" />
+                        </div>
+
+                        {/* Ana Görsel (Boşlukları Otomatik Kapatır, Üst Kadrajı Korur) */}
                         <img
                           src={cleanPhotos[selectedPhotoIndex]?.url || cleanPhotos[0]?.url}
                           alt="Temiz Dergi Fotoğrafı"
-                          className="w-full h-full object-contain filter contrast-[1.05]"
+                          className="relative z-10 w-full h-full object-cover object-[center_top] filter contrast-[1.05]"
                         />
                       </div>
                       
@@ -931,7 +978,7 @@ export function MagazineModal({
 
                     </div>
                   ) : (
-                    <div className="max-w-[390px] sm:max-w-[420px] mx-auto w-full aspect-[4/5] rounded border-2 border-dashed border-neutral-400 flex flex-col items-center justify-center p-6 text-center text-neutral-500 font-mono text-xs shrink-0">
+                    <div className="max-w-[440px] sm:max-w-[480px] mx-auto w-full aspect-[4/5] rounded border-2 border-dashed border-neutral-400 flex flex-col items-center justify-center p-6 text-center text-neutral-500 font-mono text-xs shrink-0">
                       <BookOpen className="w-10 h-10 mb-2 opacity-50" />
                       <span>Bu gönderiye ait yüklü görsel bulunamadı.</span>
                     </div>
@@ -939,10 +986,10 @@ export function MagazineModal({
 
                   {/* Thumbnail Plate Scrubber (Diğer Slayt Fotoğraflarını Seç) */}
                   {cleanPhotos.length > 1 && (
-                    <div className="space-y-1.5 max-w-[390px] sm:max-w-[420px] mx-auto w-full">
+                    <div className="space-y-1.5 max-w-[440px] sm:max-w-[480px] mx-auto w-full">
                       <div className="font-mono text-[10px] uppercase text-neutral-500 flex items-center justify-between">
                         <span>DİĞER SLAYT KADRAJLARINI İNCELE:</span>
-                        <span>{cleanPhotos.length} GÖRSEL MEVCUT</span>
+                        <span>{cleanPhotos.length} BENZERSİZ GÖRSEL MEVCUT</span>
                       </div>
                       <div className="grid grid-cols-4 gap-2">
                         {cleanPhotos.map((photo, pIdx) => (
@@ -974,7 +1021,7 @@ export function MagazineModal({
 
                   {/* Actions: Open in Studio */}
                   {onLoadPostToStudio && (
-                    <div className="pt-1 flex justify-end max-w-[390px] sm:max-w-[420px] mx-auto w-full">
+                    <div className="pt-1 flex justify-end max-w-[440px] sm:max-w-[480px] mx-auto w-full">
                       <button
                         type="button"
                         onClick={() => {
