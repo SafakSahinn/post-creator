@@ -167,8 +167,26 @@ const ZOOM_MAX = 500;
 // Dergi sayfası boyutu (ekran ve PDF ortak): 580 x 820 px = A4 oranı (210 x 297 mm)
 const PAGE_W = 580;
 const PAGE_H = 820;
-// Baskı çözünürlüğü: A4 genişliği (210 mm = 8.27 inç) 300 DPI'da 2480 piksel eder
-const PDF_PIXEL_RATIO = 2480 / PAGE_W;
+// PDF çözünürlüğü: A4 genişliği 210 mm = 8.27 inç; piksel oranı = DPI * 8.27 / PAGE_W
+// (300 DPI -> 2480 px genişlik). Seçim tarayıcıda hatırlanır.
+const A4_WIDTH_INCH = 210 / 25.4;
+const PDF_DPI_OPTIONS = [
+  { dpi: 96, label: 'Ekran' },
+  { dpi: 150, label: 'Taslak' },
+  { dpi: 200, label: 'Orta' },
+  { dpi: 300, label: 'Baskı' }
+];
+const DEFAULT_PDF_DPI = 300;
+const PDF_DPI_STORAGE_KEY = 'magazine.pdfDpi';
+const pdfPixelRatioFor = (dpi) => (dpi * A4_WIDTH_INCH) / PAGE_W;
+function readStoredPdfDpi() {
+  try {
+    const v = Number(localStorage.getItem(PDF_DPI_STORAGE_KEY));
+    return PDF_DPI_OPTIONS.some((o) => o.dpi === v) ? v : DEFAULT_PDF_DPI;
+  } catch {
+    return DEFAULT_PDF_DPI;
+  }
+}
 
 // PDF yakalamasında gömülecek web font CSS'i.
 // html-to-image varsayılan olarak her sayfada Google Fonts'un TÜM ailelerini ve alt kümelerini
@@ -403,6 +421,11 @@ export function MagazineModal({
   const [aiError, setAiError] = useState(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [pdfProgress, setPdfProgress] = useState({ current: 0, total: 0 });
+  const [pdfDpi, setPdfDpi] = useState(readStoredPdfDpi);
+  const handleChangePdfDpi = (dpi) => {
+    setPdfDpi(dpi);
+    try { localStorage.setItem(PDF_DPI_STORAGE_KEY, String(dpi)); } catch { /* özel pencere vb. */ }
+  };
   const scrollViewportRef = useRef(null);
 
   // Dergi üzerinde görselleri sürükleyerek düzenleme durumları (Stüdyodan bağımsız)
@@ -1574,7 +1597,7 @@ export function MagazineModal({
 
         const imgData = await toJpeg(pageEl, {
           quality: 0.95,
-          pixelRatio: PDF_PIXEL_RATIO,
+          pixelRatio: pdfPixelRatioFor(pdfDpi),
           backgroundColor: bgColor,
           width: w,
           height: h,
@@ -1786,13 +1809,14 @@ export function MagazineModal({
             <span className="hidden lg:inline">{isPaper ? '90\'lar Kağıt' : '90\'lar Gece'}</span>
           </button>
 
-          {/* Direct High-Quality A4 PDF Download */}
+          {/* Direct High-Quality A4 PDF Download + DPI seçici */}
+          <div className="flex items-stretch shrink-0 rounded-lg shadow-sm">
           <button
             type="button"
             onClick={handleDownloadPdf}
             disabled={isGeneratingPdf}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white border border-red-500/50 text-xs font-mono font-bold transition-all cursor-pointer shadow-sm disabled:opacity-50"
-            title="Dergiyi Yüksek Kaliteli Standart A4 PDF Olarak Doğrudan İndir"
+            className="flex items-center space-x-1.5 px-2 sm:px-3 py-1.5 rounded-l-lg bg-red-600 hover:bg-red-700 text-white border border-red-500/50 text-xs font-mono font-bold transition-all cursor-pointer disabled:opacity-50"
+            title={`Dergiyi ${pdfDpi} DPI standart A4 PDF olarak doğrudan indir`}
           >
             {isGeneratingPdf ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1801,6 +1825,24 @@ export function MagazineModal({
             )}
             <span className="hidden md:inline whitespace-nowrap">{isGeneratingPdf ? 'İndiriliyor...' : 'PDF İndir'}</span>
           </button>
+          <label className="relative flex items-center rounded-r-lg bg-red-700 hover:bg-red-800 border border-l-0 border-red-500/50 text-white text-[11px] font-mono font-bold transition-colors" title="PDF çözünürlüğü (DPI)">
+            <span className="pl-1.5 sm:pl-2 pr-3.5 sm:pr-4 pointer-events-none whitespace-nowrap">{pdfDpi}<span className="hidden lg:inline"> DPI</span></span>
+            <ChevronDown className="w-3 h-3 absolute right-1 pointer-events-none" />
+            <select
+              value={pdfDpi}
+              onChange={(e) => handleChangePdfDpi(Number(e.target.value))}
+              disabled={isGeneratingPdf}
+              aria-label="PDF çözünürlüğü (DPI)"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+            >
+              {PDF_DPI_OPTIONS.map((o) => (
+                <option key={o.dpi} value={o.dpi} className="text-black">
+                  {o.dpi} DPI — {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          </div>
 
           {/* Browser Print / Physical Paper */}
           <button
@@ -1922,7 +1964,7 @@ export function MagazineModal({
           <div>
             <h3 className="font-serif text-xl font-bold tracking-tight">PDF Dergi Hazırlanıyor</h3>
             <p className="text-xs text-neutral-400 mt-1 font-sans">
-              Tüm sayfalar tam A4 boyutunda (300 DPI) işleniyor...
+              Tüm sayfalar tam A4 boyutunda ({pdfDpi} DPI) işleniyor...
             </p>
           </div>
           <div className="w-full bg-neutral-800 rounded-full h-2.5 overflow-hidden border border-white/10">
