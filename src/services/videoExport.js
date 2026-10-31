@@ -71,7 +71,7 @@ export async function exportSlideAsVideo({
 
     if (videoEl) videoEl.style.visibility = originalVideoVisibility;
 
-    overlayImg = await new Promise((resolve, reject) => {
+    overlayImg = await new Promise((resolve) => {
       const img = new Image();
       img.onload = () => resolve(img);
       img.onerror = () => resolve(null);
@@ -100,7 +100,7 @@ export async function exportSlideAsVideo({
     try {
       videoEl.currentTime = 0;
       await videoEl.play().catch(() => {});
-    } catch (e) {
+    } catch {
       // Autoplay kısıtlaması olabilir
     }
   }
@@ -179,7 +179,7 @@ export async function exportSlideAsVideo({
             }
 
             ctx.drawImage(videoEl, sx, sy, sWidth, sHeight, 0, 0, 1080, 1350);
-          } catch (e) {
+          } catch {
             // Güvenlik veya video çizim hatası olursa pas geç
           }
         }

@@ -9,14 +9,17 @@ import {
   CheckCircle2,
   ArrowRight,
   ExternalLink,
-  HelpCircle,
   Cloud,
-  Copy,
-  BookOpen
+  BookOpen,
+  Video,
+  ShieldCheck,
+  AlertTriangle,
+  Clock
 } from 'lucide-react';
+import { InstagramIcon } from './Icons';
 
-export function GuideModal({ isOpen, onClose, onOpenSettings, onOpenProjects }) {
-  const [activeTab, setActiveTab] = useState('newProject'); // 'newProject' | 'general'
+export function GuideModal({ isOpen, onClose, onOpenSettings, onOpenProjects, onOpenMeta }) {
+  const [activeTab, setActiveTab] = useState('newProject'); // 'newProject' | 'instagram' | 'general'
 
   if (!isOpen) return null;
 
@@ -40,7 +43,7 @@ export function GuideModal({ isOpen, onClose, onOpenSettings, onOpenProjects }) 
                 </span>
               </div>
               <p className="text-xs text-neutral-400 font-mono">
-                Çoklu Proje Yönetimi & Editoryal İçerik Stüdyosu
+                Çoklu Proje Yönetimi, Meta API & Editoryal İçerik Stüdyosu
               </p>
             </div>
           </div>
@@ -54,37 +57,50 @@ export function GuideModal({ isOpen, onClose, onOpenSettings, onOpenProjects }) 
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-white/10 bg-black/40 px-6 pt-2">
+        <div className="flex border-b border-white/10 bg-black/40 px-6 pt-2 overflow-x-auto space-x-1 scrollbar-none">
           <button
             type="button"
             onClick={() => setActiveTab('newProject')}
-            className={`pb-3 px-4 font-mono text-xs font-semibold flex items-center space-x-2 border-b-2 transition-all cursor-pointer ${
+            className={`pb-3 px-3.5 font-mono text-xs font-semibold flex items-center space-x-2 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'newProject'
                 ? 'border-[#e6c280] text-[#e6c280]'
                 : 'border-transparent text-neutral-400 hover:text-white'
             }`}
           >
             <FolderPlus className="w-3.5 h-3.5" />
-            <span>Yeni Proje Nasıl Oluşturulur?</span>
+            <span>Yeni Proje</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('instagram')}
+            className={`pb-3 px-3.5 font-mono text-xs font-semibold flex items-center space-x-2 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'instagram'
+                ? 'border-[#e6c280] text-[#e6c280]'
+                : 'border-transparent text-neutral-400 hover:text-white'
+            }`}
+          >
+            <InstagramIcon className="w-3.5 h-3.5" />
+            <span>Instagram & Sınırsız Token</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('general')}
-            className={`pb-3 px-4 font-mono text-xs font-semibold flex items-center space-x-2 border-b-2 transition-all cursor-pointer ${
+            className={`pb-3 px-3.5 font-mono text-xs font-semibold flex items-center space-x-2 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'general'
                 ? 'border-[#e6c280] text-[#e6c280]'
                 : 'border-transparent text-neutral-400 hover:text-white'
             }`}
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Genel Kullanım & Çıktılar</span>
+            <span>Stüdyo & Çıktılar</span>
           </button>
         </div>
 
         {/* Modal Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {activeTab === 'newProject' ? (
+          {activeTab === 'newProject' && (
             <div className="space-y-4">
               
               {/* Highlight Banner */}
@@ -180,7 +196,87 @@ export function GuideModal({ isOpen, onClose, onOpenSettings, onOpenProjects }) 
               </div>
 
             </div>
-          ) : (
+          )}
+
+          {activeTab === 'instagram' && (
+            <div className="space-y-4">
+              
+              {/* Highlight Banner */}
+              <div className="p-4 rounded-xl bg-gradient-to-r from-pink-500/15 via-[#e6c280]/10 to-transparent border border-pink-500/30 flex items-start space-x-3.5">
+                <InstagramIcon className="w-5 h-5 text-pink-400 shrink-0 mt-0.5" />
+                <div className="text-xs space-y-1">
+                  <h4 className="font-serif font-bold text-white text-sm">
+                    Meta Graph API Otomatik Paylaşım & Planlama
+                  </h4>
+                  <p className="text-neutral-300 font-sans leading-relaxed">
+                    Post Creator, ürettiğiniz 2 ila 10 slaytlık carousel gönderilerini doğrudan resmi Instagram Graph API üzerinden profilinizde yayınlar veya ileri bir tarihe planlar. Üçüncü taraf aracı servislere ihtiyaç duymaz.
+                  </p>
+                </div>
+              </div>
+
+              {/* Step 1: Sınırsız Token */}
+              <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 space-y-2.5">
+                <div className="flex items-center space-x-2 text-[#e6c280] font-mono text-xs font-semibold">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <span className="text-white">1. Sınırsız / Asla Bitmeyen Token (Önerilen)</span>
+                  <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px]">Kalıcı</span>
+                </div>
+                <p className="text-xs text-neutral-300 leading-relaxed font-sans">
+                  Standart Graph API Explorer tokenları 1 saatte biter. Kalıcı token için Meta Business Suite'in <strong>Sistem Kullanıcıları</strong> özelliğini kullanın:
+                </p>
+                <ol className="text-xs text-neutral-300 space-y-1.5 pl-5 list-decimal font-sans">
+                  <li><strong>Meta Business Suite</strong> &rarr; <em>Ayarlar</em> &rarr; <em>Kullanıcılar</em> &rarr; <strong>Sistem Kullanıcıları</strong> sayfasına gidin.</li>
+                  <li>Yeni bir sistem kullanıcısı ekleyin ve rolünü <strong>Yönetici (Admin)</strong> yapın.</li>
+                  <li><strong>Varlıklar Ata (Assign Assets)</strong> butonuna tıklayın:
+                    <div className="p-2.5 mt-1 rounded-lg bg-black/50 border border-amber-500/30 text-amber-200 text-[11px] font-mono space-y-1">
+                      <div className="font-bold flex items-center space-x-1">
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Kritik Gereksinim: İki Varlığı da Atayın!</span>
+                      </div>
+                      <div>• <strong>Uygulamalar (Apps):</strong> <code>PostCreator</code> &rarr; Tam Kontrol / Yönet</div>
+                      <div>• <strong>Instagram Hesapları:</strong> Sayfanız (örn: <code>timsahgibi</code>) &rarr; İçerik Yönetimi</div>
+                    </div>
+                  </li>
+                  <li><strong>Yeni Jeton Oluştur (Generate Token)</strong> butonuna tıklayın:
+                    <div className="mt-1 font-mono text-[11px] text-neutral-300">
+                      Süre: <strong>Asla (Never)</strong> | İzinler: <code>instagram_basic</code>, <code>instagram_content_publish</code>, <code>pages_show_list</code>
+                    </div>
+                  </li>
+                  <li>Üretilen <code>EAA...</code> ile başlayan jetonu kopyalayıp Meta Paylaşım ekranına yapıştırın.</li>
+                </ol>
+              </div>
+
+              {/* Step 2: 60 Günlük Token */}
+              <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 space-y-2">
+                <div className="flex items-center space-x-2 text-[#e6c280] font-mono text-xs font-semibold">
+                  <Clock className="w-4 h-4 text-cyan-400" />
+                  <span className="text-white">2. Hızlı 60 Günlük Token (Token Debugger)</span>
+                  <span className="px-1.5 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[10px]">60 Gün</span>
+                </div>
+                <p className="text-xs text-neutral-300 leading-relaxed font-sans">
+                  Hızlıca test etmek isterseniz, Graph API Explorer'dan aldığınız 1 saatlik jetonu Meta'nın <a href="https://developers.facebook.com/tools/debug/accesstoken" target="_blank" rel="noopener noreferrer" className="text-[#e6c280] underline inline-flex items-center space-x-1"><span>Access Token Debugger</span><ExternalLink className="w-3 h-3" /></a> aracına yapıştırıp en alttaki <strong>"Extend Access Token"</strong> butonuna basarak 60 güne uzatabilirsiniz.
+                </p>
+              </div>
+
+              {/* Step 3: Doğrudan & İleri Tarihli Planlama */}
+              <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 space-y-2">
+                <div className="flex items-center space-x-2 text-[#e6c280] font-mono text-xs font-semibold">
+                  <CheckCircle2 className="w-4 h-4 text-[#e6c280]" />
+                  <span className="text-white">3. Şimdi Paylaş & İleri Tarihe Planla</span>
+                </div>
+                <p className="text-xs text-neutral-300 leading-relaxed font-sans">
+                  Carousel stüdyosunun sağ üstündeki <strong>"Instagram'da Paylaş / Planla"</strong> butonuna basın:
+                </p>
+                <ul className="text-xs text-neutral-300 space-y-1 pl-5 list-disc font-sans">
+                  <li><strong>Hemen Paylaş:</strong> Slaytlar 1080x1350 JPEG olarak işlenir ve saniyeler içinde yayına girer.</li>
+                  <li><strong>İleri Tarihe Planla:</strong> Tarih ve saat seçin (Meta kuralı: en az 15 dakika, en fazla 75 gün sonrası). Meta sunucuları belirlenen saatte gönderinizi otomatik yayınlar.</li>
+                </ul>
+              </div>
+
+            </div>
+          )}
+
+          {activeTab === 'general' && (
             <div className="space-y-4">
               
               {/* General Step 1 */}
@@ -194,36 +290,36 @@ export function GuideModal({ isOpen, onClose, onOpenSettings, onOpenProjects }) 
                 </p>
               </div>
 
-              {/* General Step 2 */}
+              {/* General Step 2: Carousel Studio & Lightbox */}
               <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 space-y-2">
                 <div className="flex items-center space-x-2.5 text-[#e6c280] font-mono text-xs font-semibold">
                   <Sliders className="w-4 h-4 text-[#e6c280]" />
-                  <span>2. Carousel Stüdyosu & Fotoğraf Yerleşimi</span>
+                  <span>2. Carousel Stüdyosu, Tipografi & Lightbox</span>
                 </div>
                 <p className="text-xs text-neutral-300 leading-relaxed font-sans">
-                  İçerik üretildikten sonra <strong>"Carousel Stüdyosu"</strong> sekmesine geçin. Kendi fotoğraflarınızı yükleyebilir veya küratörün İngilizce arama terimini kopyalayarak Pinterest/Unsplash'ten uygun görsel bulabilirsiniz. Her slayta farklı fotoğraf atayabilir, parlaklık/vignette ayarları yapabilir ve <kbd className="text-[#e6c280] font-bold">Ctrl + Z</kbd> ile geri alabilirsiniz.
+                  Her slayta farklı fotoğraf atayabilir, 5 özel editoryal fonttan birini seçebilir, parlaklık/vignette ve dikey metin ince ayarı yapabilirsiniz. Slaytların üzerine tıklayarak <strong>1080x1350 Lightbox (Büyük Boy Önizleme)</strong> moduna geçebilir, klavye ok tuşlarıyla slaytlar arasında gezinebilirsiniz. Yanlış bir işlemde <kbd className="text-[#e6c280] font-bold">Ctrl + Z</kbd> ile geri alabilirsiniz.
                 </p>
               </div>
 
-              {/* General Step 3 */}
+              {/* General Step 3: MP4 Reel Video */}
+              <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 space-y-2">
+                <div className="flex items-center space-x-2.5 text-[#e6c280] font-mono text-xs font-semibold">
+                  <Video className="w-4 h-4 text-[#e6c280]" />
+                  <span>3. 10 Mbps Kristal Netliğinde MP4 Video İhracı</span>
+                </div>
+                <p className="text-xs text-neutral-300 leading-relaxed font-sans">
+                  Carousel slaytlarınızı tek tıkla Instagram Reels veya TikTok için <strong>1080x1350 portre MP4 videosuna</strong> dönüştürün. Slaytlar arası yumuşak sinematik geçişler ve 10 Mbps yüksek bitrate ile bulanıklıktan uzak stüdyo kalitesinde çıktı alırsınız.
+                </p>
+              </div>
+
+              {/* General Step 4: Google Drive & IndexedDB */}
               <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 space-y-2">
                 <div className="flex items-center space-x-2.5 text-[#e6c280] font-mono text-xs font-semibold">
                   <Cloud className="w-4 h-4 text-[#e6c280]" />
-                  <span>3. Google Drive'a Tam Yedekleme</span>
+                  <span>4. Google Drive & Yerel Arşiv (IndexedDB)</span>
                 </div>
                 <p className="text-xs text-neutral-300 leading-relaxed font-sans">
-                  Arşiv çekmecesinden Google ile oturum açarak tek tıkla tüm gönderilerinizi ve yüklediğiniz tam çözünürlüklü fotoğrafları kendi Google Drive'ınızdaki <code>Post Creator</code> klasörüne yedekleyebilirsiniz. Yedeklenen gönderilerin yanında yeşil onay tiki (✓) belirir.
-                </p>
-              </div>
-
-              {/* General Step 4 */}
-              <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 space-y-2">
-                <div className="flex items-center space-x-2.5 text-[#e6c280] font-mono text-xs font-semibold">
-                  <CheckCircle2 className="w-4 h-4 text-[#e6c280]" />
-                  <span>4. Tek Tıkla Instagram'a Aktarma</span>
-                </div>
-                <p className="text-xs text-neutral-300 leading-relaxed font-sans">
-                  <strong>"Tüm Slaytları İndir (Zip/PNG)"</strong> butonuyla Instagram 4:5 portre formatındaki hazır görselleri cihazınıza kaydedebilir, <strong>"Metni Kopyala"</strong> butonuyla kanca, açıklama paragrafları ve etiketleri panoya alabilirsiniz.
+                  Ürettiğiniz tüm gönderiler fotoğraflarıyla birlikte tarayıcınızın güvenli yerel hafızasında saklanır. İsterseniz Google ile oturum açarak tek tıkla tüm arşivinizi kendi Google Drive'ınızdaki <code>Post Creator</code> klasörüne tam çözünürlüklü olarak yedekleyebilirsiniz.
                 </p>
               </div>
 
@@ -233,20 +329,35 @@ export function GuideModal({ isOpen, onClose, onOpenSettings, onOpenProjects }) 
 
         {/* Footer Actions */}
         <div className="px-6 py-4 border-t border-white/10 bg-white/[0.02] flex items-center justify-between">
-          {onOpenProjects ? (
-            <button
-              type="button"
-              onClick={() => {
-                onClose();
-                onOpenProjects();
-              }}
-              className="px-4 py-2 rounded-lg bg-[#e6c280]/15 text-[#e6c280] border border-[#e6c280]/30 hover:bg-[#e6c280]/25 text-xs font-mono font-semibold flex items-center space-x-1.5 transition-all cursor-pointer"
-            >
-              <FolderPlus className="w-3.5 h-3.5" />
-              <span>Hemen Proje Merkezine Git</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          ) : <div />}
+          <div className="flex items-center space-x-2">
+            {onOpenProjects && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenProjects();
+                }}
+                className="px-3.5 py-2 rounded-lg bg-[#e6c280]/15 text-[#e6c280] border border-[#e6c280]/30 hover:bg-[#e6c280]/25 text-xs font-mono font-semibold flex items-center space-x-1.5 transition-all cursor-pointer"
+              >
+                <FolderPlus className="w-3.5 h-3.5" />
+                <span>Proje Merkezi</span>
+              </button>
+            )}
+
+            {onOpenMeta && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenMeta();
+                }}
+                className="px-3.5 py-2 rounded-lg bg-pink-500/15 text-pink-300 border border-pink-500/30 hover:bg-pink-500/25 text-xs font-mono font-semibold flex items-center space-x-1.5 transition-all cursor-pointer"
+              >
+                <InstagramIcon className="w-3.5 h-3.5" />
+                <span>Meta Bağlantısı</span>
+              </button>
+            )}
+          </div>
 
           <button
             type="button"

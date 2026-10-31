@@ -19,7 +19,7 @@ export async function convertUrlToDataUrl(url) {
         reader.readAsDataURL(blob);
       });
     }
-  } catch (err) {
+  } catch {
     // CORS engeli durumunda Canvas fallback'ine geç
   }
 
@@ -44,7 +44,7 @@ export async function convertUrlToDataUrl(url) {
       img.src = url;
     });
     return canvasData;
-  } catch (err) {
+  } catch {
     // Canvas güvenlik kısıtlaması olursa doğrudan URL'yi koru
   }
 

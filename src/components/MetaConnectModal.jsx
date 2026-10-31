@@ -6,13 +6,15 @@ import {
   AlertCircle,
   ExternalLink,
   Loader2,
-  Key,
   ShieldCheck,
   HelpCircle,
-  Users,
   ChevronDown,
   ChevronUp,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Sparkles,
+  Zap,
+  Info,
+  ShieldAlert
 } from 'lucide-react';
 import { InstagramIcon } from './Icons';
 import {
@@ -36,6 +38,7 @@ export function MetaConnectModal({ isOpen, onClose }) {
   const [errorMsg, setErrorMsg] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
   const [showGuide, setShowGuide] = useState(false);
+  const [guideTab, setGuideTab] = useState('permanent'); // 'permanent' | 'fast' | 'findId' | 'troubleshoot'
 
   useEffect(() => {
     if (isOpen) {
@@ -217,63 +220,245 @@ export function MetaConnectModal({ isOpen, onClose }) {
             </div>
           </div>
 
-          {/* Guide Accordion */}
-          <div className="border border-white/10 rounded-xl overflow-hidden">
+          {/* Guide Accordion with Interactive Tabs */}
+          <div className="border border-white/10 rounded-xl overflow-hidden bg-black/40">
             <button
               type="button"
               onClick={() => setShowGuide(!showGuide)}
-              className="w-full p-3 bg-white/[0.02] hover:bg-white/[0.05] flex items-center justify-between text-xs font-mono text-[#e6c280] transition-colors"
+              className="w-full p-3.5 bg-white/[0.02] hover:bg-white/[0.05] flex items-center justify-between text-xs font-mono text-[#e6c280] transition-colors cursor-pointer"
             >
               <span className="flex items-center space-x-2">
-                <HelpCircle className="w-4 h-4" />
-                <span>Meta Access Token ve Hesap ID Nasıl Alınır? (3 Adım)</span>
+                <HelpCircle className="w-4 h-4 text-[#e6c280]" />
+                <span className="font-semibold">Meta Kurulum & Sınırsız Token Rehberi (Tüm Adımlar)</span>
               </span>
               {showGuide ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
 
             {showGuide && (
-              <div className="p-4 bg-black/40 text-xs font-sans text-neutral-300 space-y-3 leading-relaxed border-t border-white/5">
-                <div className="flex items-start space-x-2">
-                  <span className="w-5 h-5 rounded-full bg-[#e6c280]/20 text-[#e6c280] font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">
-                    1
-                  </span>
-                  <div>
-                    <strong className="text-white">Meta Developer Hesabı:</strong>{' '}
-                    <a
-                      href="https://developers.facebook.com"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#e6c280] hover:underline inline-flex items-center space-x-0.5"
-                    >
-                      <span>developers.facebook.com</span>
-                      <ExternalLink className="w-2.5 h-2.5" />
-                    </a>{' '}
-                    adresine gidip ücretsiz bir geliştirici hesabı açın ve yeni bir uygulama oluşturun (Tür: Diğer &rarr; İşletme).
-                  </div>
+              <div className="border-t border-white/10 text-xs font-sans text-neutral-300">
+                {/* Sub Tab Navigation */}
+                <div className="flex border-b border-white/10 bg-black/60 overflow-x-auto text-[11px] font-mono">
+                  <button
+                    type="button"
+                    onClick={() => setGuideTab('permanent')}
+                    className={`py-2 px-3 border-b-2 whitespace-nowrap transition-all cursor-pointer flex items-center space-x-1.5 ${
+                      guideTab === 'permanent'
+                        ? 'border-[#e6c280] text-[#e6c280] bg-[#e6c280]/10 font-bold'
+                        : 'border-transparent text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    <span>Sınırsız Token (Önerilen)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setGuideTab('fast')}
+                    className={`py-2 px-3 border-b-2 whitespace-nowrap transition-all cursor-pointer flex items-center space-x-1.5 ${
+                      guideTab === 'fast'
+                        ? 'border-[#e6c280] text-[#e6c280] bg-[#e6c280]/10 font-bold'
+                        : 'border-transparent text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    <Zap className="w-3 h-3" />
+                    <span>Hızlı 60 Günlük</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setGuideTab('findId')}
+                    className={`py-2 px-3 border-b-2 whitespace-nowrap transition-all cursor-pointer flex items-center space-x-1.5 ${
+                      guideTab === 'findId'
+                        ? 'border-[#e6c280] text-[#e6c280] bg-[#e6c280]/10 font-bold'
+                        : 'border-transparent text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    <Info className="w-3 h-3" />
+                    <span>Hesap ID Bulma</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setGuideTab('troubleshoot')}
+                    className={`py-2 px-3 border-b-2 whitespace-nowrap transition-all cursor-pointer flex items-center space-x-1.5 ${
+                      guideTab === 'troubleshoot'
+                        ? 'border-red-400 text-red-300 bg-red-950/20 font-bold'
+                        : 'border-transparent text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    <ShieldAlert className="w-3 h-3" />
+                    <span>Hata Çözümleri</span>
+                  </button>
                 </div>
 
-                <div className="flex items-start space-x-2">
-                  <span className="w-5 h-5 rounded-full bg-[#e6c280]/20 text-[#e6c280] font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">
-                    2
-                  </span>
-                  <div>
-                    <strong className="text-white">Graph API Explorer:</strong> Üst menüden <em>Araçlar &rarr; Graph API Explorer</em>'ı açın. İzinler (Permissions) kısmından şu 4 izni ekleyin:
-                    <div className="flex flex-wrap gap-1 mt-1 font-mono text-[10px]">
-                      <span className="px-1.5 py-0.5 rounded bg-white/10 text-emerald-300">instagram_basic</span>
-                      <span className="px-1.5 py-0.5 rounded bg-white/10 text-emerald-300">instagram_content_publish</span>
-                      <span className="px-1.5 py-0.5 rounded bg-white/10 text-emerald-300">pages_show_list</span>
-                      <span className="px-1.5 py-0.5 rounded bg-white/10 text-emerald-300">pages_read_engagement</span>
+                <div className="p-4 space-y-3.5 leading-relaxed bg-[#0b0c10]">
+                  {/* TAB 1: Sınırsız / Asla Bitmeyen Token */}
+                  {guideTab === 'permanent' && (
+                    <div className="space-y-3">
+                      <div className="p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-500/30 text-emerald-300 text-[11px] leading-relaxed">
+                        Bu yöntemle aldığınız token'ın süresi <strong>ASLA BİTMEZ (Never Expires)</strong>. Her defasında token yenilemek zorunda kalmazsınız.
+                      </div>
+
+                      <div className="space-y-2 text-xs">
+                        <div className="flex items-start space-x-2">
+                          <span className="w-5 h-5 rounded-full bg-[#e6c280]/20 text-[#e6c280] font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">1</span>
+                          <div>
+                            <strong className="text-white">Sistem Kullanıcısı Ekleyin:</strong>{' '}
+                            <a
+                              href="https://business.facebook.com/settings/system-users"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#e6c280] hover:underline inline-flex items-center space-x-0.5"
+                            >
+                              <span>business.facebook.com/settings/system-users</span>
+                              <ExternalLink className="w-2.5 h-2.5" />
+                            </a>{' '}
+                            sayfasında <strong>"Ekle"</strong> butonuna basın, isim olarak <code>PostCreator</code> yazıp rolü <strong>Yönetici (Admin)</strong> seçin.
+                          </div>
+                        </div>
+
+                        <div className="flex items-start space-x-2">
+                          <span className="w-5 h-5 rounded-full bg-[#e6c280]/20 text-[#e6c280] font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">2</span>
+                          <div>
+                            <strong className="text-white">Uygulamaya Yetki Verin:</strong> Sol menüden <code>Hesaplar ➔ Uygulamalar</code>'a gidip uygulamanızı seçin. <strong>"Kişiler atayın"</strong> butonuna basarak <code>PostCreator</code> kullanıcısına <strong>"Tam erişim / Yönet"</strong> yetkisi verin.
+                          </div>
+                        </div>
+
+                        <div className="flex items-start space-x-2">
+                          <span className="w-5 h-5 rounded-full bg-[#e6c280]/20 text-[#e6c280] font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">3</span>
+                          <div>
+                            <strong className="text-white">Instagram Hesabını Bağlayın:</strong> Sol menüden <code>Hesaplar ➔ Instagram Hesapları</code>'na gidip sayfanıza sistem kullanıcısını <strong>"Tam erişim"</strong> ile atayın.
+                          </div>
+                        </div>
+
+                        <div className="flex items-start space-x-2">
+                          <span className="w-5 h-5 rounded-full bg-[#e6c280]/20 text-[#e6c280] font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">4</span>
+                          <div>
+                            <strong className="text-white">Sınırsız Jetonu Üretin:</strong> Tekrar <code>Sistem kullanıcıları</code> sayfasına dönüp <strong>"Jeton oluştur"</strong> butonuna basın. Süreyi <strong>"Asla Dolmaz" (Never)</strong> seçin. İzinlerden şu 3 izni işaretleyin:
+                            <div className="flex flex-wrap gap-1 mt-1.5 font-mono text-[10px]">
+                              <span className="px-1.5 py-0.5 rounded bg-white/10 text-emerald-300">instagram_basic</span>
+                              <span className="px-1.5 py-0.5 rounded bg-white/10 text-emerald-300">instagram_content_publish</span>
+                              <span className="px-1.5 py-0.5 rounded bg-white/10 text-emerald-300">pages_show_list</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  )}
 
-                <div className="flex items-start space-x-2">
-                  <span className="w-5 h-5 rounded-full bg-[#e6c280]/20 text-[#e6c280] font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">
-                    3
-                  </span>
-                  <div>
-                    <strong className="text-white">ID ve Token Alma:</strong> <strong>"Generate Access Token"</strong> butonuna basın. Ardından arama kutusuna <code className="text-[#e6c280] font-mono">me/accounts?fields=instagram_business_account</code> yazıp çalıştırdığınızda Instagram Hesap ID'nizi ve Token'ınızı göreceksiniz.
-                  </div>
+                  {/* TAB 2: Hızlı 60 Günlük Token */}
+                  {guideTab === 'fast' && (
+                    <div className="space-y-3">
+                      <p className="text-xs text-neutral-300">
+                        Sistem kullanıcısıyla uğraşmak istemiyorsanız, 30 saniyede tam <strong>60 gün (2 ay)</strong> geçerli token alabilirsiniz:
+                      </p>
+
+                      <div className="space-y-2 text-xs">
+                        <div className="flex items-start space-x-2">
+                          <span className="w-5 h-5 rounded-full bg-amber-400/20 text-amber-300 font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">1</span>
+                          <div>
+                            <a
+                              href="https://developers.facebook.com/tools/explorer"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#e6c280] hover:underline inline-flex items-center space-x-0.5"
+                            >
+                              <span>Graph API Explorer</span>
+                              <ExternalLink className="w-2.5 h-2.5" />
+                            </a>{' '}
+                            sayfasında <strong>"Generate Access Token"</strong> butonuna basıp geçici token'ınızı kopyalayın.
+                          </div>
+                        </div>
+
+                        <div className="flex items-start space-x-2">
+                          <span className="w-5 h-5 rounded-full bg-amber-400/20 text-amber-300 font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">2</span>
+                          <div>
+                            <a
+                              href="https://developers.facebook.com/tools/debug/accesstoken"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#e6c280] hover:underline inline-flex items-center space-x-0.5"
+                            >
+                              <span>Access Token Debugger</span>
+                              <ExternalLink className="w-2.5 h-2.5" />
+                            </a>{' '}
+                            sayfasına gidin, token'ı kutuya yapıştırıp <strong>"Debug"</strong> deyin.
+                          </div>
+                        </div>
+
+                        <div className="flex items-start space-x-2">
+                          <span className="w-5 h-5 rounded-full bg-amber-400/20 text-amber-300 font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">3</span>
+                          <div>
+                            Sayfanın en altındaki mavi <strong>"Extend Access Token" (Erişim Jetonunu Uzat)</strong> butonuna basın. Meta size 60 günlük token'ınızı verir.
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 3: Instagram Hesap ID Bulma */}
+                  {guideTab === 'findId' && (
+                    <div className="space-y-3 text-xs">
+                      <p className="text-neutral-300">
+                        Instagram Business/Creator hesabınızın sayısal ID'sini (17 haneli) bulmanın en garantili 2 yolu:
+                      </p>
+
+                      <div className="p-3 rounded-lg bg-white/[0.03] border border-white/10 space-y-1">
+                        <strong className="text-white block">1. Yol (Meta Panelinden Tek Tıkla):</strong>
+                        <p className="text-neutral-300 text-[11px]">
+                          <a
+                            href="https://business.facebook.com/settings/instagram-account-v2"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#e6c280] hover:underline inline-flex items-center space-x-0.5"
+                          >
+                            <span>business.facebook.com/settings/instagram-account-v2</span>
+                            <ExternalLink className="w-2.5 h-2.5" />
+                          </a>{' '}
+                          sayfasını açın. Instagram hesabınıza tıkladığınızda kullanıcı adınızın altında <strong>"Hesap Kimliği (ID)"</strong> doğrudan yazar (örn: <code>178414...</code>).
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-lg bg-white/[0.03] border border-white/10 space-y-1">
+                        <strong className="text-white block">2. Yol (Graph API Sorgusu):</strong>
+                        <p className="text-neutral-300 text-[11px]">
+                          Graph API Explorer'da arama kutusuna <code className="text-[#e6c280]">me/accounts?fields=instagram_business_account&#123;id,username&#125;</code> yazıp <strong>Submit</strong> dediğinizde ID listelenir.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 4: Sık Karşılaşılan Hatalar & Çözümleri */}
+                  {guideTab === 'troubleshoot' && (
+                    <div className="space-y-2.5 text-xs">
+                      <div className="p-2.5 rounded-lg bg-red-950/20 border border-red-500/20 space-y-1">
+                        <strong className="text-red-300 font-mono text-[11px] block">
+                          "Session has expired" (Oturum süresi doldu)
+                        </strong>
+                        <p className="text-neutral-300 text-[11px]">
+                          Kullandığınız token geçici 1 saatlik token'dır. <em>"Sınırsız Token"</em> sekmesindeki adımlarla kalıcı token veya <em>"Hızlı 60 Günlük"</em> token alıp yapıştırın.
+                        </p>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-amber-950/20 border border-amber-500/20 space-y-1">
+                        <strong className="text-amber-300 font-mono text-[11px] block">
+                          "Object does not exist or missing permissions"
+                        </strong>
+                        <p className="text-neutral-300 text-[11px]">
+                          Sistem kullanıcısına Instagram hesabı varlığı atanmamıştır. Meta Business Suite'ten <code>Sistem Kullanıcıları ➔ Varlıklar Ata ➔ Instagram Hesapları</code> kısmından hesabınızı işaretleyip izin verin.
+                        </p>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-blue-950/20 border border-blue-500/20 space-y-1">
+                        <strong className="text-sky-300 font-mono text-[11px] block">
+                          "The image format is not supported"
+                        </strong>
+                        <p className="text-neutral-300 text-[11px]">
+                          Meta Instagram Publishing yalnızca JPEG kabul eder. Sistemimiz tüm slaytları artık otomatik olarak %100 stüdyo kalitesinde 1080x1350 JPEG formatına dönüştürerek yüklemektedir.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

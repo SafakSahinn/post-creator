@@ -47,7 +47,7 @@ Generate ONLY the clean English photo prompt. Do not add quotes, labels, or expl
   }
 
   // Fallback temizleme
-  let cleaned = visualNote.replace(/^(Bu içeriğin arka planı için|Küratörün Görsel Notu|Örn:|\"|\')/gi, '').trim();
+  let cleaned = visualNote.replace(/^(Bu içeriğin arka planı için|Küratörün Görsel Notu|Örn:|["'])/gi, '').trim();
   return `Authentic archival ${decade} 35mm documentary photograph of ${cleaned}, realistic natural lighting, editorial magazine archival still, film grain, muted vintage color palette, photorealistic`;
 }
 

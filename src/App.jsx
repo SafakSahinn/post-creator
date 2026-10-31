@@ -574,6 +574,10 @@ export function App() {
           setIsGuideOpen(false);
           setIsProjectModalOpen(true);
         }}
+        onOpenMeta={() => {
+          setIsGuideOpen(false);
+          setIsMetaModalOpen(true);
+        }}
       />
 
       {/* Multi-Project Manager Modal */}
