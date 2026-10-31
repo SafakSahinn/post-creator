@@ -30,7 +30,7 @@ import {
   Plus
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
-import { toJpeg } from 'html-to-image';
+import { toJpeg, getFontEmbedCSS } from 'html-to-image';
 import { InstagramIcon } from './Icons';
 import { generateDeepMagazineEssay } from '../services/gemini';
 import { saveArchiveToDb } from '../services/archiveDb';
@@ -167,6 +167,55 @@ const ZOOM_MAX = 500;
 // Dergi sayfası boyutu (ekran ve PDF ortak): 580 x 820 px = A4 oranı (210 x 297 mm)
 const PAGE_W = 580;
 const PAGE_H = 820;
+
+// PDF yakalamasında gömülecek web font CSS'i.
+// html-to-image varsayılan olarak her sayfada Google Fonts'un TÜM ailelerini ve alt kümelerini
+// (Kiril, Yunan, Vietnam...) yeniden toplayıp ~30 MB CSS olarak gömüyor. Burada bir kez toplanıp
+// yalnızca dergide kullanılan aileler ve metinde geçen karakterleri kapsayan alt kümeler bırakılıyor.
+let rawFontCssPromise = null;
+async function buildPdfFontEmbedCSS(rootEl) {
+  if (!rawFontCssPromise) {
+    rawFontCssPromise = getFontEmbedCSS(rootEl).catch((err) => {
+      rawFontCssPromise = null;
+      throw err;
+    });
+  }
+  const rawCss = await rawFontCssPromise;
+
+  const usedFamilies = new Set();
+  rootEl.querySelectorAll('*').forEach((el) => {
+    getComputedStyle(el).fontFamily.split(',').forEach((f) => {
+      usedFamilies.add(f.trim().replace(/["']/g, '').toLowerCase());
+    });
+  });
+  const usedCodePoints = new Set();
+  for (const ch of rootEl.textContent || '') usedCodePoints.add(ch.codePointAt(0));
+
+  const coversUsedText = (unicodeRange) => {
+    if (!unicodeRange) return true;
+    const ranges = unicodeRange.split(',').map((part) => {
+      const [a, b] = part.trim().replace(/^U\+/i, '').split('-');
+      const start = parseInt(a.replace(/\?/g, '0'), 16);
+      const end = parseInt((b || a).replace(/\?/g, 'F'), 16);
+      return [start, end];
+    });
+    for (const cp of usedCodePoints) {
+      if (ranges.some(([s, e]) => cp >= s && cp <= e)) return true;
+    }
+    return false;
+  };
+
+  const seen = new Set();
+  const kept = [];
+  for (const block of rawCss.match(/@font-face\s*{[^}]*}/g) || []) {
+    if (seen.has(block)) continue; // aynı stil sayfası defalarca eklenmiş olabiliyor
+    seen.add(block);
+    const family = ((block.match(/font-family:\s*["']?([^"';]+)/) || [])[1] || '').trim().toLowerCase();
+    const range = (block.match(/unicode-range:\s*([^;]+)/) || [])[1];
+    if (usedFamilies.has(family) && coversUsedText(range)) kept.push(block);
+  }
+  return kept.join('\n');
+}
 
 function normalizePhotoSetting(s) {
   if (!s) return DEFAULT_PHOTO_SETTING;
@@ -495,7 +544,10 @@ export function MagazineModal({
         });
       }
     });
-    
+
+    // Son: Arka Kapak (içindekilerde listelenmez, sayfa numarası basılmaz)
+    pages.push({ type: 'backcover' });
+
     return pages;
   }, [displayPosts]);
 
@@ -503,6 +555,15 @@ export function MagazineModal({
   const activePageData = magazinePages[currentPage] || magazinePages[0];
   const currentPost = activePageData?.post || null;
   const coverCollageImages = useMemo(() => extractCoverCollageImages(displayPosts, 5), [displayPosts]);
+  // Arka kapak görseli: önce ön kapakta kullanılmayan 5. kolaj karesi, yoksa son gönderinin son fotoğrafı
+  const backCoverImage = useMemo(() => {
+    if (coverCollageImages[4]?.url) return coverCollageImages[4].url;
+    for (let i = displayPosts.length - 1; i >= 0; i--) {
+      const photos = extractCleanPhotos(displayPosts[i]);
+      if (photos.length > 0) return photos[photos.length - 1].url;
+    }
+    return coverCollageImages[0]?.url || null;
+  }, [coverCollageImages, displayPosts]);
 
   // Sayfa değiştiğinde tepeye kaydır (Scroll to Top)
   useEffect(() => {
@@ -1119,7 +1180,7 @@ export function MagazineModal({
                       onClick={() => setCurrentPage(pageIdx + 1)}
                       className="hover:text-red-600 font-bold underline cursor-pointer text-red-600"
                     >
-                      Sonraki Dosya &rarr;
+                      {magazinePages[pageIdx + 1]?.type === 'backcover' ? 'Arka Kapak' : 'Sonraki Dosya'} &rarr;
                     </button>
                   ) : null}
                   <span>SAYFA {String(pageIdx + 1).padStart(2, '0')}</span>
@@ -1361,7 +1422,7 @@ export function MagazineModal({
                       onClick={() => setCurrentPage(pageIdx + 1)}
                       className="hover:text-red-600 font-bold underline cursor-pointer text-red-600"
                     >
-                      Sonraki Dosya &rarr;
+                      {magazinePages[pageIdx + 1]?.type === 'backcover' ? 'Arka Kapak' : 'Sonraki Dosya'} &rarr;
                     </button>
                   ) : null}
                   <span>SAYFA {String(pageIdx + 1).padStart(2, '0')}</span>
@@ -1373,6 +1434,89 @@ export function MagazineModal({
                 <span>SAYFA {String(pageIdx + 1).padStart(2, '0')}</span>
               </>
             )}
+          </div>
+        </div>
+      );
+    }
+
+    // ----------------------------------------------------
+    // SON SAYFA: ARKA KAPAK (ön kapakla aynı karanlık kabuk)
+    // ----------------------------------------------------
+    if (pageData.type === 'backcover') {
+      return (
+        <div className="relative flex-1 border-4 border-black/90 m-1.5 sm:m-3 overflow-hidden flex flex-col shadow-2xl bg-black select-none">
+          {/* Arka plan fotoğrafı */}
+          <div className="absolute inset-0 z-0 overflow-hidden">
+            {backCoverImage ? (
+              <img
+                src={backCoverImage}
+                alt=""
+                className="w-full h-full object-cover object-center filter grayscale contrast-[1.1]"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-neutral-900 via-black to-neutral-950" />
+            )}
+          </div>
+
+          {/* Karartma */}
+          <div className="absolute inset-0 z-[1] pointer-events-none bg-gradient-to-b from-black/85 via-black/50 to-black/95 shadow-[inset_0_0_140px_rgba(0,0,0,0.85)]" />
+
+          {/* Tipografi */}
+          <div className="absolute inset-0 z-10 flex flex-col justify-between p-3 sm:p-6 lg:px-8 lg:pt-6 lg:pb-2.5">
+            {/* Üst şerit */}
+            <div className="border-b border-white/20 pb-2 flex items-center justify-between font-mono text-[11px] uppercase tracking-widest text-neutral-300">
+              <span>CİLT I · SAYI 01</span>
+              <span className="font-bold text-[#e6c280] tracking-wider">{currentMonthYear}</span>
+            </div>
+
+            {/* Bu sayıda */}
+            <div className="mt-6 sm:mt-10">
+              <span className="font-mono text-[10px] font-bold tracking-[0.25em] uppercase text-red-400 block mb-2">
+                BU SAYIDA
+              </span>
+              <div className="space-y-1.5 max-w-[85%]">
+                {displayPosts.slice(0, 8).map((post, idx) => (
+                  <div key={post.id || idx} className="flex items-baseline space-x-2.5 border-b border-white/10 pb-1.5">
+                    <span className="font-mono text-[10px] font-bold text-red-400 shrink-0">
+                      {String(idx + 1).padStart(2, '0')}
+                    </span>
+                    <span className="font-serif text-sm font-bold uppercase leading-snug text-white truncate">
+                      {post.title}
+                    </span>
+                  </div>
+                ))}
+                {displayPosts.length > 8 && (
+                  <div className="font-mono text-[10px] text-neutral-400 pt-0.5">
+                    ve {displayPosts.length - 8} dosya daha
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Kapanış */}
+            <div className="mt-auto mb-4 text-center">
+              <p className="font-serif italic text-lg sm:text-xl text-neutral-200 leading-snug drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]">
+                “Bir sonraki sayıda görüşmek üzere.”
+              </p>
+              <div className="flex items-center justify-center space-x-3 mt-4">
+                <span className="h-[2px] w-10 sm:w-14 bg-red-500/80" />
+                <h2 className="font-serif text-2xl sm:text-3xl font-black tracking-[0.2em] uppercase text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.95)]">
+                  {brandName}
+                </h2>
+                <span className="h-[2px] w-10 sm:w-14 bg-red-500/80" />
+              </div>
+              <p className="font-mono text-[9px] sm:text-[10px] tracking-[0.25em] uppercase font-bold text-red-400 mt-2">
+                KÜLTÜR, SİNEMA, MODA VE ANALOG ESTETİK DERGİSİ
+              </p>
+            </div>
+
+            {/* Alt künye */}
+            <div className="border-t border-white/15 pt-2 pb-0.5 flex items-center justify-between text-[9px] sm:text-[10px] font-mono text-neutral-400">
+              <span>{displayPosts.length} DOSYA &bull; {totalPages} SAYFA</span>
+              <span className="text-neutral-300 font-semibold tracking-wider">
+                {currentMonthYear} BASKISI &bull; CİLT 01
+              </span>
+            </div>
           </div>
         </div>
       );
@@ -1394,6 +1538,7 @@ export function MagazineModal({
 
     setIsGeneratingPdf(true);
     setPdfProgress({ current: 0, total: pages.length });
+    const t0 = performance.now();
 
     try {
       // Fontların ve tüm görsellerin yüklenmesini bekle (aksi halde boş kadraj yakalanabilir)
@@ -1405,12 +1550,22 @@ export function MagazineModal({
       );
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 
+      // Fontlar bir kez, süzülmüş halde hazırlanır ve her sayfaya aynı CSS verilir
+      let fontEmbedCSS;
+      try {
+        fontEmbedCSS = await buildPdfFontEmbedCSS(printDoc);
+      } catch (fontErr) {
+        console.warn('Font CSS hazırlanamadı, varsayılan gömmeye düşülüyor:', fontErr);
+      }
+
       const bgColor = isPaper ? '#f6f3eb' : '#121318';
       const MM_W = 210;
       let pdf = null;
 
       for (let i = 0; i < pages.length; i++) {
         setPdfProgress({ current: i + 1, total: pages.length });
+        // Arayüze nefes aldır: ilerleme çubuğu güncellensin, sekme donmasın
+        await new Promise((r) => setTimeout(r, 0));
         const pageEl = pages[i];
         const w = pageEl.offsetWidth || PAGE_W;
         const h = Math.max(pageEl.offsetHeight || PAGE_H, PAGE_H);
@@ -1420,7 +1575,8 @@ export function MagazineModal({
           pixelRatio: 3,
           backgroundColor: bgColor,
           width: w,
-          height: h
+          height: h,
+          ...(fontEmbedCSS ? { fontEmbedCSS } : {})
         });
 
         const mmH = Math.round(((MM_W * h) / w) * 100) / 100;
@@ -1436,6 +1592,7 @@ export function MagazineModal({
       }
 
       const safeBrand = (brandName || 'DERGI').replace(/[^a-zA-Z0-9_\u00C0-\u017F-]/g, '_');
+      console.info(`[PDF] ${pages.length} sayfa, ${Math.round(performance.now() - t0)} ms`);
       pdf.save(`${safeBrand}_Dergisi_Sayi_01.pdf`);
     } catch (err) {
       console.error('PDF oluşturma hatası:', err);
@@ -1572,6 +1729,8 @@ export function MagazineModal({
                 <span className="text-[#e6c280] font-bold">EDİTÖRÜN NOTU<span className="hidden sm:inline"> (SAYFA 02)</span></span>
               ) : currentPage === 2 ? (
                 <span className="text-[#e6c280] font-bold">İÇİNDEKİLER<span className="hidden sm:inline"> (SAYFA 03)</span></span>
+              ) : activePageData?.type === 'backcover' ? (
+                <span className="text-[#e6c280] font-bold">ARKA KAPAK<span className="hidden sm:inline"> (SAYFA {String(currentPage + 1).padStart(2, '0')})</span></span>
               ) : (
                 <span>
                   SAYFA <strong className="text-white">{String(currentPage + 1).padStart(2, '0')}</strong> / {String(totalPages).padStart(2, '0')}
@@ -1761,7 +1920,7 @@ export function MagazineModal({
           <div>
             <h3 className="font-serif text-xl font-bold tracking-tight">PDF Dergi Hazırlanıyor</h3>
             <p className="text-xs text-neutral-400 mt-1 font-sans">
-              Tüm sayfalar tam A4 boyutunda (300 DPI) işleniyor...
+              Tüm sayfalar tam A4 boyutunda (~210 DPI) işleniyor...
             </p>
           </div>
           <div className="w-full bg-neutral-800 rounded-full h-2.5 overflow-hidden border border-white/10">
