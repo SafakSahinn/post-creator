@@ -167,6 +167,7 @@ const ZOOM_MAX = 500;
 // Dergi sayfası boyutu (ekran ve PDF ortak): 580 x 820 px = A4 oranı (210 x 297 mm)
 const PAGE_W = 580;
 const PAGE_H = 820;
+const DEFAULT_PROJECT_ID = 'lore-magazine';
 // PDF çözünürlüğü: A4 genişliği 210 mm = 8.27 inç; piksel oranı = DPI * 8.27 / PAGE_W
 // (300 DPI -> 2480 px genişlik). Seçim tarayıcıda hatırlanır.
 const A4_WIDTH_INCH = 210 / 25.4;
@@ -631,13 +632,28 @@ export function MagazineModal({
   };
 
   // Filtrelenmiş gönderiler
+  // Dergi projeye özeldir: yalnızca aktif projenin gönderileri.
+  // projectId'siz eski kayıtlar varsayılan projeye (Lore Magazine) aittir.
+  const activeProjectId = activeProject?.id || DEFAULT_PROJECT_ID;
+  const projectArchives = useMemo(
+    () => archives.filter((p) => (p?.projectId || DEFAULT_PROJECT_ID) === activeProjectId),
+    [archives, activeProjectId]
+  );
+
   const displayPosts = useMemo(() => {
-    let list = [...archives];
+    let list = [...projectArchives];
     if (onlyPublished) {
       list = list.filter((p) => p.instagramPublishedAt || p.publishedToInstagram);
     }
     return list;
-  }, [archives, onlyPublished]);
+  }, [projectArchives, onlyPublished]);
+
+  // Proje değişince dergiyi başa al ve düzenleme durumlarını temizle
+  useEffect(() => {
+    setCurrentPage(0);
+    setEditingPhotoKey(null);
+    setPhotoAdjustments({});
+  }, [activeProjectId]);
 
   // Arka kapaktaki "Bu Sayıda" listesi için kısa başlıklar: eksik olanları AI tek istekte üretir
   // ve arşive kaydeder (bir kez). Anahtar yoksa ya da istek başarısızsa uzun başlık kısaltılmadan kalır.
@@ -646,7 +662,7 @@ export function MagazineModal({
   latestArchivesRef.current = archives;
   useEffect(() => {
     if (!isOpen) return;
-    const missing = archives.filter(
+    const missing = projectArchives.filter(
       (p) => p?.id && p.title && !p.shortTitle && !shortTitleAttemptedRef.current.has(p.id)
     );
     if (missing.length === 0) return;
@@ -668,7 +684,7 @@ export function MagazineModal({
         console.warn('Kısa başlıklar üretilemedi, uzun başlık kullanılacak:', err?.message || err);
       }
     })();
-  }, [isOpen, archives, onUpdateArchiveItem]);
+  }, [isOpen, projectArchives, onUpdateArchiveItem]);
 
   // Her sayfanın tipini ve içeriğini tutan dinamik sayfa listesi:
   // Her gönderi için 1 Metin & Derinlik Sayfası + Gönderideki HER temiz fotoğraf için 1 Tam Sayfa Editoryal Plaka
@@ -792,13 +808,14 @@ export function MagazineModal({
 
   // Günümüz tarihi (90'lar Editoryal Tipografi Formatı)
   const currentDate = new Date();
-  const currentMonthYear = currentDate.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' }).toUpperCase();
-  const fullDateFormatted = currentDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase();
+  const currentMonthYear = currentDate.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' }).toLocaleUpperCase('tr-TR');
+  const fullDateFormatted = currentDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }).toLocaleUpperCase('tr-TR');
   const currentYear = currentDate.getFullYear();
 
   // Proje adı ve logo
-  const brandName = (activeProject?.name || currentPost?.projectName || 'LORE MAGAZINE').toUpperCase();
-  const brandCode = (activeProject?.shortCode || currentPost?.projectShortCode || 'LORE').toUpperCase();
+  const brandName = (activeProject?.name || currentPost?.projectName || 'LORE MAGAZINE').toLocaleUpperCase('tr-TR');
+  const brandCode = (activeProject?.shortCode || currentPost?.projectShortCode || 'LORE').toLocaleUpperCase('tr-TR');
+  const brandTagline = (activeProject?.tagline || 'Kültür, Sinema, Moda ve Analog Estetik Dergisi').toLocaleUpperCase('tr-TR');
   const issueDate = `${currentMonthYear} // SAYI #01`;
 
   // Her sayfayı hem ekranda hem de PDF'te 1:1 birebir aynı boyutta ve piksel doğruluğunda render eden tek kaynak motor
@@ -915,8 +932,8 @@ export function MagazineModal({
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-neutral-900 via-black to-neutral-950 flex flex-col items-center justify-center p-6 text-neutral-400">
                 <BookOpen className="w-16 h-16 text-[#e6c280] mb-3 opacity-60" />
-                <span className="font-serif text-2xl font-bold text-white tracking-widest uppercase">Post Creator</span>
-                <span className="text-xs font-mono text-neutral-400 mt-1">90'lar Editoryal Kültür Arşivi</span>
+                <span className="font-serif text-2xl font-bold text-white tracking-widest uppercase text-center">{brandName}</span>
+                <span className="text-xs font-mono text-neutral-400 mt-1">Editoryal Arşiv</span>
               </div>
             )}
           </div>
@@ -951,7 +968,7 @@ export function MagazineModal({
               <div className="flex items-center justify-center space-x-3 mt-2">
                 <span className="h-[2px] w-10 sm:w-14 bg-red-500/80" />
                 <p className="font-mono text-[9px] sm:text-xs tracking-[0.25em] uppercase font-bold text-red-400 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
-                  KÜLTÜR, SİNEMA, MODA VE ANALOG ESTETİK DERGİSİ
+                  {brandTagline}
                 </p>
                 <span className="h-[2px] w-10 sm:w-14 bg-red-500/80" />
               </div>
@@ -1635,7 +1652,8 @@ export function MagazineModal({
               <span className="font-bold text-[#e6c280] tracking-wider">{currentMonthYear}</span>
             </div>
 
-            {/* Bu sayıda */}
+            {/* Bu sayıda (gönderisi olmayan projede gizli) */}
+            {displayPosts.length > 0 && (
             <div className="mt-6 sm:mt-10">
               <span className="font-mono text-[10px] font-bold tracking-[0.25em] uppercase text-red-400 block mb-2">
                 BU SAYIDA
@@ -1658,6 +1676,7 @@ export function MagazineModal({
                 )}
               </div>
             </div>
+            )}
 
             {/* Kapanış */}
             <div className="mt-auto mb-4 text-center">
@@ -1672,7 +1691,7 @@ export function MagazineModal({
                 <span className="h-[2px] w-10 sm:w-14 bg-red-500/80" />
               </div>
               <p className="font-mono text-[9px] sm:text-[10px] tracking-[0.25em] uppercase font-bold text-red-400 mt-2">
-                KÜLTÜR, SİNEMA, MODA VE ANALOG ESTETİK DERGİSİ
+                {brandTagline}
               </p>
             </div>
 
