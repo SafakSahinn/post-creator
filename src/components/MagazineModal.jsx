@@ -546,7 +546,7 @@ export function MagazineModal({
               {/* ======================================================== */}
               {/* 3. FOREGROUND 90'S EDITORIAL TYPOGRAPHY & COVER ELEMENTS  */}
               {/* ======================================================== */}
-              <div className="relative z-10 flex flex-col justify-between h-full p-3 sm:p-6 lg:px-8 lg:pt-6 lg:pb-2 pointer-events-none">
+              <div className="absolute inset-0 z-10 flex flex-col justify-between p-3 sm:p-6 lg:px-8 lg:pt-6 lg:pb-2.5 pointer-events-none">
                 
                 {/* Top Banner Strip (Günümüz Tarihi & Sadeleştirilmiş Şerit) */}
                 <div className="border-b border-white/20 pb-2 flex items-center justify-between font-mono text-[11px] uppercase tracking-widest text-neutral-200 pointer-events-auto">
@@ -914,7 +914,6 @@ export function MagazineModal({
                   {/* Photo Plate Header */}
                   <div className="flex items-center justify-between font-mono text-[10px] uppercase text-neutral-500 border-b border-black/20 pb-1.5">
                     <span className="font-bold text-red-600">EDİTORYAL FOTOĞRAF PLAKASI</span>
-                    <span>TEMİZ 35MM ARŞİV GÖRSELİ (4:5 DİKEY)</span>
                   </div>
 
                   {/* Main Clean Photography Hero Plate (Boşlukları Otomatik Kapatan Full Editoryal Plaka) */}
