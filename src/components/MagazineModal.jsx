@@ -168,7 +168,6 @@ export function MagazineModal({
   const [onlyPublished, setOnlyPublished] = useState(false);
   const [isExpandingAi, setIsExpandingAi] = useState(false);
   const [aiError, setAiError] = useState(null);
-  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [pdfProgress, setPdfProgress] = useState({ current: 0, total: 0 });
   const scrollViewportRef = useRef(null);
@@ -182,24 +181,57 @@ export function MagazineModal({
     return list;
   }, [archives, onlyPublished]);
 
-  // Toplam sayfa sayısı (Her sayfa tek standart A4 sayfasıdır):
-  // Sayfa 1 (Index 0): Ön Kapak
-  // Sayfa 2 (Index 1): Editörün Notu & Yayın Künyesi
-  // Sayfa 3 (Index 2): İçindekiler Fihristi
-  // Sayfa 4..N (Index 3..): Her gönderi için 2 tam A4 sayfası (1 Metin & Analiz + 1 Editoryal Fotoğraf Plakası)
-  const totalPages = Math.max(3, 3 + displayPosts.length * 2);
+  // Her sayfanın tipini ve içeriğini tutan dinamik sayfa listesi:
+  // Her gönderi için 1 Metin & Derinlik Sayfası + Gönderideki HER temiz fotoğraf için 1 Tam Sayfa Editoryal Plaka
+  const magazinePages = useMemo(() => {
+    const pages = [];
+    
+    // 0: Kapak
+    pages.push({ type: 'cover' });
+    
+    // 1: Editörün Notu & Künye
+    pages.push({ type: 'manifesto' });
+    
+    // 2: İçindekiler Fihristi
+    pages.push({ type: 'toc' });
+    
+    // Gönderiler: Her gönderi için 1 Metin Sayfası + Gönderideki HER temiz görsel için 1 Tam Sayfa Fotoğraf Plakası
+    displayPosts.forEach((post, postIdx) => {
+      const photos = extractCleanPhotos(post);
+      
+      // Metin & Analiz Sayfası
+      pages.push({
+        type: 'article',
+        post,
+        postIndex: postIdx,
+        totalPhotos: photos.length
+      });
+      
+      // Her bir temiz fotoğraf için tam sayfa plaka
+      if (photos.length > 0) {
+        photos.forEach((photo, photoIdx) => {
+          pages.push({
+            type: 'photo',
+            post,
+            postIndex: postIdx,
+            photo,
+            photoIndex: photoIdx,
+            totalPhotos: photos.length
+          });
+        });
+      }
+    });
+    
+    return pages;
+  }, [displayPosts]);
 
-  // Mevcut makale indeksi ve sayfa tipi (Sayfa 3 ve yukarısı için)
-  const relativePageIndex = currentPage >= 3 ? currentPage - 3 : -1;
-  const currentPostIndex = relativePageIndex >= 0 ? Math.floor(relativePageIndex / 2) : -1;
-  const isPhotoPage = relativePageIndex >= 0 && relativePageIndex % 2 === 1;
-  const currentPost = currentPostIndex >= 0 ? displayPosts[currentPostIndex] : null;
-  const cleanPhotos = useMemo(() => extractCleanPhotos(currentPost), [currentPost]);
+  const totalPages = Math.max(3, magazinePages.length);
+  const activePageData = magazinePages[currentPage] || magazinePages[0];
+  const currentPost = activePageData?.post || null;
   const coverCollageImages = useMemo(() => extractCoverCollageImages(displayPosts, 5), [displayPosts]);
 
-  // Sayfa değiştiğinde fotoğraf seçimini sıfırla ve tepeye kaydır (Scroll to Top)
+  // Sayfa değiştiğinde tepeye kaydır (Scroll to Top)
   useEffect(() => {
-    setSelectedPhotoIndex(0);
     if (scrollViewportRef.current) {
       scrollViewportRef.current.scrollTo({ top: 0, behavior: 'instant' });
     }
@@ -224,18 +256,19 @@ export function MagazineModal({
   if (!isOpen) return null;
 
   // AI ile 90'lar Derinlik Analizi Üret
-  const handleGenerateDeepAnalysis = async () => {
-    if (!currentPost) return;
+  const handleGenerateDeepAnalysis = async (targetPost) => {
+    const postToUse = targetPost || currentPost;
+    if (!postToUse) return;
     setIsExpandingAi(true);
     setAiError(null);
     try {
       const result = await generateDeepMagazineEssay({
-        post: currentPost,
+        post: postToUse,
         project: activeProject
       });
 
       const updated = {
-        ...currentPost,
+        ...postToUse,
         magazineDeepDossier: result,
         updatedAt: new Date().toISOString()
       };
@@ -267,6 +300,12 @@ export function MagazineModal({
 
   // Her sayfayı hem ekranda hem de PDF'te 1:1 birebir aynı boyutta ve piksel doğruluğunda render eden tek kaynak motor
   const renderSinglePage = (pageIdx, isPdf = false) => {
+    // Gönderi indeksine karşılık gelen makale sayfasının indeksini bulma yardımcısı
+    const getArticlePageIdx = (pIdx) => {
+      const found = magazinePages.findIndex((p) => p.type === 'article' && p.postIndex === pIdx);
+      return found !== -1 ? found : 3;
+    };
+
     // ----------------------------------------------------
     // SAYFA 0: 90'LAR FULL-BLEED RETRO ÖN KAPAK
     // ----------------------------------------------------
@@ -279,7 +318,7 @@ export function MagazineModal({
               <div className="grid grid-cols-12 grid-rows-2 gap-1.5 h-full w-full p-1 bg-black">
                 {/* 1. Sol 7 Kolon */}
                 <div
-                  onClick={!isPdf ? () => setCurrentPage(3 + coverCollageImages[0].postIndex * 2) : undefined}
+                  onClick={!isPdf ? () => setCurrentPage(getArticlePageIdx(coverCollageImages[0].postIndex)) : undefined}
                   title={`${coverCollageImages[0].title} (${coverCollageImages[0].category}) — Sayfaya Git`}
                   className={`col-span-7 row-span-2 relative overflow-hidden group ${!isPdf ? 'cursor-pointer' : ''} border border-black/80 bg-neutral-900`}
                 >
@@ -298,7 +337,7 @@ export function MagazineModal({
 
                 {/* 2. Sağ Üst 5 Kolon */}
                 <div
-                  onClick={!isPdf ? () => setCurrentPage(3 + coverCollageImages[1].postIndex * 2) : undefined}
+                  onClick={!isPdf ? () => setCurrentPage(getArticlePageIdx(coverCollageImages[1].postIndex)) : undefined}
                   title={`${coverCollageImages[1].title} (${coverCollageImages[1].category}) — Sayfaya Git`}
                   className={`col-span-5 row-span-1 relative overflow-hidden group ${!isPdf ? 'cursor-pointer' : ''} border border-black/80 bg-neutral-900`}
                 >
@@ -318,7 +357,7 @@ export function MagazineModal({
                 {/* 3 & 4. Sağ Alt İki Kadraj */}
                 <div className="col-span-5 row-span-1 grid grid-cols-2 gap-1.5 h-full">
                   <div
-                    onClick={!isPdf ? () => setCurrentPage(3 + coverCollageImages[2].postIndex * 2) : undefined}
+                    onClick={!isPdf ? () => setCurrentPage(getArticlePageIdx(coverCollageImages[2].postIndex)) : undefined}
                     title={`${coverCollageImages[2].title} (${coverCollageImages[2].category}) — Sayfaya Git`}
                     className={`relative overflow-hidden group ${!isPdf ? 'cursor-pointer' : ''} border border-black/80 bg-neutral-900 h-full`}
                   >
@@ -336,7 +375,7 @@ export function MagazineModal({
                   </div>
 
                   <div
-                    onClick={!isPdf ? () => setCurrentPage(coverCollageImages[3]?.postIndex !== undefined ? 3 + coverCollageImages[3].postIndex * 2 : 2) : undefined}
+                    onClick={!isPdf ? () => setCurrentPage(coverCollageImages[3]?.postIndex !== undefined ? getArticlePageIdx(coverCollageImages[3].postIndex) : 2) : undefined}
                     title={coverCollageImages[3] ? `${coverCollageImages[3].title} (${coverCollageImages[3].category}) — Sayfaya Git` : 'Detay'}
                     className={`relative overflow-hidden group ${!isPdf ? 'cursor-pointer' : ''} border border-black/80 bg-neutral-900 h-full`}
                   >
@@ -357,21 +396,21 @@ export function MagazineModal({
             ) : coverCollageImages.length === 3 ? (
               <div className="grid grid-cols-12 grid-rows-2 gap-1.5 h-full w-full p-1 bg-black">
                 <div
-                  onClick={!isPdf ? () => setCurrentPage(3 + coverCollageImages[0].postIndex * 2) : undefined}
+                  onClick={!isPdf ? () => setCurrentPage(getArticlePageIdx(coverCollageImages[0].postIndex)) : undefined}
                   className={`col-span-7 row-span-2 relative overflow-hidden group ${!isPdf ? 'cursor-pointer' : ''} border border-black/80`}
                 >
                   <img src={coverCollageImages[0].url} alt="" className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform" />
                   <span className="absolute top-3 left-3 bg-red-600 text-white font-mono text-[9px] px-2 py-0.5 font-bold uppercase">[01A // {coverCollageImages[0].category}]</span>
                 </div>
                 <div
-                  onClick={!isPdf ? () => setCurrentPage(3 + coverCollageImages[1].postIndex * 2) : undefined}
+                  onClick={!isPdf ? () => setCurrentPage(getArticlePageIdx(coverCollageImages[1].postIndex)) : undefined}
                   className={`col-span-5 row-span-1 relative overflow-hidden group ${!isPdf ? 'cursor-pointer' : ''} border border-black/80`}
                 >
                   <img src={coverCollageImages[1].url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                   <span className="absolute top-2 left-2 bg-black/80 text-white font-mono text-[8px] px-1.5 uppercase">[02A // {coverCollageImages[1].category}]</span>
                 </div>
                 <div
-                  onClick={!isPdf ? () => setCurrentPage(3 + coverCollageImages[2].postIndex * 2) : undefined}
+                  onClick={!isPdf ? () => setCurrentPage(getArticlePageIdx(coverCollageImages[2].postIndex)) : undefined}
                   className={`col-span-5 row-span-1 relative overflow-hidden group ${!isPdf ? 'cursor-pointer' : ''} border border-black/80`}
                 >
                   <img src={coverCollageImages[2].url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
@@ -383,7 +422,7 @@ export function MagazineModal({
                 {coverCollageImages.map((img, i) => (
                   <div
                     key={i}
-                    onClick={!isPdf ? () => setCurrentPage(3 + img.postIndex * 2) : undefined}
+                    onClick={!isPdf ? () => setCurrentPage(getArticlePageIdx(img.postIndex)) : undefined}
                     className={`relative overflow-hidden group ${!isPdf ? 'cursor-pointer' : ''} border border-black/80`}
                   >
                     <img src={img.url} alt="" className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform" />
@@ -393,7 +432,7 @@ export function MagazineModal({
               </div>
             ) : coverCollageImages.length === 1 ? (
               <div
-                onClick={!isPdf ? () => setCurrentPage(3 + coverCollageImages[0].postIndex * 2) : undefined}
+                onClick={!isPdf ? () => setCurrentPage(getArticlePageIdx(coverCollageImages[0].postIndex)) : undefined}
                 className={`relative w-full h-full group ${!isPdf ? 'cursor-pointer' : ''}`}
               >
                 <img src={coverCollageImages[0].url} alt="" className="w-full h-full object-cover object-center filter contrast-[1.08]" />
@@ -448,13 +487,13 @@ export function MagazineModal({
             <div className="mt-auto mb-1 flex flex-col space-y-1.5 pointer-events-auto relative">
               {displayPosts[0] && (
                 <div
-                  onClick={!isPdf ? () => setCurrentPage(3) : undefined}
+                  onClick={!isPdf ? () => setCurrentPage(getArticlePageIdx(0)) : undefined}
                   className={`bg-black/75 hover:bg-black/90 backdrop-blur-md border-l-4 border-red-600 p-2.5 sm:p-3 rounded-r-lg border-y border-r border-white/20 shadow-2xl ${!isPdf ? 'cursor-pointer group' : ''} transition-all`}
-                  title="Baş Manşet Dosyasına Git (Sayfa 04)"
+                  title={`Baş Manşet Dosyasına Git (Sayfa ${String(getArticlePageIdx(0) + 1).padStart(2, '0')})`}
                 >
                   <div className="flex items-center justify-between text-[9px] font-mono mb-0.5">
                     <span className="text-red-400 font-bold uppercase tracking-wider">
-                      BAŞ MANŞET // SAYFA 04
+                      BAŞ MANŞET // SAYFA {String(getArticlePageIdx(0) + 1).padStart(2, '0')}
                     </span>
                     {!isPdf && (
                       <span className="text-neutral-400 group-hover:text-white transition-colors">
@@ -592,16 +631,18 @@ export function MagazineModal({
             {/* Dotted Leader Table */}
             <div className={`space-y-2 font-mono text-xs ${isPdf ? 'overflow-hidden' : 'overflow-y-auto'} flex-1 pr-1`}>
               {displayPosts.map((post, idx) => {
-                const pageNo = 4 + idx * 2;
+                const articleIdx = getArticlePageIdx(idx);
+                const pageNo = articleIdx + 1;
+                const cleanPhotos = extractCleanPhotos(post);
                 const isShared = Boolean(post.instagramPublishedAt || post.publishedToInstagram);
                 return (
                   <div
                     key={post.id || idx}
-                    onClick={!isPdf ? () => setCurrentPage(3 + idx * 2) : undefined}
+                    onClick={!isPdf ? () => setCurrentPage(articleIdx) : undefined}
                     className={`group p-2 rounded border transition-all ${!isPdf ? 'cursor-pointer' : ''} flex items-center justify-between ${
                       isPaper ? 'hover:bg-black/5 border-black/10' : 'hover:bg-white/5 border-white/10'
                     }`}
-                    title={`Sayfa ${pageNo} — ${post.title} makalesine git`}
+                    title={`Sayfa ${String(pageNo).padStart(2, '0')} — ${post.title} makalesine git`}
                   >
                     <div className="flex items-center space-x-2 truncate pr-2">
                       <span className="font-mono font-bold text-red-600 shrink-0 text-xs">
@@ -613,6 +654,11 @@ export function MagazineModal({
                       <span className="font-serif font-bold text-xs truncate group-hover:text-red-600 transition-colors">
                         {post.title}
                       </span>
+                      {cleanPhotos.length > 0 && (
+                        <span className="text-[9px] font-mono text-neutral-500 shrink-0 hidden sm:inline">
+                          ({cleanPhotos.length} Kadraj)
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-center space-x-2 shrink-0">
@@ -622,7 +668,7 @@ export function MagazineModal({
                         </span>
                       )}
                       <span className="font-serif font-black text-red-600 text-xs">
-                        S. {pageNo} &rarr;
+                        S. {String(pageNo).padStart(2, '0')} &rarr;
                       </span>
                     </div>
                   </div>
@@ -641,20 +687,13 @@ export function MagazineModal({
     }
 
     // ----------------------------------------------------
-    // SAYFALAR 3..N: MAKALE METNİ VEYA EDİTORYAL FOTOĞRAF PLAKASI
+    // SAYFALAR 3..N: DİNAMİK EDİTORYAL SAYFALAR (METİN VEYA FOTOĞRAF)
     // ----------------------------------------------------
-    const relIdx = pageIdx - 3;
-    const postIdx = Math.floor(relIdx / 2);
-    const post = displayPosts[postIdx];
-    if (!post) return null;
+    const pageData = magazinePages[pageIdx];
+    if (!pageData) return null;
 
-    const isPhoto = relIdx % 2 === 1;
-    const postPhotos = extractCleanPhotos(post);
-
-    if (!isPhoto) {
-      // ----------------------------------------------------
-      // MAKALE METNİ & DERİNLİK ANALİZİ SAYFASI
-      // ----------------------------------------------------
+    if (pageData.type === 'article') {
+      const { post, postIndex, totalPhotos } = pageData;
       return (
         <div className={`relative flex-1 ${isPdf ? 'w-full h-full' : 'min-h-[760px] sm:min-h-[820px] lg:min-h-[860px]'} p-5 sm:p-7 lg:p-8 flex flex-col justify-between m-1.5 sm:m-3 border-4 border-black/80`}>
           {/* Running Header */}
@@ -665,7 +704,7 @@ export function MagazineModal({
               <span className="hidden sm:inline">&bull; {post.category || 'KÜLTÜR'} ARŞİVİ</span>
             </div>
             <div className="flex items-center space-x-2">
-              <span>DOSYA NO: #{String(postIdx + 1).padStart(3, '0')}</span>
+              <span>DOSYA NO: #{String(postIndex + 1).padStart(3, '0')}</span>
             </div>
           </div>
 
@@ -745,7 +784,7 @@ export function MagazineModal({
                 {!isPdf && (
                   <button
                     type="button"
-                    onClick={handleGenerateDeepAnalysis}
+                    onClick={() => handleGenerateDeepAnalysis(post)}
                     disabled={isExpandingAi}
                     className="px-2 py-1 rounded bg-red-600 text-white hover:bg-black text-[10px] font-bold uppercase transition-all flex items-center space-x-1 cursor-pointer disabled:opacity-50"
                     title="Gemini AI ile bu konunun kültürel dipnotlarını üret"
@@ -821,13 +860,23 @@ export function MagazineModal({
                   &uarr; İçindekiler
                 </button>
                 <div className="flex items-center space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage(pageIdx + 1)}
-                    className="hover:text-red-600 font-bold underline cursor-pointer text-red-600"
-                  >
-                    Fotoğraf Plakası &rarr;
-                  </button>
+                  {totalPhotos > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage(pageIdx + 1)}
+                      className="hover:text-red-600 font-bold underline cursor-pointer text-red-600"
+                    >
+                      Fotoğraf Plakası #1 &rarr;
+                    </button>
+                  ) : pageIdx < totalPages - 1 ? (
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage(pageIdx + 1)}
+                      className="hover:text-red-600 font-bold underline cursor-pointer text-red-600"
+                    >
+                      Sonraki Dosya &rarr;
+                    </button>
+                  ) : null}
                   <span>SAYFA {String(pageIdx + 1).padStart(2, '0')}</span>
                 </div>
               </>
@@ -842,33 +891,34 @@ export function MagazineModal({
       );
     }
 
-    // ----------------------------------------------------
-    // EDİTORYAL FOTOĞRAF PLAKASI SAYFASI
-    // ----------------------------------------------------
-    const activePhotoIdx = (!isPdf && pageIdx === currentPage) ? selectedPhotoIndex : 0;
-    const heroPhoto = postPhotos[activePhotoIdx] || postPhotos[0];
-
-    return (
-      <div className={`relative flex-1 ${isPdf ? 'w-full h-full' : 'min-h-[760px] sm:min-h-[820px] lg:min-h-[860px]'} p-4 sm:p-6 flex flex-col justify-between m-1.5 sm:m-3 border-4 border-black/80 box-border`}>
-        {/* Running Header */}
-        <div className="border-b-2 border-black/80 pb-2 mb-2 sm:mb-3 flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-neutral-600 shrink-0">
-          <div className="flex items-center space-x-2">
-            <span className="font-bold text-red-600">SAYFA {String(pageIdx + 1).padStart(2, '0')}</span>
-            <span>// EDİTORYAL FOTOĞRAF PLAKASI</span>
+    if (pageData.type === 'photo') {
+      const { post, postIndex, photo, photoIndex, totalPhotos } = pageData;
+      return (
+        <div className={`relative flex-1 ${isPdf ? 'w-full h-full' : 'min-h-[760px] sm:min-h-[820px] lg:min-h-[860px]'} p-4 sm:p-6 flex flex-col justify-between m-1.5 sm:m-3 border-4 border-black/80 box-border`}>
+          {/* Running Header */}
+          <div className="border-b-2 border-black/80 pb-2 mb-2 sm:mb-3 flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-neutral-600 shrink-0">
+            <div className="flex items-center space-x-2">
+              <span className="font-bold text-red-600">SAYFA {String(pageIdx + 1).padStart(2, '0')}</span>
+              <span>// EDİTORYAL FOTOĞRAF PLAKASI</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span>DOSYA #{String(postIndex + 1).padStart(2, '0')}</span>
+              <span>&bull;</span>
+              <span className="font-bold text-neutral-800 dark:text-neutral-200">
+                KADRAJ {photoIndex + 1}/{totalPhotos}
+              </span>
+            </div>
           </div>
-          <span>{currentMonthYear}</span>
-        </div>
 
-        {/* Main Photo Content */}
-        <div className="space-y-2 my-auto flex-1 flex flex-col justify-center">
-          {postPhotos.length > 0 ? (
-            <div className="relative border-4 border-black/90 p-2 bg-white shadow-xl flex flex-col shrink-0 max-w-[320px] sm:max-w-[340px] mx-auto w-full">
+          {/* Main Photo Content: Restored Impactful Full-Page Photo Plate */}
+          <div className="my-auto flex-1 flex flex-col justify-center items-center space-y-3">
+            <div className="relative border-4 border-black/90 p-2 sm:p-2.5 bg-white shadow-xl flex flex-col shrink-0 max-w-[420px] sm:max-w-[440px] mx-auto w-full">
               {/* 4:5 Hero Plate */}
-              <div className="w-full aspect-[4/5] max-h-[340px] bg-neutral-950 overflow-hidden relative shrink-0 flex items-center justify-center border border-black/10">
+              <div className="w-full aspect-[4/5] max-h-[460px] bg-neutral-950 overflow-hidden relative shrink-0 flex items-center justify-center border border-black/10">
                 {/* Otomatik Boşluk Kapatıcı & Atmosferik Dolgu Katmanı */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
                   <img
-                    src={heroPhoto?.url}
+                    src={photo?.url}
                     alt=""
                     className="w-full h-full object-cover blur-2xl opacity-35 scale-125 filter contrast-125 brightness-75"
                   />
@@ -877,140 +927,101 @@ export function MagazineModal({
 
                 {/* Ana Görsel */}
                 <img
-                  src={heroPhoto?.url}
-                  alt="Temiz Dergi Fotoğrafı"
+                  src={photo?.url}
+                  alt={photo?.title || 'Dergi Fotoğrafı'}
                   className="relative z-10 w-full h-full object-cover object-[center_top] filter contrast-[1.05]"
                 />
               </div>
 
               {/* Açıklama Kutusu */}
-              <div className="mt-1.5 pt-1.5 border-t border-black/20 flex flex-col justify-between font-mono text-neutral-800 shrink-0">
-                <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-bold">
+              <div className="mt-2 pt-2 border-t border-black/20 flex flex-col justify-between font-mono text-neutral-800 shrink-0">
+                <div className="flex items-center justify-between text-[11px] sm:text-xs font-bold">
                   <span className="text-red-600 truncate mr-2">
-                    {activePhotoIdx === 0 ? 'KAPAK KADRAJI' : `ŞEKİL 1.${activePhotoIdx + 1}`} — {heroPhoto?.title || 'EDİTORYAL KADRAJ'}
+                    {photoIndex === 0 ? 'KAPAK KADRAJI' : `KADRAJ #${photoIndex + 1}`} — {photo?.title || post?.title || 'EDİTORYAL KADRAJ'}
                   </span>
-                  <span className="text-[9px] sm:text-[10px] text-neutral-500 shrink-0">
-                    KADRAJ #{activePhotoIdx + 1} / {postPhotos.length}
+                  <span className="text-[10px] text-neutral-500 shrink-0">
+                    KADRAJ #{photoIndex + 1} / {totalPhotos}
                   </span>
                 </div>
-                <p className="font-serif italic text-[11px] leading-tight text-neutral-700 line-clamp-2 my-0.5">
-                  “{heroPhoto?.quote || post?.hook || post?.conceptTitle || post?.title || '90\'lar editoryal arşiv fotoğrafı.'}”
+                <p className="font-serif italic text-xs leading-snug text-neutral-700 line-clamp-2 my-1">
+                  “{photo?.quote || post?.hook || post?.conceptTitle || post?.title || "90'lar editoryal arşiv fotoğrafı."}”
                 </p>
-                <p className="text-[9px] text-neutral-500 leading-tight truncate">
-                  <strong>Küratör Notu:</strong> {heroPhoto?.idea || '35mm editoryal arşiv negatif baskısı.'}
+                <p className="text-[10px] text-neutral-500 leading-tight truncate">
+                  <strong>Küratör Notu:</strong> {photo?.idea || post?.conceptTitle || '35mm editoryal arşiv negatif baskısı.'}
                 </p>
               </div>
             </div>
-          ) : (
-            <div className="max-w-[320px] sm:max-w-[340px] mx-auto w-full aspect-[4/5] rounded border-2 border-dashed border-neutral-400 flex flex-col items-center justify-center p-6 text-center text-neutral-500 font-mono text-xs shrink-0">
-              <BookOpen className="w-10 h-10 mb-2 opacity-50" />
-              <span>Bu gönderiye ait yüklü görsel bulunamadı.</span>
-            </div>
-          )}
 
-          {/* Diğer Slayt Fotoğrafları (Kontak Baskı) */}
-          {postPhotos.length > 1 && (
-            <div className="space-y-1 max-w-[320px] sm:max-w-[340px] mx-auto w-full shrink-0 pt-0.5">
-              <div className="font-mono text-[9px] uppercase text-neutral-500 flex items-center justify-between">
-                <span>DİĞER SLAYT KADRAJLARINI İNCELE:</span>
-                <span>{postPhotos.length} BENZERSİZ GÖRSEL MEVCUT</span>
+            {/* Stüdyoda Düzenle Butonu (Yalnızca Ekranda) */}
+            {!isPdf && onLoadPostToStudio && (
+              <div className="flex justify-end max-w-[420px] sm:max-w-[440px] mx-auto w-full shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onLoadPostToStudio(post);
+                  }}
+                  className="px-2.5 py-1 rounded bg-black/10 hover:bg-black/20 text-[10px] font-mono font-bold uppercase transition-all flex items-center space-x-1 cursor-pointer"
+                  title="Bu gönderiyi düzenlemek için Carousel Stüdyosu'na aktar"
+                >
+                  <Sliders className="w-3 h-3 text-red-600" />
+                  <span>Stüdyoda Düzenle</span>
+                </button>
               </div>
-              <div className="grid grid-cols-4 gap-1.5">
-                {postPhotos.slice(0, 4).map((photo, pIdx) => (
-                  !isPdf ? (
+            )}
+          </div>
+
+          {/* Bottom Footer */}
+          <div className="border-t-2 border-black/80 pt-2 flex items-center justify-between font-mono text-[10px] text-neutral-600 shrink-0">
+            {!isPdf ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(pageIdx - 1)}
+                  className="hover:text-red-600 font-bold underline cursor-pointer text-red-600"
+                >
+                  {photoIndex === 0 ? '← Metne Dön' : `← Önceki Kadraj (#${photoIndex})`}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(2)}
+                  className="hover:text-red-600 underline cursor-pointer text-neutral-500"
+                >
+                  İçindekiler
+                </button>
+                <div className="flex items-center space-x-2">
+                  {photoIndex < totalPhotos - 1 ? (
                     <button
-                      key={pIdx}
                       type="button"
-                      onClick={() => setSelectedPhotoIndex(pIdx)}
-                      className={`relative border p-0.5 bg-white transition-all cursor-pointer ${
-                        activePhotoIdx === pIdx
-                          ? 'border-red-600 shadow-md scale-[1.03]'
-                          : 'border-black/30 opacity-70 hover:opacity-100'
-                      }`}
+                      onClick={() => setCurrentPage(pageIdx + 1)}
+                      className="hover:text-red-600 font-bold underline cursor-pointer text-red-600"
                     >
-                      <div className="w-full h-12 sm:h-14 bg-neutral-900 overflow-hidden flex items-center justify-center">
-                        <img
-                          src={photo.url}
-                          alt=""
-                          className="w-full h-full object-cover object-top"
-                        />
-                      </div>
-                      <span className="absolute bottom-0.5 right-0.5 bg-black/85 text-white font-mono text-[8px] px-1 font-bold">
-                        #{pIdx + 1}
-                      </span>
+                      Sonraki Kadraj (#{photoIndex + 2}) &rarr;
                     </button>
-                  ) : (
-                    <div
-                      key={pIdx}
-                      className={`relative border p-0.5 bg-white ${
-                        pIdx === 0 ? 'border-red-600 shadow-sm' : 'border-black/30'
-                      }`}
+                  ) : pageIdx < totalPages - 1 ? (
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage(pageIdx + 1)}
+                      className="hover:text-red-600 font-bold underline cursor-pointer text-red-600"
                     >
-                      <div className="w-full h-12 sm:h-14 bg-neutral-900 overflow-hidden flex items-center justify-center">
-                        <img
-                          src={photo.url}
-                          alt=""
-                          className="w-full h-full object-cover object-top"
-                        />
-                      </div>
-                      <span className="absolute bottom-0.5 right-0.5 bg-black/85 text-white font-mono text-[8px] px-1 font-bold">
-                        #{pIdx + 1}
-                      </span>
-                    </div>
-                  )
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Stüdyoda Düzenle Butonu (Yalnızca Ekranda) */}
-          {!isPdf && onLoadPostToStudio && (
-            <div className="pt-0.5 flex justify-end max-w-[320px] sm:max-w-[340px] mx-auto w-full shrink-0">
-              <button
-                type="button"
-                onClick={() => {
-                  onClose();
-                  onLoadPostToStudio(post);
-                }}
-                className="px-2.5 py-1 rounded bg-black/10 hover:bg-black/20 text-[10px] font-mono font-bold uppercase transition-all flex items-center space-x-1 cursor-pointer"
-                title="Bu gönderiyi düzenlemek için Carousel Stüdyosu'na aktar"
-              >
-                <Sliders className="w-3 h-3 text-red-600" />
-                <span>Stüdyoda Düzenle</span>
-              </button>
-            </div>
-          )}
+                      Sonraki Dosya &rarr;
+                    </button>
+                  ) : null}
+                  <span>SAYFA {String(pageIdx + 1).padStart(2, '0')}</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <span>TEMİZ 35MM ARŞİV NEGATİFİ &bull; KADRAJ #{photoIndex + 1}/{totalPhotos}</span>
+                <span>SAYFA {String(pageIdx + 1).padStart(2, '0')}</span>
+              </>
+            )}
+          </div>
         </div>
+      );
+    }
 
-        {/* Bottom Footer */}
-        <div className="border-t-2 border-black/80 pt-2 flex items-center justify-between font-mono text-[10px] text-neutral-600 shrink-0">
-          {!isPdf ? (
-            <>
-              <button
-                type="button"
-                onClick={() => setCurrentPage(pageIdx - 1)}
-                className="hover:text-red-600 font-bold underline cursor-pointer text-red-600"
-              >
-                &larr; Metne Dön
-              </button>
-              <button
-                type="button"
-                onClick={() => setCurrentPage(2)}
-                className="hover:text-red-600 underline cursor-pointer text-neutral-500"
-              >
-                İçindekiler
-              </button>
-              <span>SAYFA {String(pageIdx + 1).padStart(2, '0')}</span>
-            </>
-          ) : (
-            <>
-              <span>TEMİZ 35MM ARŞİV NEGATİFİ</span>
-              <span>SAYFA {String(pageIdx + 1).padStart(2, '0')}</span>
-            </>
-          )}
-        </div>
-      </div>
-    );
+    return null;
   };
 
   // Tam A4 Boyutunda Yüksek Çözünürlüklü Doğrudan PDF İndirme Motoru
@@ -1206,7 +1217,7 @@ export function MagazineModal({
                 <span>
                   SAYFA <strong className="text-white">{String(currentPage + 1).padStart(2, '0')}</strong> / {String(totalPages).padStart(2, '0')}
                   <span className="text-neutral-400 text-[10px] ml-1.5 font-sans">
-                    ({isPhotoPage ? 'Fotoğraf' : 'Metin'})
+                    ({activePageData?.type === 'photo' ? `Fotoğraf #${(activePageData?.photoIndex || 0) + 1}` : 'Metin'})
                   </span>
                 </span>
               )}
@@ -1362,7 +1373,7 @@ export function MagazineModal({
     {/* Sitedeki görünümle 1:1 birebir aynı boyutta ve stilde     */}
     {/* ======================================================== */}
     <div id="magazine-print-document" className="magazine-print-only">
-      {Array.from({ length: totalPages }).map((_, pIdx) => (
+      {magazinePages.map((_, pIdx) => (
         <div
           key={pIdx}
           className={`magazine-page-print-item relative overflow-hidden flex flex-col ${
