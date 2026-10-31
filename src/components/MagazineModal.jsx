@@ -167,6 +167,8 @@ const ZOOM_MAX = 500;
 // Dergi sayfası boyutu (ekran ve PDF ortak): 580 x 820 px = A4 oranı (210 x 297 mm)
 const PAGE_W = 580;
 const PAGE_H = 820;
+// Baskı çözünürlüğü: A4 genişliği (210 mm = 8.27 inç) 300 DPI'da 2480 piksel eder
+const PDF_PIXEL_RATIO = 2480 / PAGE_W;
 
 // PDF yakalamasında gömülecek web font CSS'i.
 // html-to-image varsayılan olarak her sayfada Google Fonts'un TÜM ailelerini ve alt kümelerini
@@ -1572,7 +1574,7 @@ export function MagazineModal({
 
         const imgData = await toJpeg(pageEl, {
           quality: 0.95,
-          pixelRatio: 3,
+          pixelRatio: PDF_PIXEL_RATIO,
           backgroundColor: bgColor,
           width: w,
           height: h,
@@ -1920,7 +1922,7 @@ export function MagazineModal({
           <div>
             <h3 className="font-serif text-xl font-bold tracking-tight">PDF Dergi Hazırlanıyor</h3>
             <p className="text-xs text-neutral-400 mt-1 font-sans">
-              Tüm sayfalar tam A4 boyutunda (~210 DPI) işleniyor...
+              Tüm sayfalar tam A4 boyutunda (300 DPI) işleniyor...
             </p>
           </div>
           <div className="w-full bg-neutral-800 rounded-full h-2.5 overflow-hidden border border-white/10">
