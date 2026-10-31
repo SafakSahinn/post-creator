@@ -5,6 +5,7 @@ import {
   ChevronRight,
   BookOpen,
   Printer,
+  Download,
   Sparkles,
   ExternalLink,
   Layers,
@@ -22,6 +23,8 @@ import {
   RefreshCw,
   Info
 } from 'lucide-react';
+import { jsPDF } from 'jspdf';
+import { toJpeg } from 'html-to-image';
 import { InstagramIcon } from './Icons';
 import { generateDeepMagazineEssay } from '../services/gemini';
 import { saveArchiveToDb } from '../services/archiveDb';
@@ -166,6 +169,8 @@ export function MagazineModal({
   const [isExpandingAi, setIsExpandingAi] = useState(false);
   const [aiError, setAiError] = useState(null);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [pdfProgress, setPdfProgress] = useState({ current: 0, total: 0 });
   const scrollViewportRef = useRef(null);
 
   // Filtrelenmiş gönderiler
@@ -260,15 +265,84 @@ export function MagazineModal({
   const brandCode = (activeProject?.shortCode || currentPost?.projectShortCode || 'LORE').toUpperCase();
   const issueDate = `${currentMonthYear} // SAYI #01`;
 
+  // Tam A4 Boyutunda Yüksek Çözünürlüklü Doğrudan PDF İndirme Motoru
+  const handleDownloadPdf = async () => {
+    const printDoc = document.getElementById('magazine-print-document');
+    if (!printDoc) {
+      window.print();
+      return;
+    }
+
+    const pages = printDoc.querySelectorAll('.magazine-page-a4');
+    if (!pages || pages.length === 0) {
+      window.print();
+      return;
+    }
+
+    setIsGeneratingPdf(true);
+    setPdfProgress({ current: 0, total: pages.length });
+
+    try {
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+        compress: true
+      });
+
+      for (let i = 0; i < pages.length; i++) {
+        setPdfProgress({ current: i + 1, total: pages.length });
+        const pageEl = pages[i];
+
+        // Font ve görsellerin oturması için kısa render gecikmesi
+        await new Promise((resolve) => setTimeout(resolve, 80));
+
+        const imgData = await toJpeg(pageEl, {
+          quality: 0.95,
+          pixelRatio: 2,
+          cacheBust: true,
+          backgroundColor: '#ffffff'
+        });
+
+        if (i > 0) {
+          pdf.addPage('a4', 'portrait');
+        }
+
+        // Tam A4 boyutuna (210mm x 297mm) sıfır boşlukla (full-bleed) yerleştir
+        pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+      }
+
+      const safeBrand = (brandName || 'DERGI').replace(/[^a-zA-Z0-9_\u00C0-\u017F-]/g, '_');
+      pdf.save(`${safeBrand}_Dergisi_Sayi_01.pdf`);
+    } catch (err) {
+      console.error('PDF oluşturma hatası:', err);
+      // Beklenmeyen bir capture hatasında tarayıcı yazdırmasına düş
+      window.print();
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black/90 backdrop-blur-md overflow-hidden animate-fadeIn magazine-modal-portal">
       
       {/* 90's Publication Print & PDF Stylesheet (A4 Multi-Page Standard) */}
       <style>{`
+        @media screen {
+          .magazine-print-only {
+            position: fixed !important;
+            left: -99999px !important;
+            top: 0 !important;
+            width: 210mm !important;
+            opacity: 1 !important;
+            pointer-events: none !important;
+            z-index: -999 !important;
+          }
+        }
         @media print {
           @page {
-            size: A4 portrait;
-            margin: 0;
+            size: 210mm 297mm;
+            margin: 0mm !important;
           }
           html, body {
             margin: 0 !important;
@@ -276,18 +350,40 @@ export function MagazineModal({
             background: #ffffff !important;
             color: #111111 !important;
             overflow: visible !important;
+            width: 210mm !important;
+          }
+          #root,
+          #root > div,
+          .magazine-modal-portal {
+            position: static !important;
+            display: block !important;
+            width: 210mm !important;
+            height: auto !important;
+            min-height: 0 !important;
+            max-height: none !important;
+            overflow: visible !important;
+            background: transparent !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            inset: auto !important;
+            transform: none !important;
+            backdrop-filter: none !important;
           }
           .magazine-screen-only {
             display: none !important;
           }
-          .magazine-print-only {
+          .magazine-print-only,
+          #magazine-print-document {
             display: block !important;
-            position: absolute !important;
-            top: 0 !important;
-            left: 0 !important;
+            position: static !important;
+            left: auto !important;
+            top: auto !important;
             width: 210mm !important;
-            background: white !important;
-            z-index: 999999 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            z-index: auto !important;
+            opacity: 1 !important;
           }
           .magazine-page-a4 {
             width: 210mm !important;
@@ -301,15 +397,11 @@ export function MagazineModal({
             box-sizing: border-box !important;
             overflow: hidden !important;
             position: relative !important;
+            margin: 0 !important;
             background: white !important;
             color: #111111 !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
-          }
-        }
-        @media screen {
-          .magazine-print-only {
-            display: none !important;
           }
         }
       `}</style>
@@ -412,15 +504,31 @@ export function MagazineModal({
             <span className="hidden lg:inline">{isPaper ? '90\'lar Kağıt' : '90\'lar Gece'}</span>
           </button>
 
-          {/* Print / Save as PDF */}
+          {/* Direct High-Quality A4 PDF Download */}
+          <button
+            type="button"
+            onClick={handleDownloadPdf}
+            disabled={isGeneratingPdf}
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white border border-red-500/50 text-xs font-mono font-bold transition-all cursor-pointer shadow-sm disabled:opacity-50"
+            title="Dergiyi Yüksek Kaliteli Standart A4 PDF Olarak Doğrudan İndir"
+          >
+            {isGeneratingPdf ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Download className="w-3.5 h-3.5" />
+            )}
+            <span>{isGeneratingPdf ? 'İndiriliyor...' : 'PDF İndir'}</span>
+          </button>
+
+          {/* Browser Print / Physical Paper */}
           <button
             type="button"
             onClick={() => window.print()}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#e6c280]/15 hover:bg-[#e6c280]/25 text-[#e6c280] border border-[#e6c280]/30 text-xs font-mono font-semibold transition-all cursor-pointer"
-            title="Dergiyi Yazdır veya PDF Olarak Kaydet"
+            className="hidden sm:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border border-white/10 bg-white/[0.03] hover:bg-white/[0.08] text-xs font-mono text-neutral-300 transition-all cursor-pointer"
+            title="Tarayıcı Yazdırma Penceresini Aç"
           >
-            <Printer className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">PDF / Yazdır</span>
+            <Printer className="w-3.5 h-3.5 text-[#e6c280]" />
+            <span>Yazdır</span>
           </button>
 
           {/* Close */}
@@ -474,7 +582,7 @@ export function MagazineModal({
                       <img
                         src={coverCollageImages[0].url}
                         alt={coverCollageImages[0].title}
-                        className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105 filter contrast-[1.08]"
+                        className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105 filter contrast-[1.08]"
                       />
                       <div className="absolute top-3 left-3 bg-red-600/90 text-white font-mono text-[9px] px-2 py-0.5 font-bold uppercase tracking-wider shadow border border-white/20">
                         BAŞ MANŞET // {coverCollageImages[0].category}
@@ -552,7 +660,7 @@ export function MagazineModal({
                       onClick={() => setCurrentPage(3 + coverCollageImages[0].postIndex * 2)}
                       className="col-span-7 row-span-2 relative overflow-hidden group cursor-pointer border border-black/80"
                     >
-                      <img src={coverCollageImages[0].url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                      <img src={coverCollageImages[0].url} alt="" className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform" />
                       <span className="absolute top-3 left-3 bg-red-600 text-white font-mono text-[9px] px-2 py-0.5 font-bold uppercase">[01A // {coverCollageImages[0].category}]</span>
                     </div>
                     <div
@@ -579,7 +687,7 @@ export function MagazineModal({
                         onClick={() => setCurrentPage(3 + img.postIndex * 2)}
                         className="relative overflow-hidden group cursor-pointer border border-black/80"
                       >
-                        <img src={img.url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                        <img src={img.url} alt="" className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform" />
                         <span className="absolute top-3 left-3 bg-red-600 text-white font-mono text-[9px] px-2 py-0.5 font-bold uppercase">[0{i + 1}A // {img.category}]</span>
                       </div>
                     ))}
@@ -590,7 +698,7 @@ export function MagazineModal({
                     onClick={() => setCurrentPage(3 + coverCollageImages[0].postIndex * 2)}
                     className="relative w-full h-full group cursor-pointer"
                   >
-                    <img src={coverCollageImages[0].url} alt="" className="w-full h-full object-cover filter contrast-[1.08]" />
+                    <img src={coverCollageImages[0].url} alt="" className="w-full h-full object-cover object-center filter contrast-[1.08]" />
                     <span className="absolute top-3 left-3 bg-red-600 text-white font-mono text-[9px] px-2 py-0.5 font-bold uppercase">[01A // {coverCollageImages[0].category}]</span>
                   </div>
                 ) : (
@@ -1032,7 +1140,7 @@ export function MagazineModal({
               <div className="relative flex-1 min-h-[760px] sm:min-h-[820px] lg:min-h-[860px] p-5 sm:p-7 lg:p-8 flex flex-col justify-between m-1.5 sm:m-3 border-4 border-black/80">
                 
                 {/* Running Header */}
-                <div className="border-b-2 border-black/80 pb-2 flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-neutral-600">
+                <div className="border-b-2 border-black/80 pb-2.5 mb-5 sm:mb-6 flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-neutral-600">
                   <div className="flex items-center space-x-2">
                     <span className="font-bold text-red-600">SAYFA {String(currentPage + 1).padStart(2, '0')}</span>
                     <span>// EDİTORYAL FOTOĞRAF PLAKASI</span>
@@ -1041,7 +1149,7 @@ export function MagazineModal({
                 </div>
 
                 {/* Main Photo Content */}
-                <div className="space-y-3 my-auto">
+                <div className="space-y-3 my-auto pt-1 sm:pt-2">
 
                   {/* Main Clean Photography Hero Plate (Boşlukları Otomatik Kapatan Full Editoryal Plaka) */}
                   {cleanPhotos.length > 0 ? (
@@ -1233,7 +1341,7 @@ export function MagazineModal({
           {coverCollageImages.length >= 4 ? (
             <div className="grid grid-cols-12 grid-rows-2 gap-2 h-full w-full p-2 bg-black">
               <div className="col-span-7 row-span-2 relative overflow-hidden border border-black/80 bg-neutral-900">
-                <img src={coverCollageImages[0].url} alt="" className="w-full h-full object-cover object-top filter contrast-[1.08]" />
+                <img src={coverCollageImages[0].url} alt="" className="w-full h-full object-cover object-center filter contrast-[1.08]" />
                 <span className="absolute top-3 left-3 bg-red-600 text-white font-mono text-[9px] px-2 py-0.5 font-bold uppercase tracking-wider">
                   BAŞ MANŞET // {coverCollageImages[0].category}
                 </span>
@@ -1252,7 +1360,7 @@ export function MagazineModal({
             </div>
           ) : coverCollageImages.length > 0 ? (
             <div className="w-full h-full">
-              <img src={coverCollageImages[0].url} alt="" className="w-full h-full object-cover object-top filter contrast-[1.08]" />
+              <img src={coverCollageImages[0].url} alt="" className="w-full h-full object-cover object-center filter contrast-[1.08]" />
             </div>
           ) : null}
         </div>
@@ -1454,7 +1562,7 @@ export function MagazineModal({
 
             {/* SAĞ A4 SAYFASI: EDİTORYAL FOTOĞRAF PLAKASI */}
             <div className="magazine-page-a4 bg-[#f8f6f0] text-[#1c1c1f] p-12 flex flex-col justify-between border-8 border-black">
-              <div className="border-b-2 border-black pb-2 flex items-center justify-between font-mono text-[10px] uppercase text-neutral-600">
+              <div className="border-b-2 border-black pb-2 mb-6 flex items-center justify-between font-mono text-[10px] uppercase text-neutral-600">
                 <span>EDİTORYAL FOTOĞRAF PLAKASI</span>
                 <span>{currentMonthYear} // SAYFA {pageRightNo}</span>
               </div>
@@ -1521,6 +1629,35 @@ export function MagazineModal({
       })}
 
     </div>
+
+    {/* Yüksek Çözünürlüklü A4 PDF İndirme İlerleme Katmanı */}
+    {isGeneratingPdf && (
+      <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md flex flex-col items-center justify-center p-6 text-white font-mono select-none animate-fadeIn">
+        <div className="bg-[#14151b] border border-white/20 p-6 rounded-2xl shadow-2xl flex flex-col items-center space-y-4 max-w-sm w-full text-center">
+          <div className="w-14 h-14 rounded-2xl bg-red-600/20 border border-red-500/40 flex items-center justify-center text-red-500 shadow-inner">
+            <Loader2 className="w-7 h-7 animate-spin" />
+          </div>
+          <div>
+            <h3 className="font-serif text-xl font-bold tracking-tight">PDF Dergi Hazırlanıyor</h3>
+            <p className="text-xs text-neutral-400 mt-1 font-sans">
+              Tüm sayfalar tam A4 boyutunda (300 DPI) işleniyor...
+            </p>
+          </div>
+          <div className="w-full bg-neutral-800 rounded-full h-2.5 overflow-hidden border border-white/10">
+            <div
+              className="bg-red-600 h-full transition-all duration-300"
+              style={{ width: `${pdfProgress.total ? (pdfProgress.current / pdfProgress.total) * 100 : 15}%` }}
+            />
+          </div>
+          <div className="flex items-center justify-between w-full text-[11px] text-neutral-400 pt-1">
+            <span>İşlenen Sayfa:</span>
+            <strong className="text-[#e6c280]">
+              {pdfProgress.current} / {pdfProgress.total || totalPages}
+            </strong>
+          </div>
+        </div>
+      </div>
+    )}
 
     </div>
   );
