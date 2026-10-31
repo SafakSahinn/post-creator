@@ -151,39 +151,198 @@ export async function getAvailableModels(apiKey) {
   }
 }
 
-// Dergi yardımcı istekleri (kısa başlık, derinlik makalesi) için denenecek model sırası.
-// Sabit model adları hesapta olmayabilir ya da emekliye ayrılmış olabilir (o zaman her istek
-// sessizce 404 alıyordu), bu yüzden ana üretim gibi hesabın canlı model listesinden seçilir:
-// önce kullanıcının seçtiği model, sonra flash modeller, sonra diğerleri. Liste anahtar başına
-// bir kez alınır; alınamazsa eski sabit liste kullanılır.
-const modelChainCache = new Map();
-async function resolveModelChain(apiKey, preferred) {
-  const userModel = preferred || (() => {
-    try { return localStorage.getItem('lore_gemini_model') || ''; } catch { return ''; }
-  })();
-  if (!modelChainCache.has(apiKey)) modelChainCache.set(apiKey, getAvailableModels(apiKey));
-  const available = await modelChainCache.get(apiKey);
-  if (!available.length) {
-    modelChainCache.delete(apiKey); // sonraki çağrıda yeniden dene
-    return Array.from(new Set([userModel, 'gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash'].filter(Boolean)));
-  }
-  // Metin üretmeyen (görsel, ses, gömme vb.) ve 404 vermiş modelleri ele.
-  // Not: liste emekliye ayrılmış modelleri (ör. gemini-2.5-flash) hâlâ gösterebiliyor,
-  // bu yüzden 404 alan model deadModels'e girer ve oturum boyunca bir daha denenmez.
-  const textModels = available.filter(
-    (m) => !/image|tts|audio|embedding|veo|imagen|aqa|live|omni|nano|customtools/i.test(m.id) && !deadModels.has(m.id)
+// ---------------------------------------------------------------------------
+// Model taraması: hangi model GERÇEKTEN çalışıyor?
+// Google'ın model listesi emekliye ayrılmış modelleri (ör. gemini-2.5-flash) hâlâ gösteriyor
+// ama çağrınca 404 "no longer available" dönüyor. Bu yüzden listeye güvenilmez; her metin
+// modeli tek bir küçük istekle denenir ve sonuç anahtar başına 24 saat saklanır.
+//   ok   = cevap verdi (seçilebilir)
+//   busy = geçici yoğunluk / kota (429, 5xx, zaman aşımı) — seçilebilir, "yoğun" diye işaretlenir
+//   dead = 404/400/403 — bu hesapta kullanılamaz, seçilemez ve hiçbir istekte denenmez
+// ---------------------------------------------------------------------------
+const PROBE_CACHE_KEY = 'lore_gemini_model_probe';
+const PROBE_TTL_MS = 24 * 60 * 60 * 1000;
+const PROBE_MAX_MODELS = 16;
+const deadModels = new Set();
+
+// Anahtarın kendisini saklamadan hangi anahtara ait olduğunu ayırt etmek için kısa parmak izi
+function keyFingerprint(apiKey) {
+  let h = 0;
+  for (const ch of String(apiKey || '')) h = (h * 31 + ch.charCodeAt(0)) | 0;
+  return String(h >>> 0);
+}
+
+// Metin üretmeyen (görsel, ses, gömme vb.) modelleri ele
+function isTextModelId(id) {
+  return !/image|tts|audio|embedding|veo|imagen|aqa|live|omni|nano|customtools|robotics|computer-use|gemma/i.test(id);
+}
+
+// En yeni sürüm önce; aynı sürümde kararlı > preview; flash > diğerleri.
+// "-latest" takma adları en sona: sık sık 503 (yoğun) veriyorlar.
+function modelRank(id) {
+  if (/-latest$/.test(id)) return 0.5;
+  return parseFloat((id.match(/gemini-(\d+(?:\.\d+)?)/) || [])[1]) || 0;
+}
+export function compareModelsNewestFirst(a, b) {
+  const ia = a.id || a;
+  const ib = b.id || b;
+  return (
+    /flash/i.test(ib) - /flash/i.test(ia) ||
+    modelRank(ib) - modelRank(ia) ||
+    /preview/i.test(ia) - /preview/i.test(ib) ||
+    /lite/i.test(ia) - /lite/i.test(ib)
   );
-  const pool = textModels.length ? textModels : available;
-  const chosen = pool.find((m) => m.id === userModel.replace(/^models\//, ''));
-  // En yeni sürüm önce ("-latest" takma adları en başta, aynı sürümde kararlı > preview)
-  const rank = (id) => (/-latest$/.test(id) ? 1000 : parseFloat((id.match(/gemini-(\d+(?:\.\d+)?)/) || [])[1]) || 0);
-  const byNewest = (a, b) => rank(b.id) - rank(a.id) || /preview/.test(a.id) - /preview/.test(b.id);
-  const flash = pool.filter((m) => /flash/i.test(m.id)).sort(byNewest);
-  const others = pool.filter((m) => !/flash/i.test(m.id)).sort(byNewest);
-  const ordered = [chosen, ...flash, ...others].filter(Boolean).map((m) => m.id);
+}
+
+function readProbeCache(apiKey) {
+  try {
+    const c = JSON.parse(localStorage.getItem(PROBE_CACHE_KEY) || 'null');
+    if (!c || c.fp !== keyFingerprint(apiKey) || !Array.isArray(c.results)) return null;
+    if (Date.now() - c.at > PROBE_TTL_MS) return null;
+    return c;
+  } catch {
+    return null;
+  }
+}
+function writeProbeCache(apiKey, results) {
+  try {
+    localStorage.setItem(PROBE_CACHE_KEY, JSON.stringify({ fp: keyFingerprint(apiKey), at: Date.now(), results }));
+  } catch {
+    /* depolama dolu: önbelleksiz devam */
+  }
+}
+function syncDeadModels(results) {
+  for (const r of results || []) if (r.status === 'dead') deadModels.add(r.id);
+}
+
+/** Önbellekteki tarama sonucu (24 saatten eski ya da başka anahtara aitse null) */
+export function getCachedModelProbe(apiKey) {
+  const c = readProbeCache(apiKey);
+  if (c) syncDeadModels(c.results);
+  return c;
+}
+
+/** Tek bir modeli küçük bir istekle dener → 'ok' | 'busy' | 'dead' */
+export async function probeModel(apiKey, id, timeoutMs = 20000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const t0 = performance.now();
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${id}:generateContent?key=${apiKey.trim()}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: 'Sadece OK yaz.' }] }] }),
+        signal: controller.signal
+      }
+    );
+    recordApiRequest();
+    const ms = Math.round(performance.now() - t0);
+    if (res.ok) return { status: 'ok', ms };
+    if ([400, 403, 404].includes(res.status)) {
+      deadModels.add(id);
+      return { status: 'dead', ms, code: res.status };
+    }
+    return { status: 'busy', ms, code: res.status };
+  } catch {
+    return { status: 'busy', ms: Math.round(performance.now() - t0), code: 'timeout' };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Hesaptaki metin modellerini tarar (önbellek 24 saat; force ile yenilenir).
+ * Döner: [{ id, displayName, status, ms }] en iyiden kötüye sıralı.
+ */
+export async function probeWorkingModels(apiKey, { force = false, onProgress } = {}) {
+  if (!apiKey?.trim()) throw new Error('Gemini API anahtarı tanımlı değil.');
+  if (!force) {
+    const cached = getCachedModelProbe(apiKey);
+    if (cached) return cached.results;
+  }
+  const listed = await getAvailableModels(apiKey);
+  if (!listed.length) throw new Error('Model listesi alınamadı. API anahtarınızı kontrol edin.');
+  const candidates = listed
+    .filter((m) => isTextModelId(m.id) && /gemini/i.test(m.id))
+    .sort(compareModelsNewestFirst)
+    .slice(0, PROBE_MAX_MODELS);
+
+  const results = new Array(candidates.length);
+  let next = 0;
+  let done = 0;
+  const worker = async () => {
+    while (next < candidates.length) {
+      const i = next++;
+      const m = candidates[i];
+      const r = await probeModel(apiKey, m.id);
+      results[i] = { id: m.id, displayName: m.displayName || m.id, ...r };
+      done++;
+      if (onProgress) onProgress(done, candidates.length);
+    }
+  };
+  await Promise.all([worker(), worker(), worker(), worker()]);
+
+  const order = { ok: 0, busy: 1, dead: 2 };
+  results.sort((a, b) => order[a.status] - order[b.status] || compareModelsNewestFirst(a, b));
+  writeProbeCache(apiKey, results);
+  syncDeadModels(results);
+  return results;
+}
+
+/** Tarama sonucundan önerilen model: ilk çalışan, yoksa ilk yoğun */
+export function pickBestModel(results) {
+  return (results || []).find((r) => r.status === 'ok')?.id || (results || []).find((r) => r.status === 'busy')?.id || null;
+}
+
+/**
+ * Seçili model bu hesapta çalışıyor mu? Çalışmıyorsa (dead) en iyi çalışan modeli döndürür.
+ * Önce önbelleğe bakar; bilgi yoksa yalnızca seçili modeli dener (1 istek), ölüyse tam tarar.
+ */
+export async function ensureWorkingModel(apiKey, current) {
+  if (!apiKey?.trim()) return current;
+  const id = String(current || '').replace(/^models\//, '');
+  const cached = getCachedModelProbe(apiKey);
+  const known = cached?.results.find((r) => r.id === id);
+  if (known && known.status !== 'dead') return id;
+  if (!known && id && !deadModels.has(id)) {
+    const r = await probeModel(apiKey, id);
+    if (r.status !== 'dead') return id;
+  }
+  const results = cached ? cached.results : await probeWorkingModels(apiKey);
+  return pickBestModel(results) || id;
+}
+
+// Yardımcı istekler (kısa başlık, derinlik makalesi, görsel istemi) için denenecek model sırası:
+// önce kullanıcının seçtiği model, sonra tarama/canlı listedeki en yeni flash modeller.
+// Ölü (404) modeller hiç denenmez.
+const modelChainCache = new Map();
+export async function resolveModelChain(apiKey, preferred) {
+  const userModel = String(
+    preferred ||
+      (() => {
+        try {
+          return localStorage.getItem('lore_gemini_model') || '';
+        } catch {
+          return '';
+        }
+      })()
+  ).replace(/^models\//, '');
+
+  const cached = getCachedModelProbe(apiKey);
+  let pool;
+  if (cached) {
+    pool = cached.results.filter((r) => r.status !== 'dead').map((r) => r.id);
+  } else {
+    if (!modelChainCache.has(apiKey)) modelChainCache.set(apiKey, getAvailableModels(apiKey));
+    const available = await modelChainCache.get(apiKey);
+    if (!available.length) modelChainCache.delete(apiKey); // sonraki çağrıda yeniden dene
+    pool = available.filter((m) => isTextModelId(m.id)).sort(compareModelsNewestFirst).map((m) => m.id);
+  }
+  const ordered = [userModel, ...pool].filter((id) => id && !deadModels.has(id));
   return Array.from(new Set(ordered)).slice(0, 8);
 }
-const deadModels = new Set();
 
 // Yanıttan metni al (düşünen modellerde "thought" parçalarını atla)
 function extractResponseText(data) {
@@ -274,7 +433,7 @@ export function formatInstagramCaption(post) {
   return parts.join('\n\n');
 }
 
-export async function generateEditorialPost({ apiKey, category, decade, customTopic, model = "gemini-2.5-flash", onProgress, project }) {
+export async function generateEditorialPost({ apiKey, category, decade, customTopic, model, onProgress, project }) {
   if (!apiKey?.trim()) {
     throw new Error("Lütfen ayarlardan geçerli bir Gemini API anahtarı girin.");
   }
@@ -288,37 +447,11 @@ ${project?.filterTypeLabel || 'Filtre / Dönem'}: ${decade}
 
   if (onProgress) onProgress("Google'dan hesabınıza uygun aktif modeller listeleniyor...");
 
-  let availableModels = await getAvailableModels(apiKey);
-  let targetModelNames = [];
-
-  if (availableModels.length > 0) {
-    const userSelected = availableModels.find(
-      (m) => m.id === model || m.fullName === model || m.id.includes(model)
-    );
-
-    const flashModels = availableModels.filter((m) => m.id.toLowerCase().includes("flash"));
-    const otherModels = availableModels.filter((m) => !m.id.toLowerCase().includes("flash"));
-
-    if (userSelected) {
-      targetModelNames.push(userSelected.fullName);
-    }
-    flashModels.forEach((m) => {
-      if (!targetModelNames.includes(m.fullName)) targetModelNames.push(m.fullName);
-    });
-    otherModels.forEach((m) => {
-      if (!targetModelNames.includes(m.fullName)) targetModelNames.push(m.fullName);
-    });
-  }
-
-  if (targetModelNames.length === 0) {
-    const fallbacks = [
-      model,
-      "models/gemini-2.5-flash",
-      "models/gemini-2.0-flash",
-      "models/gemini-1.5-flash"
-    ];
-    targetModelNames = fallbacks.map((m) => (m.startsWith("models/") ? m : `models/${m}`));
-  }
+  // Seçili model + çalışan modeller (tarama önbelleği ya da canlı liste, en yeni flash önce);
+  // bu hesapta ölü (404) olduğu bilinen modeller hiç denenmez.
+  const chain = await resolveModelChain(apiKey, model);
+  let targetModelNames = chain.map((id) => `models/${id}`);
+  if (targetModelNames.length === 0 && model) targetModelNames = [`models/${String(model).replace(/^models\//, "")}`];
 
   let lastError = null;
 
@@ -329,7 +462,9 @@ ${project?.filterTypeLabel || 'Filtre / Dönem'}: ${decade}
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 14000);
+    // Yeni nesil modeller tam makale için 14 sn'yi aşabiliyor (gemini-3.5-flash kısa bir
+    // istekte bile ~17 sn sürdü) → erken kesip sonraki modele atlamasın
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
 
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/${currentModelFullName}:generateContent?key=${apiKey.trim()}`;
@@ -362,6 +497,7 @@ ${project?.filterTypeLabel || 'Filtre / Dönem'}: ${decade}
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
+        if (res.status === 404) deadModels.add(shortName);
         const msg = errorData.error?.message || `HTTP ${res.status}: ${res.statusText}`;
         console.warn(`Model ${currentModelFullName} başarısız: ${msg}`);
         throw new Error(msg);
@@ -369,7 +505,7 @@ ${project?.filterTypeLabel || 'Filtre / Dönem'}: ${decade}
 
       const data = await res.json();
       recordApiRequest();
-      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      const rawText = extractResponseText(data);
       if (!rawText) throw new Error("Yapay zekadan boş yanıt döndü.");
 
       let cleaned = rawText.trim();

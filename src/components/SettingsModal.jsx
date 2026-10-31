@@ -1,24 +1,58 @@
 import React, { useState, useEffect } from 'react';
-import { X, Key, ExternalLink, Check, AlertCircle, ShieldCheck, Cpu, Gauge, Zap, RotateCcw } from 'lucide-react';
-import { getAvailableModels } from '../services/gemini';
+import { X, Key, ExternalLink, Check, AlertCircle, ShieldCheck, Gauge, RotateCcw, RefreshCw } from 'lucide-react';
+import { probeWorkingModels, getCachedModelProbe, pickBestModel } from '../services/gemini';
 import { getQuotaStats, resetQuotaStats } from '../services/apiQuota';
 
 export function SettingsModal({ isOpen, onClose, apiKey, onSaveApiKey, model, onSaveModel }) {
   const [tempKey, setTempKey] = useState(apiKey || '');
   const [showKey, setShowKey] = useState(false);
-  const [tempModel, setTempModel] = useState(model || 'gemini-2.5-flash');
+  const [tempModel, setTempModel] = useState(model || '');
   const [testing, setTesting] = useState(false);
-  const [detectedModels, setDetectedModels] = useState([]);
   const [testResult, setTestResult] = useState(null); // { success: bool, message: string }
   const [quotaStats, setQuotaStats] = useState(() => getQuotaStats());
+  // Model taraması: her model gerçekten denenir, yalnız cevap verenler (ok/yoğun) seçilebilir
+  const [probe, setProbe] = useState({ results: null, at: null, loading: false, done: 0, total: 0, error: null });
+
+  const runProbe = async (key, force) => {
+    if (!key?.trim()) return null;
+    setProbe((p) => ({ ...p, loading: true, done: 0, total: 0, error: null }));
+    try {
+      const results = await probeWorkingModels(key.trim(), {
+        force,
+        onProgress: (done, total) => setProbe((p) => ({ ...p, done, total }))
+      });
+      setProbe({ results, at: Date.now(), loading: false, done: 0, total: 0, error: null });
+      setQuotaStats(getQuotaStats());
+      return results;
+    } catch (err) {
+      setProbe((p) => ({ ...p, loading: false, error: err.message }));
+      return null;
+    }
+  };
 
   useEffect(() => {
-    if (isOpen) {
-      setQuotaStats(getQuotaStats());
+    if (!isOpen) return;
+    setQuotaStats(getQuotaStats());
+    setTempKey(apiKey || '');
+    setTempModel(model || '');
+    setTestResult(null);
+    if (!apiKey?.trim()) {
+      setProbe({ results: null, at: null, loading: false, done: 0, total: 0, error: null });
+      return;
     }
+    const cached = getCachedModelProbe(apiKey.trim());
+    if (cached) setProbe({ results: cached.results, at: cached.at, loading: false, done: 0, total: 0, error: null });
+    else runProbe(apiKey, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const selectable = (probe.results || []).filter((r) => r.status !== 'dead');
+  const deadCount = (probe.results || []).filter((r) => r.status === 'dead').length;
+  const recommendedId = pickBestModel(probe.results);
+  const isSelectable = (id) => selectable.some((r) => r.id === id);
+  const keyChanged = tempKey.trim() !== (apiKey || '').trim();
 
   const handleDirectSave = () => {
     if (!tempKey.trim()) {
@@ -26,8 +60,9 @@ export function SettingsModal({ isOpen, onClose, apiKey, onSaveApiKey, model, on
       return;
     }
     onSaveApiKey(tempKey.trim());
-    onSaveModel(tempModel);
-    setTestResult({ success: true, message: 'API Anahtarı kaydedildi!' });
+    // Çalışmayan model kaydedilmez
+    if (isSelectable(tempModel)) onSaveModel(tempModel);
+    setTestResult({ success: true, message: 'Kaydedildi!' });
     setTimeout(() => {
       onClose();
     }, 600);
@@ -43,25 +78,21 @@ export function SettingsModal({ isOpen, onClose, apiKey, onSaveApiKey, model, on
     setTestResult(null);
 
     try {
-      const models = await getAvailableModels(tempKey.trim());
+      // Anahtar değiştiyse ya da hiç taranmadıysa modelleri baştan dene
+      const results = await runProbe(tempKey, keyChanged || !probe.results);
+      if (!results) throw new Error('Modeller denenemedi. API anahtarınızı kontrol edin.');
+      const working = results.filter((r) => r.status !== 'dead');
+      if (!working.length) throw new Error('Bu anahtarla çalışan model bulunamadı.');
 
-      if (models.length === 0) {
-        throw new Error("Hesabınız için aktif model bulunamadı veya API anahtarı geçersiz. Lütfen anahtarınızı kontrol edin.");
-      }
-
-      setDetectedModels(models);
-
-      // Flash model veya seçili modeli ayarla
-      const matching = models.find((m) => m.id === tempModel);
-      const best = matching || models.find((m) => m.id.toLowerCase().includes('flash')) || models[0];
+      const chosen = working.some((r) => r.id === tempModel) ? tempModel : pickBestModel(results);
 
       onSaveApiKey(tempKey.trim());
-      onSaveModel(best.id);
-      setTempModel(best.id);
+      onSaveModel(chosen);
+      setTempModel(chosen);
 
       setTestResult({
         success: true,
-        message: `Bağlantı başarılı! ${models.length} adet aktif model bulundu. (${best.id} aktif edildi)`
+        message: `Bağlantı başarılı! ${working.length} model çalışıyor. (${chosen} aktif edildi)`
       });
 
       setTimeout(() => {
@@ -221,46 +252,70 @@ export function SettingsModal({ isOpen, onClose, apiKey, onSaveApiKey, model, on
           <div>
             <label className="block text-xs font-mono uppercase tracking-wider text-neutral-300 mb-1.5 flex items-center justify-between">
               <span>Yapay Zeka Modeli</span>
-              <span className="text-[10px] text-neutral-500 font-normal">Hızlı & Grounding Destekli</span>
+              <button
+                type="button"
+                disabled={probe.loading || !tempKey.trim()}
+                onClick={() => runProbe(tempKey, true)}
+                className="text-[10px] font-normal normal-case tracking-normal text-neutral-400 hover:text-white disabled:opacity-40 flex items-center space-x-1 transition-colors"
+                title="Hesabındaki modelleri yeniden dene"
+              >
+                <RefreshCw className={`w-3 h-3 ${probe.loading ? 'animate-spin' : ''}`} />
+                <span>{probe.loading ? 'Deneniyor…' : 'Modelleri Yeniden Tara'}</span>
+              </button>
             </label>
-            <div className="grid grid-cols-2 gap-2 mb-2">
-              {[
-                { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', tag: 'En Yeni & Önerilen' },
-                { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', tag: 'Yeni Nesil Hızlı' },
-                { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', tag: 'Klasik Hızlı' },
-                { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', tag: 'Derin Akıl & Detay' },
-              ].map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => setTempModel(m.id)}
-                  className={`p-3 rounded-lg border text-left transition-all ${
-                    tempModel === m.id
-                      ? 'border-[#e6c280] bg-[#e6c280]/10 text-white shadow-[0_0_12px_rgba(230,194,128,0.15)] ring-1 ring-[#e6c280]/40'
-                      : 'border-white/10 bg-neutral-900/40 text-neutral-400 hover:border-white/20'
-                  }`}
-                >
-                  <div className="text-xs font-semibold text-white flex items-center justify-between">
-                    <span>{m.name}</span>
-                    <span className="text-[9px] font-mono text-[#e6c280] border border-[#e6c280]/30 px-1 py-0.2 rounded">
-                      {m.tag}
-                    </span>
-                  </div>
-                </button>
-              ))}
-            </div>
 
-            {/* Custom Model Input */}
-            <div className="flex items-center space-x-2 pt-1">
-              <span className="text-[10px] font-mono text-neutral-400 shrink-0">Özel Model Adı:</span>
-              <input
-                type="text"
-                value={tempModel}
-                onChange={(e) => setTempModel(e.target.value.trim())}
-                placeholder="Örn: gemini-3.8-flash"
-                className="w-full bg-[#0a0a0d] border border-white/10 rounded px-2.5 py-1 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-[#e6c280] font-mono"
-              />
-            </div>
+            {!tempKey.trim() ? (
+              <p className="text-[11px] text-neutral-500 font-mono py-2">Modelleri görmek için önce API anahtarını girin.</p>
+            ) : probe.loading && !probe.results ? (
+              <p className="text-[11px] text-neutral-400 font-mono py-2">
+                Hesabındaki modeller tek tek deneniyor{probe.total ? ` (${probe.done}/${probe.total})` : ''}… yalnızca cevap verenler listelenecek.
+              </p>
+            ) : probe.error && !probe.results ? (
+              <p className="text-[11px] text-red-300 font-mono py-2">{probe.error}</p>
+            ) : keyChanged ? (
+              <p className="text-[11px] text-neutral-400 font-mono py-2">Yeni anahtarın modellerini görmek için "Modelleri Yeniden Tara" ya da "Doğrula ve Kaydet".</p>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-2 mb-2 max-h-52 overflow-y-auto pr-1">
+                  {selectable.map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => setTempModel(m.id)}
+                      title={m.status === 'busy' ? `Şu an yoğun (${m.code}); seçilebilir ama yavaş/başarısız olabilir` : `${m.id} — ${(m.ms / 1000).toFixed(1)} sn'de cevap verdi`}
+                      className={`p-2.5 rounded-lg border text-left transition-all ${
+                        tempModel === m.id
+                          ? 'border-[#e6c280] bg-[#e6c280]/10 text-white shadow-[0_0_12px_rgba(230,194,128,0.15)] ring-1 ring-[#e6c280]/40'
+                          : 'border-white/10 bg-neutral-900/40 text-neutral-400 hover:border-white/20'
+                      }`}
+                    >
+                      <div className="text-xs font-semibold text-white truncate">{m.displayName}</div>
+                      <div className="mt-1 flex items-center justify-between gap-1">
+                        <span className="text-[9px] font-mono text-neutral-500 truncate">{m.id}</span>
+                        {m.id === recommendedId ? (
+                          <span className="text-[9px] font-mono text-[#e6c280] border border-[#e6c280]/30 px-1 rounded shrink-0">Önerilen</span>
+                        ) : m.status === 'busy' ? (
+                          <span className="text-[9px] font-mono text-amber-300 border border-amber-400/30 px-1 rounded shrink-0">Yoğun</span>
+                        ) : (
+                          <span className="text-[9px] font-mono text-emerald-300 shrink-0">{(m.ms / 1000).toFixed(1)} sn</span>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] font-mono text-neutral-500">
+                  {selectable.length} model çalışıyor
+                  {deadCount > 0 && ` · ${deadCount} model bu hesapta kapalı, listede gösterilmiyor`}
+                  {probe.at && ` · son tarama ${new Date(probe.at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`}
+                  {probe.loading && probe.total ? ` · yenileniyor ${probe.done}/${probe.total}` : ''}
+                </p>
+                {tempModel && !isSelectable(tempModel) && (
+                  <p className="text-[10px] font-mono text-amber-300 mt-1">
+                    Kayıtlı model ({tempModel}) bu hesapta çalışmıyor; listeden bir model seç.
+                  </p>
+                )}
+              </>
+            )}
           </div>
 
           {/* Status Message */}

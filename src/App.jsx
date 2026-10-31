@@ -10,7 +10,7 @@ import { ProjectModal } from './components/ProjectModal';
 import { LoginScreen } from './components/LoginScreen';
 import { MetaConnectModal } from './components/MetaConnectModal';
 import { MagazineModal } from './components/MagazineModal';
-import { generateEditorialPost } from './services/gemini';
+import { generateEditorialPost, ensureWorkingModel } from './services/gemini';
 import {
   getAllProjects,
   getActiveProject,
@@ -145,6 +145,26 @@ export function App() {
     setModel(newModel);
     localStorage.setItem('lore_gemini_model', newModel);
   };
+
+  // Seçili model bu hesapta artık çalışmıyorsa (Google emekliye ayırdıysa, ör. gemini-2.5-flash)
+  // açılışta çalışan en iyi modele kendiliğinden geç. Önbellek varsa istek atmaz; yoksa yalnızca
+  // seçili modeli dener, ölüyse modelleri tarar.
+  useEffect(() => {
+    if (!apiKey?.trim()) return;
+    let alive = true;
+    ensureWorkingModel(apiKey, model)
+      .then((working) => {
+        if (alive && working && working !== model) {
+          console.info(`[Model] ${model} bu hesapta kullanılamıyor → ${working} seçildi`);
+          handleSaveModel(working);
+        }
+      })
+      .catch((err) => console.warn("Model kontrolü yapılamadı:", err?.message || err));
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apiKey, model]);
 
   // Proje Değiştirme ve Stüdyo Çalışma Alanını Sıfırlama
   const handleSwitchProject = (targetProject) => {

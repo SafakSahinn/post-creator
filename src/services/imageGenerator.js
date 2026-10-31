@@ -1,3 +1,4 @@
+import { resolveModelChain } from './gemini';
 /**
  * LORE Görsel Üretim Motoru
  * Gemini 2.5 ile kusursuz İngilizce fotoğraf direktifine dönüştürür
@@ -8,7 +9,9 @@ export async function createRefinedPhotoPrompt({ visualNote, title, category, de
   // Eğer Gemini API varsa, önce promptu profesyonel bir fotoğrafçı direktifine dönüştür
   if (apiKey?.trim()) {
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
+      // Sabit gemini-2.5-flash artık 404 veriyor: seçili/çalışan modeli kullan
+      const [modelId = "gemini-flash-lite-latest"] = await resolveModelChain(apiKey.trim());
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey.trim()}`;
       const systemInstruction = `You are a world-class editorial photography director for Vogue and GQ.
 Your job is to convert a vintage cultural topic into a single, clean, hyper-realistic English image prompt.
 Rules:
@@ -30,7 +33,7 @@ Generate ONLY the clean English photo prompt. Do not add quotes, labels, or expl
         body: JSON.stringify({
           contents: [{ role: 'user', parts: [{ text: promptReq }] }],
           systemInstruction: { parts: [{ text: systemInstruction }] },
-          generationConfig: { temperature: 0.4, maxOutputTokens: 120 }
+          generationConfig: { temperature: 0.4, maxOutputTokens: 1024 } // düşünen modeller düşünmeye de token harcar
         })
       });
 
