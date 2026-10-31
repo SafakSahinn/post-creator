@@ -282,7 +282,7 @@ export function SettingsModal({ isOpen, onClose, apiKey, onSaveApiKey, model, on
                       key={m.id}
                       type="button"
                       onClick={() => setTempModel(m.id)}
-                      title={m.status === 'busy' ? `Şu an yoğun (${m.code}); seçilebilir ama yavaş/başarısız olabilir` : `${m.id} — ${(m.ms / 1000).toFixed(1)} sn'de cevap verdi`}
+                      title={m.status === 'busy' ? (m.code === 'timeout' ? 'Denemede 20 sn içinde cevap vermedi; seçilebilir ama yavaş olabilir' : `Şu an yoğun (${m.code}); seçilebilir ama başarısız olabilir`) : `${m.id} — ${(m.ms / 1000).toFixed(1)} sn'de cevap verdi`}
                       className={`p-2.5 rounded-lg border text-left transition-all ${
                         tempModel === m.id
                           ? 'border-[#e6c280] bg-[#e6c280]/10 text-white shadow-[0_0_12px_rgba(230,194,128,0.15)] ring-1 ring-[#e6c280]/40'
@@ -295,7 +295,9 @@ export function SettingsModal({ isOpen, onClose, apiKey, onSaveApiKey, model, on
                         {m.id === recommendedId ? (
                           <span className="text-[9px] font-mono text-[#e6c280] border border-[#e6c280]/30 px-1 rounded shrink-0">Önerilen</span>
                         ) : m.status === 'busy' ? (
-                          <span className="text-[9px] font-mono text-amber-300 border border-amber-400/30 px-1 rounded shrink-0">Yoğun</span>
+                          <span className="text-[9px] font-mono text-amber-300 border border-amber-400/30 px-1 rounded shrink-0">
+                            {m.code === 'timeout' ? 'Yavaş' : 'Yoğun'}
+                          </span>
                         ) : (
                           <span className="text-[9px] font-mono text-emerald-300 shrink-0">{(m.ms / 1000).toFixed(1)} sn</span>
                         )}

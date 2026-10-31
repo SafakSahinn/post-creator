@@ -174,7 +174,7 @@ function keyFingerprint(apiKey) {
 
 // Metin üretmeyen (görsel, ses, gömme vb.) modelleri ele
 function isTextModelId(id) {
-  return !/image|tts|audio|embedding|veo|imagen|aqa|live|omni|nano|customtools|robotics|computer-use|gemma/i.test(id);
+  return !/image|tts|audio|embedding|veo|imagen|aqa|live|omni|nano|customtools|robotics|computer-use|gemma|transcribe|learnlm/i.test(id);
 }
 
 // En yeni sürüm önce; aynı sürümde kararlı > preview; flash > diğerleri.
@@ -243,6 +243,11 @@ export async function probeModel(apiKey, id, timeoutMs = 20000) {
     if ([400, 403, 404].includes(res.status)) {
       deadModels.add(id);
       return { status: 'dead', ms, code: res.status };
+    }
+    // 429 "limit: 0" = model ücretsiz planda hiç yok (geçici kota dolması değil) → kapalı say
+    if (res.status === 429 && /limit:\s*0\b/.test(await res.text().catch(() => ''))) {
+      deadModels.add(id);
+      return { status: 'dead', ms, code: 'plan' };
     }
     return { status: 'busy', ms, code: res.status };
   } catch {
