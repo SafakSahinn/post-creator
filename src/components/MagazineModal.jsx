@@ -34,6 +34,8 @@ import { toJpeg, getFontEmbedCSS } from 'html-to-image';
 import { InstagramIcon } from './Icons';
 import { generateDeepMagazineEssay, generateShortMagazineTitles } from '../services/gemini';
 import { saveArchiveToDb } from '../services/archiveDb';
+import { MagazineIssueList, MagazineIssueEditor } from './MagazineIssues';
+import { getIssuesForProject, getNextIssueNumber, saveIssue, deleteIssue } from '../services/magazineIssues';
 
 /**
  * Gönderinin arşivdeki slaytlarında fiilen KULLANILMIŞ temiz fotoğraflarını ayıklar.
@@ -527,7 +529,10 @@ export function MagazineModal({
   // 2..N: Makale çift sayfaları (Her makale 1 yayılım = 2 sayfa)
   const [currentPage, setCurrentPage] = useState(0);
   const [themeMode, setThemeMode] = useState('paper'); // 'paper' (90'lar Kuşe/Gazete) | 'noir' (90'lar Gece)
-  const [onlyPublished, setOnlyPublished] = useState(false);
+  // Dergi sayıları: activeIssueId = okunan sayı (null = sayı listesi), editorIssue = düzenlenen taslak
+  const [issueRefreshKey, setIssueRefreshKey] = useState(0);
+  const [activeIssueId, setActiveIssueId] = useState(null);
+  const [editorIssue, setEditorIssue] = useState(null);
   const [isExpandingAi, setIsExpandingAi] = useState(false);
   const [aiError, setAiError] = useState(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -640,20 +645,58 @@ export function MagazineModal({
     [archives, activeProjectId]
   );
 
-  const displayPosts = useMemo(() => {
-    let list = [...projectArchives];
-    if (onlyPublished) {
-      list = list.filter((p) => p.instagramPublishedAt || p.publishedToInstagram);
-    }
-    return list;
-  }, [projectArchives, onlyPublished]);
+  // Projenin kayıtlı sayıları (dergi her açıldığında ve sayı kaydedilince/silinince tazelenir)
+  const issues = useMemo(
+    () => getIssuesForProject(activeProjectId),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activeProjectId, issueRefreshKey, isOpen]
+  );
+  const activeIssue = issues.find((i) => i.id === activeIssueId) || null;
+  const isReading = Boolean(activeIssue) && !editorIssue;
 
-  // Proje değişince dergiyi başa al ve düzenleme durumlarını temizle
+  // Dergi yalnızca kayıtlı bir sayının gönderilerinden, sayıdaki sırayla oluşur.
+  // Arşivden silinmiş gönderiler atlanır.
+  const displayPosts = useMemo(() => {
+    if (!activeIssue) return [];
+    const byId = new Map(archives.map((p) => [p.id, p]));
+    return activeIssue.postIds.map((id) => byId.get(id)).filter(Boolean);
+  }, [activeIssue, archives]);
+
+  // Proje değişince sayı listesine dön ve düzenleme durumlarını temizle
   useEffect(() => {
+    setActiveIssueId(null);
+    setEditorIssue(null);
     setCurrentPage(0);
     setEditingPhotoKey(null);
     setPhotoAdjustments({});
   }, [activeProjectId]);
+
+  // Okunan sayı değişince başa dön
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [activeIssueId]);
+
+  const handleCreateIssue = () => {
+    setEditorIssue({ id: null, projectId: activeProjectId, number: getNextIssueNumber(activeProjectId), title: '', postIds: [] });
+  };
+  const handleEditIssue = (id) => {
+    const issue = issues.find((i) => i.id === id);
+    if (issue) setEditorIssue(issue);
+  };
+  const handleSaveIssue = (draft) => {
+    const saved = saveIssue(draft);
+    setEditorIssue(null);
+    setIssueRefreshKey((k) => k + 1);
+    setActiveIssueId(saved.id);
+    setCurrentPage(0);
+  };
+  const handleDeleteIssue = (issue) => {
+    const label = issue.title ? `"${issue.title}" (Sayı #${issue.number})` : `Sayı #${issue.number}`;
+    if (!window.confirm(`${label} silinsin mi? Gönderiler arşivde kalır, yalnızca bu sayı silinir.`)) return;
+    deleteIssue(issue.id);
+    if (activeIssueId === issue.id) setActiveIssueId(null);
+    setIssueRefreshKey((k) => k + 1);
+  };
 
   // Arka kapaktaki "Bu Sayıda" listesi için kısa başlıklar: eksik olanları AI tek istekte üretir
   // ve arşive kaydeder (bir kez). Anahtar yoksa ya da istek başarısızsa uzun başlık kısaltılmadan kalır.
@@ -760,17 +803,22 @@ export function MagazineModal({
     const handleKeyDown = (e) => {
       const tag = e.target?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target?.isContentEditable) return;
+      if (e.key === 'Escape') {
+        // Düzenleyici açıksa önce onu kapat (değişiklikler kaydedilmez)
+        if (editorIssue) setEditorIssue(null);
+        else onClose();
+        return;
+      }
+      if (!isReading) return;
       if (e.key === 'ArrowRight' || e.key === 'PageDown') {
         setCurrentPage((prev) => Math.min(prev + 1, totalPages - 1));
       } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
         setCurrentPage((prev) => Math.max(prev - 1, 0));
-      } else if (e.key === 'Escape') {
-        onClose();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, totalPages, onClose]);
+  }, [isOpen, totalPages, onClose, isReading, editorIssue]);
 
   if (!isOpen) return null;
 
@@ -807,7 +855,9 @@ export function MagazineModal({
   const isPaper = themeMode === 'paper';
 
   // Günümüz tarihi (90'lar Editoryal Tipografi Formatı)
-  const currentDate = new Date();
+  // Sayının tarihi: oluşturulduğu ay (eski sayılar her açılışta bugünün tarihini almasın)
+  const currentDate = activeIssue?.createdAt ? new Date(activeIssue.createdAt) : new Date();
+  const issueNo = String(activeIssue?.number || 1).padStart(2, '0');
   const currentMonthYear = currentDate.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' }).toLocaleUpperCase('tr-TR');
   const fullDateFormatted = currentDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }).toLocaleUpperCase('tr-TR');
   const currentYear = currentDate.getFullYear();
@@ -816,7 +866,7 @@ export function MagazineModal({
   const brandName = (activeProject?.name || currentPost?.projectName || 'LORE MAGAZINE').toLocaleUpperCase('tr-TR');
   const brandCode = (activeProject?.shortCode || currentPost?.projectShortCode || 'LORE').toLocaleUpperCase('tr-TR');
   const brandTagline = (activeProject?.tagline || 'Kültür, Sinema, Moda ve Analog Estetik Dergisi').toLocaleUpperCase('tr-TR');
-  const issueDate = `${currentMonthYear} // SAYI #01`;
+  const issueDate = `${currentMonthYear} // SAYI #${issueNo}`;
 
   // Her sayfayı hem ekranda hem de PDF'te 1:1 birebir aynı boyutta ve piksel doğruluğunda render eden tek kaynak motor
   const renderSinglePage = (pageIdx, isPdf = false) => {
@@ -950,7 +1000,7 @@ export function MagazineModal({
                   ÖZEL RETROSPEKTİF BASKI
                 </span>
                 <span className="text-neutral-300 drop-shadow">
-                  CİLT I · SAYI 01
+                  CİLT I · SAYI {issueNo}
                 </span>
               </div>
               <div className="text-right">
@@ -1648,7 +1698,7 @@ export function MagazineModal({
           <div className="absolute inset-0 z-10 flex flex-col justify-between p-3 sm:p-6 lg:px-8 lg:pt-6 lg:pb-2.5">
             {/* Üst şerit */}
             <div className="border-b border-white/20 pb-2 flex items-center justify-between font-mono text-[11px] uppercase tracking-widest text-neutral-300">
-              <span>CİLT I · SAYI 01</span>
+              <span>CİLT I · SAYI {issueNo}</span>
               <span className="font-bold text-[#e6c280] tracking-wider">{currentMonthYear}</span>
             </div>
 
@@ -1778,7 +1828,7 @@ export function MagazineModal({
 
       const safeBrand = (brandName || 'DERGI').replace(/[^a-zA-Z0-9_\u00C0-\u017F-]/g, '_');
       console.info(`[PDF] ${pages.length} sayfa, ${Math.round(performance.now() - t0)} ms`);
-      pdf.save(`${safeBrand}_Dergisi_Sayi_01.pdf`);
+      pdf.save(`${safeBrand}_Dergisi_Sayi_${issueNo}.pdf`);
     } catch (err) {
       console.error('PDF oluşturma hatası:', err);
       // Beklenmeyen bir capture hatasında tarayıcı yazdırmasına düş
@@ -1890,12 +1940,19 @@ export function MagazineModal({
                 </span>
               </div>
               <p className="text-[10px] font-mono text-neutral-400">
-                {issueDate} · EDİTORYAL BASKI & FOTOĞRAF ARŞİVİ
+                {isReading
+                  ? `${issueDate}${activeIssue.title ? ` · ${activeIssue.title.toLocaleUpperCase('tr-TR')}` : ''} · EDİTORYAL BASKI & FOTOĞRAF ARŞİVİ`
+                  : `${issues.length} SAYI · EDİTORYAL BASKI & FOTOĞRAF ARŞİVİ`}
               </p>
             </div>
           </div>
 
-          {/* Center Page Navigator */}
+          {/* Center Page Navigator (yalnızca bir sayı okunurken) */}
+          {!isReading ? (
+            <div className="font-mono text-[11px] text-neutral-400 truncate">
+              {editorIssue ? 'SAYI DÜZENLEYİCİ' : 'DERGİ SAYILARI'}
+            </div>
+          ) : (
           <div className="flex items-center space-x-1.5 sm:space-x-2 font-mono text-xs shrink-0">
             <button
               type="button"
@@ -1936,28 +1993,37 @@ export function MagazineModal({
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
+          )}
 
-        {/* Right Actions: Theme, Filter, Print, Close */}
+        {/* Right Actions: Sayılar, Düzenle, Theme, Print, Close */}
         <div className="flex items-center space-x-1.5 sm:space-x-3 shrink-0">
-          
-          {/* Published Only Filter */}
-          <button
-            type="button"
-            onClick={() => {
-              setOnlyPublished(!onlyPublished);
-              setCurrentPage(0);
-            }}
-            className={`hidden sm:flex shrink-0 items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-mono transition-all cursor-pointer ${
-              onlyPublished
-                ? 'border-pink-500/50 bg-pink-950/30 text-pink-300'
-                : 'border-white/10 text-neutral-400 hover:text-white'
-            }`}
-            title="Sadece Instagram'da yayınlanmış gönderileri göster"
-          >
-            <InstagramIcon className="w-3.5 h-3.5" />
-            <span className="hidden xl:inline whitespace-nowrap">{onlyPublished ? 'Sadece Yayındakiler' : 'Tüm Gönderiler'}</span>
-          </button>
 
+          {isReading && (
+            <>
+              {/* Sayı listesine dön */}
+              <button
+                type="button"
+                onClick={() => setActiveIssueId(null)}
+                className="flex shrink-0 items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border border-white/10 text-xs font-mono text-neutral-300 hover:text-white hover:bg-white/[0.08] transition-all cursor-pointer"
+                title="Dergi sayıları listesine dön"
+              >
+                <Layers className="w-3.5 h-3.5 text-[#e6c280]" />
+                <span className="hidden lg:inline whitespace-nowrap">Sayılar</span>
+              </button>
+              {/* Bu sayının gönderilerini düzenle */}
+              <button
+                type="button"
+                onClick={() => handleEditIssue(activeIssue.id)}
+                className="hidden sm:flex shrink-0 items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border border-white/10 text-xs font-mono text-neutral-300 hover:text-white hover:bg-white/[0.08] transition-all cursor-pointer"
+                title="Bu sayıya gönderi ekle, çıkar veya sırala"
+              >
+                <Sliders className="w-3.5 h-3.5" />
+                <span className="hidden xl:inline whitespace-nowrap">Sayıyı Düzenle</span>
+              </button>
+            </>
+          )}
+
+          {isReading && (<>
           {/* Theme Toggle: 90's Paper vs 90's Noir */}
           <button
             type="button"
@@ -1998,6 +2064,7 @@ export function MagazineModal({
             <Printer className="w-3.5 h-3.5 text-[#e6c280]" />
             <span className="hidden xl:inline">Yazdır</span>
           </button>
+          </>)}
 
           {/* Close */}
           <button
@@ -2019,8 +2086,28 @@ export function MagazineModal({
           isPaper ? 'bg-[#212124]' : 'bg-[#08080a]'
         }`}
       >
-        
-        {/* The 90's Physical Magazine Spread Container (Her Sayfa Kapak Gibi Standart Tek A4 Boyutunda) */}
+
+        {editorIssue ? (
+          <MagazineIssueEditor
+            key={editorIssue.id || 'new'}
+            initialIssue={editorIssue}
+            projectPosts={projectArchives}
+            issues={issues}
+            onSave={handleSaveIssue}
+            onCancel={() => setEditorIssue(null)}
+          />
+        ) : !activeIssue ? (
+          <MagazineIssueList
+            issues={issues}
+            archives={archives}
+            projectName={brandName}
+            onOpen={setActiveIssueId}
+            onEdit={handleEditIssue}
+            onDelete={handleDeleteIssue}
+            onCreate={handleCreateIssue}
+          />
+        ) : (
+        /* The 90's Physical Magazine Spread Container (Her Sayfa Kapak Gibi Standart Tek A4 Boyutunda) */
         <div className={`relative w-full shadow-2xl rounded-sm transition-all duration-300 overflow-clip min-h-[760px] sm:min-h-[820px] flex flex-col max-w-[540px] sm:max-w-[580px] my-1 sm:my-3 mx-auto ${
           isPaper
             ? 'bg-[#f6f3eb] text-[#1c1c1f] shadow-[0_20px_60px_rgba(0,0,0,0.6)] border border-[#d8d4c7]'
@@ -2030,10 +2117,12 @@ export function MagazineModal({
           {renderSinglePage(currentPage, false)}
 
         </div>
+        )}
 
       </div>
 
       {/* 90's Bottom Navigation Bar */}
+      {isReading && (
       <div className="h-14 px-3 sm:px-6 bg-[#101115] border-t border-white/10 flex items-center justify-between shrink-0 font-mono text-xs z-20">
         
         {/* Previous Button */}
@@ -2071,6 +2160,7 @@ export function MagazineModal({
         </button>
 
       </div>
+      )}
 
     </div>
 
@@ -2079,7 +2169,7 @@ export function MagazineModal({
     {/* Sitedeki görünümle 1:1 birebir aynı boyutta ve stilde     */}
     {/* ======================================================== */}
     <div id="magazine-print-document" className="magazine-print-only">
-      {magazinePages.map((_, pIdx) => (
+      {isReading && magazinePages.map((_, pIdx) => (
         <div
           key={pIdx}
           className={`magazine-page-print-item relative overflow-hidden flex flex-col ${

@@ -14,6 +14,7 @@ import {
   Copy
 } from 'lucide-react';
 import { BUILTIN_PROJECTS } from '../services/projects';
+import { countIssuesForProject } from '../services/magazineIssues';
 
 export function ProjectModal({
   isOpen,
@@ -299,8 +300,10 @@ export function ProjectModal({
                                   e.stopPropagation();
                                   // projectId'siz eski kayıtlar varsayılan projeye (Lore Magazine) aittir
                                   const postCount = archives.filter((a) => (a?.projectId || 'lore-magazine') === proj.id).length;
-                                  const warning = postCount > 0
-                                    ? `"${proj.name}" projesinde ${postCount} gönderi var.\n\nProje silinirse bu gönderiler arşivde kalır ama hiçbir dergide görünmez.\n\nYine de silmek istiyor musunuz?`
+                                  const issueCount = countIssuesForProject(proj.id);
+                                  const issueNote = issueCount > 0 ? ` ve ${issueCount} dergi sayısı` : '';
+                                  const warning = postCount > 0 || issueCount > 0
+                                    ? `"${proj.name}" projesinde ${postCount} gönderi${issueNote} var.\n\nProje silinirse bunlar saklanır ama hiçbir projede görünmez.\n\nYine de silmek istiyor musunuz?`
                                     : `"${proj.name}" projesinde hiç gönderi yok. Silmek istediğinize emin misiniz?`;
                                   if (window.confirm(warning)) {
                                     onDeleteProject(proj.id);
