@@ -476,7 +476,8 @@ JSON Formatında Sadece Aşağıdaki Yapıyı Döndür:
 }
 
 /**
- * Dergi arka kapağındaki "Bu Sayıda" listesi için uzun başlıkları kısaltır.
+ * Dergi listelerindeki (İçindekiler, arka kapak "Bu Sayıda") uzun başlıkları kısaltır.
+ * Her öğe kendi `maxChars` sınırını taşıyabilir (varsayılan 30): satıra sığacak uzunluk.
  * Tek istekte toplu çalışır; { [id]: kısaBaşlık } döndürür.
  */
 export async function generateShortMagazineTitles({ items, apiKey, model = 'gemini-2.5-flash' }) {
@@ -484,16 +485,23 @@ export async function generateShortMagazineTitles({ items, apiKey, model = 'gemi
   if (!activeKey) throw new Error('Gemini API anahtarı tanımlı değil.');
   if (!items?.length) return {};
 
-  const list = items.map((it) => ({ id: String(it.id), title: it.title || '', concept: it.conceptTitle || '' }));
+  const list = items.map((it) => ({
+    id: String(it.id),
+    title: it.title || '',
+    concept: it.conceptTitle || '',
+    maxChars: Math.max(8, Math.round(Number(it.maxChars) || 30))
+  }));
   const prompt = `
 Rol: 1990'lar kültür dergisinin baş editörü.
-Görev: Aşağıdaki makale başlıklarını derginin ARKA KAPAĞINDAKİ "Bu Sayıda" listesi için kısalt.
+Görev: Aşağıdaki makale başlıklarını derginin içindekiler ve "Bu Sayıda" listelerinde tek satıra sığacak şekilde kısalt.
 
 Kurallar:
-- Her kısa başlık en fazla 4 kelime ve 30 karakter olsun.
+- Her kısa başlık, o öğenin "maxChars" değerini (boşluklar dahil karakter sayısı) KESİNLİKLE aşmasın ve en fazla 4 kelime olsun.
+- Sınır izin veriyorsa sınıra yakın, bilgi taşıyan bir başlık yaz; gereksiz kısaltma yapma.
 - Konunun özünü ve özel adını koru; açıklayıcı uzun kuyruğu at.
 - Başlıkta "Ana İfade: Özel Ad" yapısı varsa onu kullan.
-- Örnek: "Gri Devrim: PlayStation ve 90'ların Oturma Odasını Ele Geçiren Konsol" -> "Gri Devrim: PlayStation"
+- Örnek (maxChars 30): "Gri Devrim: PlayStation ve 90'ların Oturma Odasını Ele Geçiren Konsol" -> "Gri Devrim: PlayStation"
+- Örnek (maxChars 14): aynı başlık -> "PlayStation"
 - Türkçe yazım ve özel adların doğru yazılışı korunmalı (PlayStation, Nokia, MTV...).
 - Tırnak işareti ve sonda nokta kullanma.
 

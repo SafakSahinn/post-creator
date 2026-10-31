@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback } from 'react';
 import {
   X,
   ChevronLeft,
@@ -515,6 +515,100 @@ function MagazinePhotoFrame({ url, alt, setting, editing, isPdf, onChange, onCom
   );
 }
 
+// ---------------------------------------------------------------------------
+// Satıra sığan başlık (İçindekiler + arka kapak "Bu Sayıda")
+// Ölçüm yalnızca PDF baskı katmanında yapılır: o katman ekran dışında hep PAGE_W (580 px)
+// genişliğinde düzenlenir, yani ölçüm PDF ile birebir aynıdır ve mobilde daralan ekran
+// gereksiz kısaltmaya yol açmaz. Seçilen metin ekrandaki sayfaya da aynen yansır.
+// ---------------------------------------------------------------------------
+let fitMeasureCanvas = null;
+function measureTextPx(el, text) {
+  if (!fitMeasureCanvas) fitMeasureCanvas = document.createElement('canvas');
+  const ctx = fitMeasureCanvas.getContext('2d');
+  const cs = getComputedStyle(el);
+  ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+  if ('letterSpacing' in ctx) ctx.letterSpacing = cs.letterSpacing === 'normal' ? '0px' : cs.letterSpacing;
+  const lang = el.closest('[lang]')?.getAttribute('lang') || undefined;
+  const shown = cs.textTransform === 'uppercase' ? text.toLocaleUpperCase(lang) : text;
+  return ctx.measureText(shown).width;
+}
+
+// Gönderinin aday başlıkları: tam başlık, kalıcı kısa başlık ve alan genişliğine göre üretilmiş kısa başlıklar
+function getTitleCandidates(post) {
+  const list = [post?.title, post?.shortTitle, ...Object.values(post?.fitTitles || {})];
+  return Array.from(new Set(list.map((t) => String(t || '').trim()).filter(Boolean)));
+}
+
+/**
+ * PDF katmanında başlığı ölçer:
+ *  1) Önce tercih edilen metni basar; taşmıyorsa onu seçer.
+ *  2) Taşıyorsa (overflow alanı tam genişliği verir) adaylar içinden sığan en uzununu seçer.
+ *  3) Hiçbiri sığmıyorsa alanın karakter bütçesiyle AI kısa başlık ister; o gelene kadar
+ *     en kısa aday "…" ile kesilerek gösterilir (anahtar yoksa / istek başarısızsa da öyle kalır).
+ * Satır genişliği ya da font değişince ölçüm tekrarlanır. Bu katman görünmediğinden
+ * ölçüm sırasındaki geçici metin kullanıcıya hiç görünmez.
+ */
+function FitTitleProbe({ fitKey, post, preferred, className, reservePx = 0, fontsVersion, onChoose, onNeedShorter }) {
+  const ref = useRef(null);
+  const candidates = getTitleCandidates(post);
+  const candidatesSig = candidates.join('\u0001');
+  const [rowWidth, setRowWidth] = useState(0);
+  const [state, setState] = useState({ phase: 'measure', text: preferred });
+
+  // Satır (sabit genişlikli kap) yeniden boyutlanınca baştan ölç
+  useLayoutEffect(() => {
+    const row = ref.current?.closest('[data-fit-row]');
+    if (!row || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(([entry]) => setRowWidth(Math.round(entry.contentRect.width)));
+    ro.observe(row);
+    return () => ro.disconnect();
+  }, []);
+
+  useLayoutEffect(() => {
+    setState({ phase: 'measure', text: preferred });
+  }, [preferred, candidatesSig, rowWidth, fontsVersion]);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (state.phase !== 'measure' || !el) return;
+    if (!el.clientWidth) return; // henüz düzenlenmedi
+    // Ölçüm sırasında span'e reservePx kadar sağ dolgu verilir (ekranda bu alanın yanında olup
+    // PDF'te olmayan "→" oku gibi ögelerin payı). Metin alanı = clientWidth - dolgu; span ister
+    // satır sınırına dayanmış ister içeriğine büzülmüş olsun bu eşitlik doğrudur.
+    const textArea = el.clientWidth - reservePx;
+    let chosen = preferred;
+    if (measureTextPx(el, preferred) > textArea + 1) {
+      const limit = textArea - 2;
+      const widths = candidates.map((t) => ({ t, w: measureTextPx(el, t) }));
+      const fitting = widths.filter((c) => c.w <= limit).sort((a, b) => b.w - a.w);
+      if (fitting.length) {
+        chosen = fitting[0].t;
+      } else {
+        // Ortalama karakter genişliğinden bu alana sığacak karakter sayısı
+        const fullW = measureTextPx(el, preferred);
+        const charW = fullW / Math.max(1, preferred.length);
+        // 4'ün katına yuvarla: font yüklenmesi vb. küçük genişlik oynamaları aynı bütçeye düşsün,
+        // aynı gönderi için 47/46 gibi neredeyse aynı iki istek gitmesin
+        const maxChars = Math.max(8, Math.floor((limit / charW - 1) / 4) * 4);
+        onNeedShorter(post, maxChars);
+        chosen = widths.sort((a, b) => a.w - b.w)[0]?.t || preferred;
+      }
+    }
+    setState({ phase: 'show', text: chosen });
+    onChoose(fitKey, chosen);
+  }, [state.phase]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <span
+      ref={ref}
+      className={className}
+      style={state.phase === 'measure' && reservePx ? { paddingRight: reservePx } : undefined}
+    >
+      {state.text}
+    </span>
+  );
+}
+
 export function MagazineModal({
   isOpen,
   onClose,
@@ -705,7 +799,7 @@ export function MagazineModal({
   latestArchivesRef.current = archives;
   useEffect(() => {
     if (!isOpen) return;
-    const missing = projectArchives.filter(
+    const missing = displayPosts.filter(
       (p) => p?.id && p.title && !p.shortTitle && !shortTitleAttemptedRef.current.has(p.id)
     );
     if (missing.length === 0) return;
@@ -727,7 +821,98 @@ export function MagazineModal({
         console.warn('Kısa başlıklar üretilemedi, uzun başlık kullanılacak:', err?.message || err);
       }
     })();
-  }, [isOpen, projectArchives, onUpdateArchiveItem]);
+  }, [isOpen, displayPosts, onUpdateArchiveItem]);
+
+  // Satıra sığan başlıklar: PDF katmanındaki FitTitleProbe'ların seçtiği metin ("alan:gönderiId" -> metin).
+  // Ekrandaki sayfa aynı metni gösterir.
+  const [fitChoices, setFitChoices] = useState({});
+  const handleFitChoose = useCallback((key, text) => {
+    setFitChoices((prev) => (prev[key] === text ? prev : { ...prev, [key]: text }));
+  }, []);
+
+  // Web fontları yüklenince genişlikler değişir → yeniden ölç
+  const [fontsVersion, setFontsVersion] = useState(0);
+  useEffect(() => {
+    if (!isOpen || !document.fonts) return;
+    let alive = true;
+    const bump = () => alive && setFontsVersion((v) => v + 1);
+    document.fonts.ready.then(bump);
+    document.fonts.addEventListener?.('loadingdone', bump);
+    return () => {
+      alive = false;
+      document.fonts.removeEventListener?.('loadingdone', bump);
+    };
+  }, [isOpen]);
+
+  // Hiçbir aday sığmayınca alanın karakter bütçesiyle kısa başlık iste. İstekler kısa bir süre
+  // biriktirilip tek istekte gönderilir; her (gönderi, bütçe) çifti yalnızca bir kez denenir
+  // (sonuç yine sığmasa da) → sonsuz istek döngüsü olmaz. Sonuç gönderinin fitTitles alanına
+  // { [bütçe]: metin } olarak kaydedilir ve ölçüm otomatik tekrarlanır.
+  const fitQueueRef = useRef(new Map());
+  const fitAttemptedRef = useRef(new Set());
+  const fitTimerRef = useRef(null);
+  const flushFitQueue = useCallback(async () => {
+    const items = Array.from(fitQueueRef.current.values());
+    fitQueueRef.current.clear();
+    for (let i = 0; i < items.length; i += 40) {
+      const chunk = items.slice(i, i + 40);
+      try {
+        const map = await generateShortMagazineTitles({
+          items: chunk.map((it) => ({ ...it, id: `${it.postId}|${it.maxChars}` }))
+        });
+        const byPost = new Map();
+        for (const it of chunk) {
+          const short = map[`${it.postId}|${it.maxChars}`];
+          if (!short) continue;
+          if (!byPost.has(it.postId)) byPost.set(it.postId, {});
+          byPost.get(it.postId)[it.maxChars] = short;
+        }
+        for (const [postId, additions] of byPost) {
+          const post = latestArchivesRef.current.find((p) => p.id === postId);
+          if (!post) continue;
+          const updated = {
+            ...post,
+            fitTitles: { ...(post.fitTitles || {}), ...additions },
+            updatedAt: new Date().toISOString()
+          };
+          if (onUpdateArchiveItem) await onUpdateArchiveItem(updated);
+          else await saveArchiveToDb(updated);
+        }
+      } catch (err) {
+        console.warn('Sığan kısa başlık üretilemedi, başlık kesilerek gösterilecek:', err?.message || err);
+      }
+    }
+  }, [onUpdateArchiveItem]);
+  const handleNeedShorter = useCallback((post, maxChars) => {
+    if (!post?.id || !post.title) return;
+    const key = `${post.id}|${maxChars}`;
+    if (fitAttemptedRef.current.has(key)) return;
+    fitAttemptedRef.current.add(key);
+    fitQueueRef.current.set(key, { postId: post.id, title: post.title, conceptTitle: post.conceptTitle, maxChars });
+    clearTimeout(fitTimerRef.current);
+    fitTimerRef.current = setTimeout(flushFitQueue, 300);
+  }, [flushFitQueue]);
+  useEffect(() => () => clearTimeout(fitTimerRef.current), []);
+
+  // Başlık alanı: PDF katmanında ölçen bileşen, ekranda ölçümün seçtiği metin
+  const renderFitTitle = (slot, post, preferred, className, isPdf, reservePx = 0) => {
+    const key = `${slot}:${post.id}`;
+    if (isPdf) {
+      return (
+        <FitTitleProbe
+          fitKey={key}
+          post={post}
+          preferred={preferred}
+          className={className}
+          fontsVersion={fontsVersion}
+          reservePx={reservePx}
+          onChoose={handleFitChoose}
+          onNeedShorter={handleNeedShorter}
+        />
+      );
+    }
+    return <span className={className}>{fitChoices[key] ?? preferred}</span>;
+  };
 
   // Her sayfanın tipini ve içeriğini tutan dinamik sayfa listesi:
   // Her gönderi için 1 Metin & Derinlik Sayfası + Gönderideki HER temiz fotoğraf için 1 Tam Sayfa Editoryal Plaka
@@ -1179,6 +1364,7 @@ export function MagazineModal({
                 return (
                   <div
                     key={post.id || idx}
+                    data-fit-row
                     onClick={!isPdf ? () => setCurrentPage(articleIdx) : undefined}
                     className={`group p-2 rounded border transition-all ${!isPdf ? 'cursor-pointer' : ''} flex items-center justify-between ${
                       isPaper ? 'hover:bg-black/5 border-black/10' : 'hover:bg-white/5 border-white/10'
@@ -1192,9 +1378,14 @@ export function MagazineModal({
                       <span className="font-mono text-[9px] px-1.5 py-0.5 rounded bg-black/10 shrink-0 font-bold uppercase">
                         {post.category || 'GENEL'}
                       </span>
-                      <span className="font-serif font-bold text-xs truncate group-hover:text-red-600 transition-colors">
-                        {post.title}
-                      </span>
+                      {renderFitTitle(
+                        'toc',
+                        post,
+                        post.title || '',
+                        'font-serif font-bold text-xs truncate group-hover:text-red-600 transition-colors',
+                        isPdf,
+                        14 // ekrandaki "S. 01 →" oku PDF'te yok
+                      )}
                       {cleanPhotos.length > 0 && (
                         <span className="text-[9px] font-mono text-neutral-500 shrink-0 hidden sm:inline">
                           ({cleanPhotos.length} Kadraj)
@@ -1710,13 +1901,17 @@ export function MagazineModal({
               </span>
               <div className="space-y-1.5 max-w-[85%]">
                 {displayPosts.slice(0, 8).map((post, idx) => (
-                  <div key={post.id || idx} className="flex items-baseline space-x-2.5 border-b border-white/10 pb-1.5">
+                  <div key={post.id || idx} data-fit-row className="flex items-baseline space-x-2.5 border-b border-white/10 pb-1.5">
                     <span className="font-mono text-[10px] font-bold text-red-400 shrink-0">
                       {String(idx + 1).padStart(2, '0')}
                     </span>
-                    <span className="font-serif text-sm font-bold uppercase leading-snug text-white truncate">
-                      {post.shortTitle || post.title}
-                    </span>
+                    {renderFitTitle(
+                      'back',
+                      post,
+                      post.shortTitle || post.title || '',
+                      'font-serif text-sm font-bold uppercase leading-snug text-white truncate',
+                      isPdf
+                    )}
                   </div>
                 ))}
                 {displayPosts.length > 8 && (
