@@ -362,297 +362,287 @@ export function MagazineModal({
         }`}>
 
           {/* ======================================================== */}
-          {/* PAGE 0: 1990'S RETRO COVER PAGE                         */}
+          {/* PAGE 0: 1990'S FULL-BLEED RETRO COVER PAGE (KOMPLE KAPLAYAN KOLAJ) */}
           {/* ======================================================== */}
           {currentPage === 0 && (
-            <div className="relative flex-1 min-h-[760px] sm:min-h-[820px] lg:min-h-[860px] p-4 sm:p-8 lg:p-10 flex flex-col justify-between border-4 border-black/80 m-1.5 sm:m-3 bg-gradient-to-b from-transparent to-black/5">
+            <div className="relative flex-1 min-h-[760px] sm:min-h-[820px] lg:min-h-[860px] border-4 border-black/90 m-1.5 sm:m-3 overflow-hidden flex flex-col justify-between shadow-2xl bg-black select-none">
               
-              {/* Top Banner & Barcode Strip */}
-              <div className="border-b-2 border-black/80 pb-3 flex items-center justify-between font-mono text-[11px] uppercase tracking-widest">
-                <div className="flex items-center space-x-3">
-                  <span className="font-bold text-red-600 bg-red-600/10 px-2 py-0.5 border border-red-600/30">
-                    ÖZEL RETROSPEKTİF BASKI
-                  </span>
-                  <span className={isPaper ? 'text-neutral-700' : 'text-neutral-300'}>
-                    VOL. III · SAYI 04 · EKİM 1994
-                  </span>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <span className="hidden sm:inline">İSTANBUL · LONDRA · MİLANO · TOKYO</span>
-                  <span className="font-bold">FİYATI: 120.000 TL / $4.50 / £2.80</span>
-                </div>
-              </div>
-
-              {/* Big Iconic 90's Masthead (Ray Gun / The Face Aesthetic) */}
-              <div className="my-6 text-center select-none">
-                <h1 className="font-serif text-6xl sm:text-8xl lg:text-9xl font-black tracking-[0.25em] leading-none uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.15)]">
-                  {brandName}
-                </h1>
-                <div className="flex items-center justify-center space-x-4 mt-3">
-                  <span className="h-[2px] w-16 bg-black/60" />
-                  <p className="font-mono text-xs sm:text-sm tracking-[0.3em] uppercase font-bold text-red-600">
-                    KÜLTÜR, SİNEMA, MODA VE ANALOG ESTETİK DERGİSİ
-                  </p>
-                  <span className="h-[2px] w-16 bg-black/60" />
-                </div>
-              </div>
-
-              {/* Cover Hero Content Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 my-4 items-center">
-                
-                {/* Left Side: 90's Cover Headlines / Teasers */}
-                <div className="lg:col-span-4 space-y-5 font-sans">
-                  <div className="border-l-4 border-red-600 pl-3.5 space-y-1">
-                    <span className="font-mono text-[10px] text-red-600 font-bold uppercase tracking-wider block">
-                      BAŞ MANŞET // SAYFA 04
-                    </span>
-                    <h2 className="font-serif text-xl sm:text-2xl font-black leading-tight uppercase">
-                      {displayPosts[0]?.title || "90'LARIN ANALOG RUHU VE MİNİMALİZM"}
-                    </h2>
-                    <p className={`text-xs font-serif italic ${isPaper ? 'text-neutral-700' : 'text-neutral-300'}`}>
-                      {displayPosts[0]?.conceptTitle || "Sessiz lüks, bit pazarları ve piksel öncesi estetik."}
-                    </p>
-                  </div>
-
-                  <div className="p-3.5 rounded bg-black/5 border border-black/15 space-y-2 font-mono text-[11px]">
-                    <div className="font-bold text-red-600 uppercase flex items-center space-x-1.5">
-                      <span>✦ BU SAYININ DOSYALARI</span>
-                    </div>
-                    <ul className={`space-y-1.5 ${isPaper ? 'text-neutral-800' : 'text-neutral-300'}`}>
-                      {displayPosts.slice(1, 4).map((p, i) => (
-                        <li key={i} className="truncate">
-                          <span className="text-red-600 font-bold mr-1.5">&bull;</span>
-                          <strong>{p.category || 'DOSYA'}:</strong> {p.title}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* 90's Circular Badge / Sticker */}
-                  <div className="w-28 h-28 rounded-full border-2 border-dashed border-red-600 flex flex-col items-center justify-center text-center p-2 transform -rotate-12 bg-red-600/10 shadow-sm mx-auto sm:mx-0">
-                    <span className="text-[9px] font-mono font-bold tracking-widest text-red-600">ÖZEL DOSYA</span>
-                    <span className="font-serif text-xs font-black uppercase tracking-tight">KÜLT ARŞİV</span>
-                    <span className="text-[8px] font-mono text-neutral-600">1990 - 1999</span>
-                  </div>
-                </div>
-
-                {/* Center / Right: 90's Editorial Cover Collage (Bu Haftanın Görsellerinden Oluşan Kolaj) */}
-                <div className="lg:col-span-8 relative">
-                  <div className="relative border-4 border-black/90 p-2.5 bg-white shadow-xl flex flex-col">
+              {/* ======================================================== */}
+              {/* 1. FULL-BLEED BACKGROUND COLLAGE (KAPAĞI KOMPLE KAPLAYAN KOLAJ) */}
+              {/* ======================================================== */}
+              <div className="absolute inset-0 z-0 overflow-hidden">
+                {coverCollageImages.length >= 4 ? (
+                  /* 4+ Görsel: 90'lar Asimetrik Full-Bleed Editoryal Mozaik */
+                  <div className="grid grid-cols-12 grid-rows-2 gap-1.5 h-full w-full p-1 bg-black">
                     
-                    {/* Sabit Boyutlu Kolaj Alanı (Boyut Asla Değişmez) */}
-                    <div className="w-full h-[320px] sm:h-[380px] bg-neutral-950 overflow-hidden relative">
-                      {coverCollageImages.length >= 4 ? (
-                        /* 4+ Görsel: 90'lar Asimetrik Editoryal Grid Montajı */
-                        <div className="grid grid-cols-12 grid-rows-2 gap-1.5 h-full w-full p-1 bg-black">
-                          
-                          {/* 1. Büyük Ana Kadraj (Sol 7 Kolon, 2 Satır) */}
-                          <div
-                            onClick={() => setCurrentPage(coverCollageImages[0].postIndex + 2)}
-                            title={`${coverCollageImages[0].title} (${coverCollageImages[0].category}) — Sayfaya Git`}
-                            className="col-span-7 row-span-2 relative overflow-hidden group cursor-pointer border border-black/60 bg-neutral-900"
-                          >
-                            <img
-                              src={coverCollageImages[0].url}
-                              alt={coverCollageImages[0].title}
-                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 filter contrast-[1.05]"
-                            />
-                            <div className="absolute top-2 left-2 flex items-center space-x-1">
-                              <span className="bg-red-600 text-white font-mono text-[9px] px-1.5 py-0.5 font-bold uppercase tracking-wider shadow">
-                                BAŞ MANŞET // {coverCollageImages[0].category}
-                              </span>
-                            </div>
-                            <span className="absolute bottom-2 left-2 bg-black/85 text-[#e6c280] font-mono text-[9px] px-1.5 py-0.5 tracking-wider border border-white/10 font-bold">
-                              [01A KODAK]
-                            </span>
-                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-2 text-white font-serif text-xs font-bold truncate opacity-0 group-hover:opacity-100 transition-opacity">
-                              {coverCollageImages[0].title} &rarr;
-                            </div>
-                          </div>
-
-                          {/* 2. Sağ Üst Kadraj (Sağ 5 Kolon, 1 Satır) */}
-                          <div
-                            onClick={() => setCurrentPage(coverCollageImages[1].postIndex + 2)}
-                            title={`${coverCollageImages[1].title} (${coverCollageImages[1].category}) — Sayfaya Git`}
-                            className="col-span-5 row-span-1 relative overflow-hidden group cursor-pointer border border-black/60 bg-neutral-900"
-                          >
-                            <img
-                              src={coverCollageImages[1].url}
-                              alt={coverCollageImages[1].title}
-                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 filter contrast-[1.05]"
-                            />
-                            <span className="absolute top-1.5 left-1.5 bg-black/85 text-white font-mono text-[8px] px-1.5 py-0.5 font-bold uppercase tracking-wider">
-                              {coverCollageImages[1].category}
-                            </span>
-                            <span className="absolute bottom-1.5 right-1.5 bg-black/85 text-[#e6c280] font-mono text-[8px] px-1">
-                              [02A]
-                            </span>
-                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-1.5 text-white font-serif text-[11px] font-bold truncate opacity-0 group-hover:opacity-100 transition-opacity">
-                              {coverCollageImages[1].title} &rarr;
-                            </div>
-                          </div>
-
-                          {/* 3 & 4. Sağ Alt İki Kadraj (Sağ 5 Kolon, 1 Satır içinde 2 eşit kutu) */}
-                          <div className="col-span-5 row-span-1 grid grid-cols-2 gap-1.5 h-full">
-                            
-                            {/* Sağ Alt Sol */}
-                            <div
-                              onClick={() => setCurrentPage(coverCollageImages[2].postIndex + 2)}
-                              title={`${coverCollageImages[2].title} (${coverCollageImages[2].category}) — Sayfaya Git`}
-                              className="relative overflow-hidden group cursor-pointer border border-black/60 bg-neutral-900 h-full"
-                            >
-                              <img
-                                src={coverCollageImages[2].url}
-                                alt={coverCollageImages[2].title}
-                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 filter contrast-[1.05]"
-                              />
-                              <span className="absolute top-1 left-1 bg-black/85 text-white font-mono text-[8px] px-1 font-bold uppercase truncate max-w-[65px]">
-                                {coverCollageImages[2].category}
-                              </span>
-                              <span className="absolute bottom-1 right-1 bg-black/85 text-[#e6c280] font-mono text-[8px] px-1">
-                                [03A]
-                              </span>
-                            </div>
-
-                            {/* Sağ Alt Sağ */}
-                            <div
-                              onClick={() => setCurrentPage(coverCollageImages[3]?.postIndex ? coverCollageImages[3].postIndex + 2 : 1)}
-                              title={coverCollageImages[3] ? `${coverCollageImages[3].title} (${coverCollageImages[3].category}) — Sayfaya Git` : 'Detay'}
-                              className="relative overflow-hidden group cursor-pointer border border-black/60 bg-neutral-900 h-full"
-                            >
-                              <img
-                                src={coverCollageImages[3]?.url || coverCollageImages[0].url}
-                                alt={coverCollageImages[3]?.title || 'Detay'}
-                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 filter contrast-[1.05]"
-                              />
-                              <span className="absolute top-1 left-1 bg-black/85 text-white font-mono text-[8px] px-1 font-bold uppercase truncate max-w-[65px]">
-                                {coverCollageImages[3]?.category || 'ARŞİV'}
-                              </span>
-                              <span className="absolute bottom-1 right-1 bg-black/85 text-[#e6c280] font-mono text-[8px] px-1">
-                                [04A]
-                              </span>
-                            </div>
-
-                          </div>
-
-                        </div>
-                      ) : coverCollageImages.length === 3 ? (
-                        /* 3 Görsel: Sol Büyük, Sağda İki Eşit Yatay Bant */
-                        <div className="grid grid-cols-12 grid-rows-2 gap-1.5 h-full w-full p-1 bg-black">
-                          <div
-                            onClick={() => setCurrentPage(coverCollageImages[0].postIndex + 2)}
-                            className="col-span-7 row-span-2 relative overflow-hidden group cursor-pointer border border-black/60"
-                          >
-                            <img src={coverCollageImages[0].url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                            <span className="absolute top-2 left-2 bg-red-600 text-white font-mono text-[9px] px-1.5 py-0.5 font-bold uppercase">
-                              {coverCollageImages[0].category}
-                            </span>
-                            <span className="absolute bottom-2 left-2 bg-black/85 text-[#e6c280] font-mono text-[9px] px-1.5">[01A]</span>
-                          </div>
-                          <div
-                            onClick={() => setCurrentPage(coverCollageImages[1].postIndex + 2)}
-                            className="col-span-5 row-span-1 relative overflow-hidden group cursor-pointer border border-black/60"
-                          >
-                            <img src={coverCollageImages[1].url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                            <span className="absolute top-1.5 left-1.5 bg-black/80 text-white font-mono text-[8px] px-1 uppercase">{coverCollageImages[1].category}</span>
-                            <span className="absolute bottom-1 right-1 bg-black/85 text-[#e6c280] font-mono text-[8px] px-1">[02A]</span>
-                          </div>
-                          <div
-                            onClick={() => setCurrentPage(coverCollageImages[2].postIndex + 2)}
-                            className="col-span-5 row-span-1 relative overflow-hidden group cursor-pointer border border-black/60"
-                          >
-                            <img src={coverCollageImages[2].url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                            <span className="absolute top-1.5 left-1.5 bg-black/80 text-white font-mono text-[8px] px-1 uppercase">{coverCollageImages[2].category}</span>
-                            <span className="absolute bottom-1 right-1 bg-black/85 text-[#e6c280] font-mono text-[8px] px-1">[03A]</span>
-                          </div>
-                        </div>
-                      ) : coverCollageImages.length === 2 ? (
-                        /* 2 Görsel: Yan Yana İki Dikey Panel */
-                        <div className="grid grid-cols-2 gap-1.5 h-full w-full p-1 bg-black">
-                          {coverCollageImages.map((img, i) => (
-                            <div
-                              key={i}
-                              onClick={() => setCurrentPage(img.postIndex + 2)}
-                              className="relative overflow-hidden group cursor-pointer border border-black/60"
-                            >
-                              <img src={img.url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                              <span className="absolute top-2 left-2 bg-red-600 text-white font-mono text-[9px] px-1.5 py-0.5 font-bold uppercase">
-                                {img.category}
-                              </span>
-                              <span className="absolute bottom-2 right-2 bg-black/85 text-[#e6c280] font-mono text-[9px] px-1.5">
-                                [0{i + 1}A]
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : coverCollageImages.length === 1 ? (
-                        /* 1 Görsel: Tek Büyük Plaka */
-                        <div
-                          onClick={() => setCurrentPage(coverCollageImages[0].postIndex + 2)}
-                          className="relative w-full h-full group cursor-pointer"
-                        >
-                          <img src={coverCollageImages[0].url} alt="" className="w-full h-full object-cover filter contrast-[1.05]" />
-                          <span className="absolute top-2 left-2 bg-red-600 text-white font-mono text-[9px] px-1.5 py-0.5 font-bold uppercase">
-                            {coverCollageImages[0].category}
-                          </span>
-                        </div>
-                      ) : (
-                        /* Görsel Yoksa */
-                        <div className="w-full h-full bg-neutral-800 flex flex-col items-center justify-center p-6 text-center text-neutral-400">
-                          <BookOpen className="w-12 h-12 text-[#e6c280] mb-2" />
-                          <span className="font-serif text-lg font-bold text-white">Fotoğraf Arşivi</span>
-                          <span className="text-xs font-mono">Üretilen içeriklerin görselleri burada editoryal bir kolaj olarak sergilenir.</span>
-                        </div>
-                      )}
+                    {/* 1. Büyük Ana Kadraj (Sol 7 Kolon, Tam Yükseklik) */}
+                    <div
+                      onClick={() => setCurrentPage(coverCollageImages[0].postIndex + 2)}
+                      title={`${coverCollageImages[0].title} (${coverCollageImages[0].category}) — Sayfaya Git`}
+                      className="col-span-7 row-span-2 relative overflow-hidden group cursor-pointer border border-black/80 bg-neutral-900"
+                    >
+                      <img
+                        src={coverCollageImages[0].url}
+                        alt={coverCollageImages[0].title}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 filter contrast-[1.08]"
+                      />
+                      <div className="absolute top-3 left-3 bg-red-600/90 text-white font-mono text-[9px] px-2 py-0.5 font-bold uppercase tracking-wider shadow border border-white/20">
+                        BAŞ MANŞET // {coverCollageImages[0].category}
+                      </div>
+                      <div className="absolute bottom-3 left-3 bg-black/80 text-[#e6c280] font-mono text-[9px] px-2 py-0.5 tracking-wider border border-white/10 font-bold">
+                        [01A KODAK 5052]
+                      </div>
                     </div>
 
-                    {/* Photo Plate Caption in 90's style (fixed height) */}
-                    <div className="mt-2.5 pt-2 border-t border-black/20 flex items-center justify-between font-mono text-[10px] text-neutral-600 h-[22px] shrink-0">
-                      <div className="flex items-center space-x-2">
-                        <span className="font-bold text-red-600 uppercase">✦ BU SAYININ EDİTORYAL FOTOĞRAF KOLAJI</span>
-                        <span className="text-neutral-500 font-semibold">({coverCollageImages.length} KADRAJ)</span>
+                    {/* 2. Sağ Üst Kadraj (Sağ 5 Kolon, Üst Yarı) */}
+                    <div
+                      onClick={() => setCurrentPage(coverCollageImages[1].postIndex + 2)}
+                      title={`${coverCollageImages[1].title} (${coverCollageImages[1].category}) — Sayfaya Git`}
+                      className="col-span-5 row-span-1 relative overflow-hidden group cursor-pointer border border-black/80 bg-neutral-900"
+                    >
+                      <img
+                        src={coverCollageImages[1].url}
+                        alt={coverCollageImages[1].title}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 filter contrast-[1.08]"
+                      />
+                      <span className="absolute top-2 left-2 bg-black/80 text-white font-mono text-[8px] px-1.5 py-0.5 font-bold uppercase tracking-wider border border-white/10">
+                        {coverCollageImages[1].category}
+                      </span>
+                      <span className="absolute bottom-2 right-2 bg-black/80 text-[#e6c280] font-mono text-[8px] px-1.5 py-0.5 border border-white/10">
+                        [02A]
+                      </span>
+                    </div>
+
+                    {/* 3 & 4. Sağ Alt İki Kadraj (Sağ 5 Kolon, Alt Yarı Yan Yana) */}
+                    <div className="col-span-5 row-span-1 grid grid-cols-2 gap-1.5 h-full">
+                      
+                      <div
+                        onClick={() => setCurrentPage(coverCollageImages[2].postIndex + 2)}
+                        title={`${coverCollageImages[2].title} (${coverCollageImages[2].category}) — Sayfaya Git`}
+                        className="relative overflow-hidden group cursor-pointer border border-black/80 bg-neutral-900 h-full"
+                      >
+                        <img
+                          src={coverCollageImages[2].url}
+                          alt={coverCollageImages[2].title}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 filter contrast-[1.08]"
+                        />
+                        <span className="absolute top-1.5 left-1.5 bg-black/80 text-white font-mono text-[8px] px-1 font-bold uppercase truncate max-w-[70px] border border-white/10">
+                          {coverCollageImages[2].category}
+                        </span>
+                        <span className="absolute bottom-1.5 right-1.5 bg-black/80 text-[#e6c280] font-mono text-[8px] px-1">
+                          [03A]
+                        </span>
                       </div>
-                      <span className="hidden sm:inline font-bold text-black/70">SAYFAYA GİTMEK İÇİN GÖRSELE TIKLAYIN &rarr;</span>
+
+                      <div
+                        onClick={() => setCurrentPage(coverCollageImages[3]?.postIndex ? coverCollageImages[3].postIndex + 2 : 1)}
+                        title={coverCollageImages[3] ? `${coverCollageImages[3].title} (${coverCollageImages[3].category}) — Sayfaya Git` : 'Detay'}
+                        className="relative overflow-hidden group cursor-pointer border border-black/80 bg-neutral-900 h-full"
+                      >
+                        <img
+                          src={coverCollageImages[3]?.url || coverCollageImages[0].url}
+                          alt={coverCollageImages[3]?.title || 'Detay'}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 filter contrast-[1.08]"
+                        />
+                        <span className="absolute top-1.5 left-1.5 bg-black/80 text-white font-mono text-[8px] px-1 font-bold uppercase truncate max-w-[70px] border border-white/10">
+                          {coverCollageImages[3]?.category || 'ARŞİV'}
+                        </span>
+                        <span className="absolute bottom-1.5 right-1.5 bg-black/80 text-[#e6c280] font-mono text-[8px] px-1">
+                          [04A]
+                        </span>
+                      </div>
+
                     </div>
 
                   </div>
-                </div>
-
+                ) : coverCollageImages.length === 3 ? (
+                  /* 3 Görsel: Sol Büyük, Sağ 2 Parça */
+                  <div className="grid grid-cols-12 grid-rows-2 gap-1.5 h-full w-full p-1 bg-black">
+                    <div
+                      onClick={() => setCurrentPage(coverCollageImages[0].postIndex + 2)}
+                      className="col-span-7 row-span-2 relative overflow-hidden group cursor-pointer border border-black/80"
+                    >
+                      <img src={coverCollageImages[0].url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                      <span className="absolute top-3 left-3 bg-red-600 text-white font-mono text-[9px] px-2 py-0.5 font-bold uppercase">[01A // {coverCollageImages[0].category}]</span>
+                    </div>
+                    <div
+                      onClick={() => setCurrentPage(coverCollageImages[1].postIndex + 2)}
+                      className="col-span-5 row-span-1 relative overflow-hidden group cursor-pointer border border-black/80"
+                    >
+                      <img src={coverCollageImages[1].url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                      <span className="absolute top-2 left-2 bg-black/80 text-white font-mono text-[8px] px-1.5 uppercase">[02A // {coverCollageImages[1].category}]</span>
+                    </div>
+                    <div
+                      onClick={() => setCurrentPage(coverCollageImages[2].postIndex + 2)}
+                      className="col-span-5 row-span-1 relative overflow-hidden group cursor-pointer border border-black/80"
+                    >
+                      <img src={coverCollageImages[2].url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                      <span className="absolute top-2 left-2 bg-black/80 text-white font-mono text-[8px] px-1.5 uppercase">[03A // {coverCollageImages[2].category}]</span>
+                    </div>
+                  </div>
+                ) : coverCollageImages.length === 2 ? (
+                  /* 2 Görsel: Yan Yana İki Tam Boy Panel */
+                  <div className="grid grid-cols-2 gap-1.5 h-full w-full p-1 bg-black">
+                    {coverCollageImages.map((img, i) => (
+                      <div
+                        key={i}
+                        onClick={() => setCurrentPage(img.postIndex + 2)}
+                        className="relative overflow-hidden group cursor-pointer border border-black/80"
+                      >
+                        <img src={img.url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                        <span className="absolute top-3 left-3 bg-red-600 text-white font-mono text-[9px] px-2 py-0.5 font-bold uppercase">[0{i + 1}A // {img.category}]</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : coverCollageImages.length === 1 ? (
+                  /* 1 Görsel: Tek Tam Boy Panel */
+                  <div
+                    onClick={() => setCurrentPage(coverCollageImages[0].postIndex + 2)}
+                    className="relative w-full h-full group cursor-pointer"
+                  >
+                    <img src={coverCollageImages[0].url} alt="" className="w-full h-full object-cover filter contrast-[1.08]" />
+                    <span className="absolute top-3 left-3 bg-red-600 text-white font-mono text-[9px] px-2 py-0.5 font-bold uppercase">[01A // {coverCollageImages[0].category}]</span>
+                  </div>
+                ) : (
+                  /* Boş / Yedek */
+                  <div className="w-full h-full bg-gradient-to-br from-neutral-900 via-black to-neutral-950 flex flex-col items-center justify-center p-6 text-neutral-400">
+                    <BookOpen className="w-16 h-16 text-[#e6c280] mb-3 opacity-60" />
+                    <span className="font-serif text-2xl font-bold text-white tracking-widest uppercase">Post Creator</span>
+                    <span className="text-xs font-mono text-neutral-400 mt-1">90'lar Editoryal Kültür Arşivi</span>
+                  </div>
+                )}
               </div>
 
-              {/* Bottom Bar: Barcode & Navigation Trigger */}
-              <div className="border-t-2 border-black/80 pt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+              {/* ======================================================== */}
+              {/* 2. ATMOSPHERIC 90'S DARKROOM VIGNETTE & CONTRAST OVERLAY */}
+              {/* ======================================================== */}
+              <div className="absolute inset-0 z-[1] pointer-events-none bg-gradient-to-b from-black/85 via-black/45 to-black/90 shadow-[inset_0_0_120px_rgba(0,0,0,0.85)]" />
+
+              {/* ======================================================== */}
+              {/* 3. FOREGROUND 90'S EDITORIAL TYPOGRAPHY & COVER ELEMENTS  */}
+              {/* ======================================================== */}
+              <div className="relative z-10 flex flex-col justify-between h-full p-4 sm:p-8 lg:p-10 pointer-events-none">
                 
-                {/* 90's ISSN Barcode */}
-                <div className="flex items-center space-x-3">
-                  <div className="flex items-end space-x-[2px] h-9 bg-white px-2 py-1 border border-black/40">
-                    <div className="w-[3px] h-7 bg-black" />
-                    <div className="w-[1px] h-7 bg-black" />
-                    <div className="w-[2px] h-6 bg-black" />
-                    <div className="w-[4px] h-7 bg-black" />
-                    <div className="w-[1px] h-6 bg-black" />
-                    <div className="w-[3px] h-7 bg-black" />
-                    <div className="w-[2px] h-7 bg-black" />
-                    <div className="w-[1px] h-6 bg-black" />
-                    <div className="w-[3px] h-7 bg-black" />
-                    <div className="w-[2px] h-7 bg-black" />
-                    <div className="w-[4px] h-7 bg-black" />
+                {/* Top Banner Strip */}
+                <div className="border-b border-white/20 pb-3 flex items-center justify-between font-mono text-[11px] uppercase tracking-widest text-neutral-200 pointer-events-auto">
+                  <div className="flex items-center space-x-3">
+                    <span className="font-bold text-red-400 bg-red-950/70 px-2 py-0.5 border border-red-500/50 shadow">
+                      ÖZEL RETROSPEKTİF BASKI
+                    </span>
+                    <span className="text-neutral-300 hidden sm:inline drop-shadow">
+                      VOL. III · SAYI 04 · EKİM 1994
+                    </span>
                   </div>
-                  <div className="font-mono text-[9px] text-neutral-600 leading-tight">
-                    <div className="font-bold">ISSN 1042-8720</div>
-                    <div>EDİTORYAL ARŞİV KODU: 94-OCT-001</div>
+                  <div className="flex items-center space-x-4">
+                    <span className="hidden md:inline drop-shadow">İSTANBUL · LONDRA · MİLANO · TOKYO</span>
+                    <span className="font-bold text-[#e6c280] drop-shadow">FİYATI: 120.000 TL / $4.50 / £2.80</span>
                   </div>
                 </div>
 
-                {/* Start Reading Button */}
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage(1)}
-                  className="px-6 py-2.5 rounded bg-black text-white hover:bg-red-600 font-mono text-xs font-bold tracking-widest uppercase transition-all flex items-center space-x-2 shadow-lg cursor-pointer"
-                >
-                  <span>Dergiyi Aç & Sayfaları Çevir</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
+                {/* Big Iconic 90's Masthead (Ray Gun / The Face Aesthetic) */}
+                <div className="my-6 text-center select-none pointer-events-auto">
+                  <h1 className="font-serif text-6xl sm:text-8xl lg:text-9xl font-black tracking-[0.25em] leading-none uppercase drop-shadow-[0_4px_20px_rgba(0,0,0,0.95)] text-white">
+                    {brandName}
+                  </h1>
+                  <div className="flex items-center justify-center space-x-4 mt-3">
+                    <span className="h-[2px] w-16 bg-red-500/80" />
+                    <p className="font-mono text-xs sm:text-sm tracking-[0.35em] uppercase font-bold text-red-400 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                      KÜLTÜR, SİNEMA, MODA VE ANALOG ESTETİK DERGİSİ
+                    </p>
+                    <span className="h-[2px] w-16 bg-red-500/80" />
+                  </div>
+                </div>
+
+                {/* Mid Section: Floating Headlines & Newsstand Badges */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 my-auto py-4 items-end pointer-events-auto">
+                  
+                  {/* Left: Headline Floating Card */}
+                  <div className="md:col-span-7">
+                    <div className="bg-black/75 backdrop-blur-md border-l-4 border-red-600 p-4 sm:p-5 rounded-r-xl border-y border-r border-white/15 max-w-xl shadow-2xl space-y-1.5">
+                      <span className="font-mono text-[10px] text-red-400 font-bold uppercase tracking-wider block">
+                        BAŞ MANŞET // SAYFA 04
+                      </span>
+                      <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-black leading-tight uppercase text-white drop-shadow">
+                        {displayPosts[0]?.title || "90'LARIN ANALOG RUHU VE MİNİMALİZM"}
+                      </h2>
+                      <p className="text-xs sm:text-sm font-serif italic text-neutral-300 leading-snug">
+                        {displayPosts[0]?.conceptTitle || "Sessiz lüks, bit pazarları ve piksel öncesi estetik."}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Right: Floating Dossier Box & Retro Sticker Stamp */}
+                  <div className="md:col-span-5 flex flex-col items-start md:items-end space-y-4">
+                    
+                    {/* 90's Circular Badge / Sticker */}
+                    <div className="w-24 h-24 rounded-full border-2 border-dashed border-red-500 bg-red-600/30 backdrop-blur-md flex flex-col items-center justify-center text-center p-2 transform -rotate-12 shadow-2xl border-white/30 text-white">
+                      <span className="text-[8px] font-mono font-bold tracking-widest text-red-300 uppercase">ÖZEL DOSYA</span>
+                      <span className="font-serif text-xs font-black uppercase tracking-tight">KÜLT ARŞİV</span>
+                      <span className="text-[8px] font-mono text-neutral-300">1990 - 1999</span>
+                    </div>
+
+                    {/* Dossier Teaser Card */}
+                    <div className="bg-black/80 backdrop-blur-md border border-white/20 p-3.5 rounded-xl font-mono text-[11px] w-full max-w-xs shadow-2xl space-y-2">
+                      <div className="font-bold text-red-400 uppercase flex items-center justify-between border-b border-white/10 pb-1.5">
+                        <span>✦ BU SAYININ DOSYALARI</span>
+                        <span className="text-[9px] text-[#e6c280]">4 KÜLTÜR KADRAJI</span>
+                      </div>
+                      <ul className="space-y-1.5 text-neutral-200">
+                        {displayPosts.slice(0, 3).map((p, i) => (
+                          <li
+                            key={i}
+                            onClick={() => setCurrentPage(i + 2)}
+                            className="truncate cursor-pointer hover:text-red-400 transition-colors flex items-center space-x-1"
+                            title={`${p.title} - Sayfaya Git`}
+                          >
+                            <span className="text-red-500 font-bold">&bull;</span>
+                            <strong className="text-white">{p.category || 'DOSYA'}:</strong>
+                            <span className="truncate">{p.title}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                  </div>
+
+                </div>
+
+                {/* Bottom Bar: Barcode, Collage Caption & Navigation Button */}
+                <div className="border-t border-white/20 pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 pointer-events-auto bg-black/60 backdrop-blur-md p-3 sm:p-4 rounded-xl border border-white/10 shadow-2xl">
+                  
+                  {/* 90's Barcode & Collage Stats */}
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-end space-x-[2px] h-9 bg-white px-2 py-1 border border-black/40 rounded-sm">
+                      <div className="w-[3px] h-7 bg-black" />
+                      <div className="w-[1px] h-7 bg-black" />
+                      <div className="w-[2px] h-6 bg-black" />
+                      <div className="w-[4px] h-7 bg-black" />
+                      <div className="w-[1px] h-6 bg-black" />
+                      <div className="w-[3px] h-7 bg-black" />
+                      <div className="w-[2px] h-7 bg-black" />
+                      <div className="w-[1px] h-6 bg-black" />
+                      <div className="w-[3px] h-7 bg-black" />
+                    </div>
+                    <div className="font-mono text-[10px] text-neutral-300 leading-tight">
+                      <div className="font-bold text-white flex items-center space-x-1.5">
+                        <span className="text-red-400">✦ FULL-BLEED EDİTORYAL KOLAJ</span>
+                        <span className="text-neutral-400">({coverCollageImages.length} KADRAJ)</span>
+                      </div>
+                      <div className="text-[9px] text-neutral-400">ISSN 1042-8720 · FOTOĞRAFLARA TIKLAYARAK İLGİLİ SAYFAYA GİDİN</div>
+                    </div>
+                  </div>
+
+                  {/* Start Reading Button */}
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage(1)}
+                    className="px-6 py-2.5 rounded-lg bg-red-600 text-white hover:bg-white hover:text-black font-mono text-xs font-bold tracking-widest uppercase transition-all flex items-center space-x-2 shadow-[0_0_20px_rgba(220,38,38,0.5)] cursor-pointer"
+                  >
+                    <span>Dergiyi Aç & Sayfaları Çevir</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+
+                </div>
 
               </div>
 
