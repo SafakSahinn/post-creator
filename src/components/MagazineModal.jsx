@@ -125,6 +125,7 @@ function extractCoverCollageImages(posts, maxCount = 5) {
       results.push({
         url: clean[0].url,
         title: p.title || 'Arşiv',
+        postTitle: p.title || '',
         category: p.category || 'Kültür',
         period: p.period || "90'lar",
         postIndex: postIdx
@@ -144,6 +145,7 @@ function extractCoverCollageImages(posts, maxCount = 5) {
           results.push({
             url: clean[i].url,
             title: clean[i].quote || p.title || 'Detay Kadraj',
+            postTitle: p.title || '',
             category: p.category || 'Kadraj',
             period: p.period || "90'lar",
             postIndex: postIdx
@@ -330,6 +332,24 @@ function MagazinePhotoFrame({ url, alt, setting, editing, isPdf, onChange, onCom
         )}
       </div>
     </div>
+  );
+}
+
+// Kapak kolajındaki fotoğrafların üzerinde gönderi başlığı.
+// Baş manşet gönderisi (postIndex 0) alttaki manşet kutusunda zaten yazdığı için tekrarlanmaz.
+// Konum, kapağın üst/alt karartma geçişine ve masthead yazısına denk gelmeyecek şekilde seçilir.
+const COVER_LABEL_POS = {
+  top: 'top-2 left-2',
+  mid: 'top-1/2 left-2 -translate-y-1/2',
+  bottom: 'bottom-2 left-2'
+};
+function CoverPhotoLabel({ img, pos = 'top' }) {
+  const text = img?.postTitle;
+  if (!text || img.postIndex === 0) return null;
+  return (
+    <span className={`absolute ${COVER_LABEL_POS[pos]} max-w-[85%] bg-black/80 text-white font-mono text-[8px] leading-tight px-1.5 py-0.5 font-bold uppercase tracking-wider border border-white/10 line-clamp-2 pointer-events-none`}>
+      {text}
+    </span>
   );
 }
 
@@ -603,6 +623,7 @@ export function MagazineModal({
                     alt={coverCollageImages[0].title}
                     className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105 filter contrast-[1.08]"
                   />
+<CoverPhotoLabel img={coverCollageImages[0]} pos="mid" />
                 </div>
 
                 {/* 2. Sağ Üst 5 Kolon */}
@@ -616,6 +637,7 @@ export function MagazineModal({
                     alt={coverCollageImages[1].title}
                     className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105 filter contrast-[1.08]"
                   />
+<CoverPhotoLabel img={coverCollageImages[1]} pos="bottom" />
                 </div>
 
                 {/* 3 & 4. Sağ Alt İki Kadraj */}
@@ -630,6 +652,7 @@ export function MagazineModal({
                       alt={coverCollageImages[2].title}
                       className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105 filter contrast-[1.08]"
                     />
+<CoverPhotoLabel img={coverCollageImages[2]} />
                   </div>
 
                   <div
@@ -642,6 +665,7 @@ export function MagazineModal({
                       alt={coverCollageImages[3]?.title || 'Detay'}
                       className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105 filter contrast-[1.08]"
                     />
+<CoverPhotoLabel img={coverCollageImages[3] || coverCollageImages[0]} />
                   </div>
                 </div>
               </div>
@@ -652,18 +676,21 @@ export function MagazineModal({
                   className={`col-span-7 row-span-2 relative overflow-hidden group ${!isPdf ? 'cursor-pointer' : ''} border border-black/80`}
                 >
                   <img src={coverCollageImages[0].url} alt="" className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform" />
+<CoverPhotoLabel img={coverCollageImages[0]} pos="mid" />
                 </div>
                 <div
                   onClick={!isPdf ? () => setCurrentPage(getArticlePageIdx(coverCollageImages[1].postIndex)) : undefined}
                   className={`col-span-5 row-span-1 relative overflow-hidden group ${!isPdf ? 'cursor-pointer' : ''} border border-black/80`}
                 >
                   <img src={coverCollageImages[1].url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+<CoverPhotoLabel img={coverCollageImages[1]} pos="bottom" />
                 </div>
                 <div
                   onClick={!isPdf ? () => setCurrentPage(getArticlePageIdx(coverCollageImages[2].postIndex)) : undefined}
                   className={`col-span-5 row-span-1 relative overflow-hidden group ${!isPdf ? 'cursor-pointer' : ''} border border-black/80`}
                 >
                   <img src={coverCollageImages[2].url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+<CoverPhotoLabel img={coverCollageImages[2]} />
                 </div>
               </div>
             ) : coverCollageImages.length === 2 ? (
@@ -675,6 +702,7 @@ export function MagazineModal({
                     className={`relative overflow-hidden group ${!isPdf ? 'cursor-pointer' : ''} border border-black/80`}
                   >
                     <img src={img.url} alt="" className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform" />
+<CoverPhotoLabel img={img} pos="mid" />
                   </div>
                 ))}
               </div>
@@ -684,6 +712,7 @@ export function MagazineModal({
                 className={`relative w-full h-full group ${!isPdf ? 'cursor-pointer' : ''}`}
               >
                 <img src={coverCollageImages[0].url} alt="" className="w-full h-full object-cover object-center filter contrast-[1.08]" />
+<CoverPhotoLabel img={coverCollageImages[0]} pos="mid" />
               </div>
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-neutral-900 via-black to-neutral-950 flex flex-col items-center justify-center p-6 text-neutral-400">
