@@ -725,7 +725,7 @@ export function MagazineModal({
                 </div>
               )}
 
-              {Array.isArray(post.lore) && post.lore.slice(1).map((para, pIdx) => (
+              {Array.isArray(post.lore) && post.lore.slice(1, 3).map((para, pIdx) => (
                 <p key={pIdx} className="indent-4">
                   {para}
                 </p>
@@ -849,9 +849,9 @@ export function MagazineModal({
     const heroPhoto = postPhotos[activePhotoIdx] || postPhotos[0];
 
     return (
-      <div className={`relative flex-1 ${isPdf ? 'w-full h-full' : 'min-h-[760px] sm:min-h-[820px] lg:min-h-[860px]'} p-5 sm:p-7 lg:p-8 flex flex-col justify-between m-1.5 sm:m-3 border-4 border-black/80`}>
+      <div className={`relative flex-1 ${isPdf ? 'w-full h-full' : 'min-h-[760px] sm:min-h-[820px] lg:min-h-[860px]'} p-4 sm:p-6 flex flex-col justify-between m-1.5 sm:m-3 border-4 border-black/80 box-border`}>
         {/* Running Header */}
-        <div className="border-b-2 border-black/80 pb-2.5 mb-5 sm:mb-6 flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-neutral-600">
+        <div className="border-b-2 border-black/80 pb-2 mb-2 sm:mb-3 flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-neutral-600 shrink-0">
           <div className="flex items-center space-x-2">
             <span className="font-bold text-red-600">SAYFA {String(pageIdx + 1).padStart(2, '0')}</span>
             <span>// EDİTORYAL FOTOĞRAF PLAKASI</span>
@@ -860,11 +860,11 @@ export function MagazineModal({
         </div>
 
         {/* Main Photo Content */}
-        <div className="space-y-3 my-auto pt-1 sm:pt-2">
+        <div className="space-y-2 my-auto flex-1 flex flex-col justify-center">
           {postPhotos.length > 0 ? (
-            <div className="relative border-4 border-black/90 p-2 sm:p-2.5 bg-white shadow-xl flex flex-col shrink-0 max-w-[440px] sm:max-w-[480px] mx-auto w-full">
+            <div className="relative border-4 border-black/90 p-2 bg-white shadow-xl flex flex-col shrink-0 max-w-[320px] sm:max-w-[340px] mx-auto w-full">
               {/* 4:5 Hero Plate */}
-              <div className="w-full aspect-[4/5] bg-neutral-950 overflow-hidden relative shrink-0 flex items-center justify-center border border-black/10">
+              <div className="w-full aspect-[4/5] max-h-[340px] bg-neutral-950 overflow-hidden relative shrink-0 flex items-center justify-center border border-black/10">
                 {/* Otomatik Boşluk Kapatıcı & Atmosferik Dolgu Katmanı */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
                   <img
@@ -884,25 +884,25 @@ export function MagazineModal({
               </div>
 
               {/* Açıklama Kutusu */}
-              <div className="mt-2 pt-2 border-t border-black/20 flex flex-col justify-between h-[78px] font-mono text-neutral-800 shrink-0">
-                <div className="flex items-center justify-between text-[11px] font-bold">
+              <div className="mt-1.5 pt-1.5 border-t border-black/20 flex flex-col justify-between font-mono text-neutral-800 shrink-0">
+                <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-bold">
                   <span className="text-red-600 truncate mr-2">
                     {activePhotoIdx === 0 ? 'KAPAK KADRAJI' : `ŞEKİL 1.${activePhotoIdx + 1}`} — {heroPhoto?.title || 'EDİTORYAL KADRAJ'}
                   </span>
-                  <span className="text-[10px] text-neutral-500 shrink-0">
+                  <span className="text-[9px] sm:text-[10px] text-neutral-500 shrink-0">
                     KADRAJ #{activePhotoIdx + 1} / {postPhotos.length}
                   </span>
                 </div>
-                <p className="font-serif italic text-xs leading-tight text-neutral-700 line-clamp-2 my-0.5">
+                <p className="font-serif italic text-[11px] leading-tight text-neutral-700 line-clamp-2 my-0.5">
                   “{heroPhoto?.quote || post?.hook || post?.conceptTitle || post?.title || '90\'lar editoryal arşiv fotoğrafı.'}”
                 </p>
-                <p className="text-[10px] text-neutral-500 leading-tight truncate">
+                <p className="text-[9px] text-neutral-500 leading-tight truncate">
                   <strong>Küratör Notu:</strong> {heroPhoto?.idea || '35mm editoryal arşiv negatif baskısı.'}
                 </p>
               </div>
             </div>
           ) : (
-            <div className="max-w-[440px] sm:max-w-[480px] mx-auto w-full aspect-[4/5] rounded border-2 border-dashed border-neutral-400 flex flex-col items-center justify-center p-6 text-center text-neutral-500 font-mono text-xs shrink-0">
+            <div className="max-w-[320px] sm:max-w-[340px] mx-auto w-full aspect-[4/5] rounded border-2 border-dashed border-neutral-400 flex flex-col items-center justify-center p-6 text-center text-neutral-500 font-mono text-xs shrink-0">
               <BookOpen className="w-10 h-10 mb-2 opacity-50" />
               <span>Bu gönderiye ait yüklü görsel bulunamadı.</span>
             </div>
@@ -910,50 +910,50 @@ export function MagazineModal({
 
           {/* Diğer Slayt Fotoğrafları (Kontak Baskı) */}
           {postPhotos.length > 1 && (
-            <div className="space-y-1.5 max-w-[440px] sm:max-w-[480px] mx-auto w-full">
-              <div className="font-mono text-[10px] uppercase text-neutral-500 flex items-center justify-between">
+            <div className="space-y-1 max-w-[320px] sm:max-w-[340px] mx-auto w-full shrink-0 pt-0.5">
+              <div className="font-mono text-[9px] uppercase text-neutral-500 flex items-center justify-between">
                 <span>DİĞER SLAYT KADRAJLARINI İNCELE:</span>
                 <span>{postPhotos.length} BENZERSİZ GÖRSEL MEVCUT</span>
               </div>
-              <div className="grid grid-cols-4 gap-2">
-                {postPhotos.map((photo, pIdx) => (
+              <div className="grid grid-cols-4 gap-1.5">
+                {postPhotos.slice(0, 4).map((photo, pIdx) => (
                   !isPdf ? (
                     <button
                       key={pIdx}
                       type="button"
                       onClick={() => setSelectedPhotoIndex(pIdx)}
-                      className={`relative border-2 p-0.5 bg-white transition-all cursor-pointer ${
+                      className={`relative border p-0.5 bg-white transition-all cursor-pointer ${
                         activePhotoIdx === pIdx
                           ? 'border-red-600 shadow-md scale-[1.03]'
                           : 'border-black/30 opacity-70 hover:opacity-100'
                       }`}
                     >
-                      <div className="w-full aspect-[4/5] bg-neutral-900 overflow-hidden flex items-center justify-center">
+                      <div className="w-full h-12 sm:h-14 bg-neutral-900 overflow-hidden flex items-center justify-center">
                         <img
                           src={photo.url}
                           alt=""
                           className="w-full h-full object-cover object-top"
                         />
                       </div>
-                      <span className="absolute bottom-1 right-1 bg-black/85 text-white font-mono text-[9px] px-1 font-bold">
+                      <span className="absolute bottom-0.5 right-0.5 bg-black/85 text-white font-mono text-[8px] px-1 font-bold">
                         #{pIdx + 1}
                       </span>
                     </button>
                   ) : (
                     <div
                       key={pIdx}
-                      className={`relative border-2 p-0.5 bg-white ${
+                      className={`relative border p-0.5 bg-white ${
                         pIdx === 0 ? 'border-red-600 shadow-sm' : 'border-black/30'
                       }`}
                     >
-                      <div className="w-full aspect-[4/5] bg-neutral-900 overflow-hidden flex items-center justify-center">
+                      <div className="w-full h-12 sm:h-14 bg-neutral-900 overflow-hidden flex items-center justify-center">
                         <img
                           src={photo.url}
                           alt=""
                           className="w-full h-full object-cover object-top"
                         />
                       </div>
-                      <span className="absolute bottom-1 right-1 bg-black/85 text-white font-mono text-[9px] px-1 font-bold">
+                      <span className="absolute bottom-0.5 right-0.5 bg-black/85 text-white font-mono text-[8px] px-1 font-bold">
                         #{pIdx + 1}
                       </span>
                     </div>
@@ -965,17 +965,17 @@ export function MagazineModal({
 
           {/* Stüdyoda Düzenle Butonu (Yalnızca Ekranda) */}
           {!isPdf && onLoadPostToStudio && (
-            <div className="pt-1 flex justify-end max-w-[440px] sm:max-w-[480px] mx-auto w-full">
+            <div className="pt-0.5 flex justify-end max-w-[320px] sm:max-w-[340px] mx-auto w-full shrink-0">
               <button
                 type="button"
                 onClick={() => {
                   onClose();
                   onLoadPostToStudio(post);
                 }}
-                className="px-3.5 py-1.5 rounded bg-black/10 hover:bg-black/20 text-xs font-mono font-bold uppercase transition-all flex items-center space-x-1.5 cursor-pointer"
+                className="px-2.5 py-1 rounded bg-black/10 hover:bg-black/20 text-[10px] font-mono font-bold uppercase transition-all flex items-center space-x-1 cursor-pointer"
                 title="Bu gönderiyi düzenlemek için Carousel Stüdyosu'na aktar"
               >
-                <Sliders className="w-3.5 h-3.5 text-red-600" />
+                <Sliders className="w-3 h-3 text-red-600" />
                 <span>Stüdyoda Düzenle</span>
               </button>
             </div>
@@ -983,7 +983,7 @@ export function MagazineModal({
         </div>
 
         {/* Bottom Footer */}
-        <div className="border-t-2 border-black/80 pt-2 flex items-center justify-between font-mono text-[10px] text-neutral-600">
+        <div className="border-t-2 border-black/80 pt-2 flex items-center justify-between font-mono text-[10px] text-neutral-600 shrink-0">
           {!isPdf ? (
             <>
               <button
@@ -1046,13 +1046,15 @@ export function MagazineModal({
         const pageEl = pages[i];
 
         // Font ve görsellerin oturması için kısa render gecikmesi
-        await new Promise((resolve) => setTimeout(resolve, 80));
+        await new Promise((resolve) => setTimeout(resolve, 120));
 
         const imgData = await toJpeg(pageEl, {
-          quality: 0.95,
+          quality: 0.98,
           pixelRatio: 2,
           cacheBust: true,
-          backgroundColor: bgColor
+          backgroundColor: bgColor,
+          width: 580,
+          height: 820
         });
 
         if (i > 0) {
