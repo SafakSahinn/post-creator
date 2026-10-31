@@ -19,6 +19,7 @@ export function ProjectModal({
   isOpen,
   onClose,
   projects,
+  archives = [],
   activeProject,
   onSelectProject,
   onSaveProject,
@@ -296,7 +297,12 @@ export function ProjectModal({
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (window.confirm(`"${proj.name}" projesini silmek istediğinize emin misiniz?`)) {
+                                  // projectId'siz eski kayıtlar varsayılan projeye (Lore Magazine) aittir
+                                  const postCount = archives.filter((a) => (a?.projectId || 'lore-magazine') === proj.id).length;
+                                  const warning = postCount > 0
+                                    ? `"${proj.name}" projesinde ${postCount} gönderi var.\n\nProje silinirse bu gönderiler arşivde kalır ama hiçbir dergide görünmez.\n\nYine de silmek istiyor musunuz?`
+                                    : `"${proj.name}" projesinde hiç gönderi yok. Silmek istediğinize emin misiniz?`;
+                                  if (window.confirm(warning)) {
                                     onDeleteProject(proj.id);
                                   }
                                 }}

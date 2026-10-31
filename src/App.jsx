@@ -590,6 +590,7 @@ export function App() {
         isOpen={isProjectModalOpen}
         onClose={() => setIsProjectModalOpen(false)}
         projects={projects}
+        archives={archives}
         activeProject={activeProject}
         onSelectProject={(id) => {
           const p = projects.find((x) => x.id === id);
