@@ -151,6 +151,46 @@ export async function getAvailableModels(apiKey) {
   }
 }
 
+// Dergi yardımcı istekleri (kısa başlık, derinlik makalesi) için denenecek model sırası.
+// Sabit model adları hesapta olmayabilir ya da emekliye ayrılmış olabilir (o zaman her istek
+// sessizce 404 alıyordu), bu yüzden ana üretim gibi hesabın canlı model listesinden seçilir:
+// önce kullanıcının seçtiği model, sonra flash modeller, sonra diğerleri. Liste anahtar başına
+// bir kez alınır; alınamazsa eski sabit liste kullanılır.
+const modelChainCache = new Map();
+async function resolveModelChain(apiKey, preferred) {
+  const userModel = preferred || (() => {
+    try { return localStorage.getItem('lore_gemini_model') || ''; } catch { return ''; }
+  })();
+  if (!modelChainCache.has(apiKey)) modelChainCache.set(apiKey, getAvailableModels(apiKey));
+  const available = await modelChainCache.get(apiKey);
+  if (!available.length) {
+    modelChainCache.delete(apiKey); // sonraki çağrıda yeniden dene
+    return Array.from(new Set([userModel, 'gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash'].filter(Boolean)));
+  }
+  // Metin üretmeyen (görsel, ses, gömme vb.) ve 404 vermiş modelleri ele.
+  // Not: liste emekliye ayrılmış modelleri (ör. gemini-2.5-flash) hâlâ gösterebiliyor,
+  // bu yüzden 404 alan model deadModels'e girer ve oturum boyunca bir daha denenmez.
+  const textModels = available.filter(
+    (m) => !/image|tts|audio|embedding|veo|imagen|aqa|live|omni|nano|customtools/i.test(m.id) && !deadModels.has(m.id)
+  );
+  const pool = textModels.length ? textModels : available;
+  const chosen = pool.find((m) => m.id === userModel.replace(/^models\//, ''));
+  // En yeni sürüm önce ("-latest" takma adları en başta, aynı sürümde kararlı > preview)
+  const rank = (id) => (/-latest$/.test(id) ? 1000 : parseFloat((id.match(/gemini-(\d+(?:\.\d+)?)/) || [])[1]) || 0);
+  const byNewest = (a, b) => rank(b.id) - rank(a.id) || /preview/.test(a.id) - /preview/.test(b.id);
+  const flash = pool.filter((m) => /flash/i.test(m.id)).sort(byNewest);
+  const others = pool.filter((m) => !/flash/i.test(m.id)).sort(byNewest);
+  const ordered = [chosen, ...flash, ...others].filter(Boolean).map((m) => m.id);
+  return Array.from(new Set(ordered)).slice(0, 8);
+}
+const deadModels = new Set();
+
+// Yanıttan metni al (düşünen modellerde "thought" parçalarını atla)
+function extractResponseText(data) {
+  const parts = data?.candidates?.[0]?.content?.parts || [];
+  return parts.filter((p) => !p.thought && typeof p.text === 'string').map((p) => p.text).join('');
+}
+
 // Cümle ayıklayıcı (kısa slayt metni fallback'i - anlamı tam, eksiksiz cümle)
 export function getPunchyExcerpt(text, maxSentences = 1) {
   if (!text) return "";
@@ -402,7 +442,7 @@ ${project?.filterTypeLabel || 'Filtre / Dönem'}: ${decade}
  * 90'lar Editoryal Dergi Formatı İçin Derinlemesine Kültürel Analiz ve Arşiv Notları Üretir
  * Instagram'a sığmayan detaylı perde arkası, tasarım sosyolojisi, tarihi anekdotlar ve dipnotları içerir.
  */
-export async function generateDeepMagazineEssay({ post, project, apiKey, model = 'gemini-2.5-flash' }) {
+export async function generateDeepMagazineEssay({ post, project, apiKey, model }) {
   const activeKey = apiKey || getStoredApiKey();
   if (!activeKey) {
     throw new Error('Lütfen Gemini API anahtarınızı tanımlayın.');
@@ -436,13 +476,7 @@ JSON Formatında Sadece Aşağıdaki Yapıyı Döndür:
 }
 `;
 
-  const modelsToTry = [
-    model,
-    'gemini-2.5-flash',
-    'gemini-2.5-flash-lite',
-    'gemini-2.0-flash'
-  ];
-  const uniqueModels = Array.from(new Set(modelsToTry));
+  const uniqueModels = await resolveModelChain(activeKey, model);
 
   for (const mod of uniqueModels) {
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${mod}:generateContent?key=${activeKey}`;
@@ -460,9 +494,13 @@ JSON Formatında Sadece Aşağıdaki Yapıyı Döndür:
         })
       });
 
-      if (!res.ok) continue;
+      if (!res.ok) {
+        if (res.status === 404) deadModels.add(mod);
+        console.warn(`Dergi derinlik üretimi ${mod}: HTTP ${res.status}`, (await res.text().catch(() => '')).slice(0, 300));
+        continue;
+      }
       const data = await res.json();
-      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      const rawText = extractResponseText(data);
       if (!rawText) continue;
 
       const parsed = JSON.parse(rawText.replace(/```json/g, '').replace(/```/g, '').trim());
@@ -480,7 +518,7 @@ JSON Formatında Sadece Aşağıdaki Yapıyı Döndür:
  * Her öğe kendi `maxChars` sınırını taşıyabilir (varsayılan 30): satıra sığacak uzunluk.
  * Tek istekte toplu çalışır; { [id]: kısaBaşlık } döndürür.
  */
-export async function generateShortMagazineTitles({ items, apiKey, model = 'gemini-2.5-flash' }) {
+export async function generateShortMagazineTitles({ items, apiKey, model }) {
   const activeKey = apiKey || getStoredApiKey();
   if (!activeKey) throw new Error('Gemini API anahtarı tanımlı değil.');
   if (!items?.length) return {};
@@ -512,7 +550,7 @@ Sadece şu JSON yapısını döndür:
 { "titles": [ { "id": "aynı id", "shortTitle": "kısa başlık" } ] }
 `;
 
-  for (const mod of Array.from(new Set([model, 'gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash']))) {
+  for (const mod of await resolveModelChain(activeKey, model)) {
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${mod}:generateContent?key=${activeKey}`;
     try {
       recordApiRequest();
@@ -524,9 +562,13 @@ Sadece şu JSON yapısını döndür:
           generationConfig: { temperature: 0.3, responseMimeType: 'application/json' }
         })
       });
-      if (!res.ok) continue;
+      if (!res.ok) {
+        if (res.status === 404) deadModels.add(mod);
+        console.warn(`Kısa başlık üretimi ${mod}: HTTP ${res.status}`, (await res.text().catch(() => '')).slice(0, 300));
+        continue;
+      }
       const data = await res.json();
-      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      const rawText = extractResponseText(data);
       if (!rawText) continue;
       const parsed = JSON.parse(rawText.replace(/```json/g, '').replace(/```/g, '').trim());
       const out = {};
