@@ -603,12 +603,6 @@ export function MagazineModal({
                     alt={coverCollageImages[0].title}
                     className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105 filter contrast-[1.08]"
                   />
-                  <div className="absolute top-3 left-3 bg-red-600/90 text-white font-mono text-[9px] px-2 py-0.5 font-bold uppercase tracking-wider shadow border border-white/20">
-                    BAŞ MANŞET // {coverCollageImages[0].category}
-                  </div>
-                  <div className="absolute bottom-3 left-3 bg-black/80 text-[#e6c280] font-mono text-[9px] px-2 py-0.5 tracking-wider border border-white/10 font-bold">
-                    [01A KODAK 5052]
-                  </div>
                 </div>
 
                 {/* 2. Sağ Üst 5 Kolon */}
@@ -622,12 +616,6 @@ export function MagazineModal({
                     alt={coverCollageImages[1].title}
                     className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105 filter contrast-[1.08]"
                   />
-                  <span className="absolute top-2 left-2 bg-black/80 text-white font-mono text-[8px] px-1.5 py-0.5 font-bold uppercase tracking-wider border border-white/10">
-                    {coverCollageImages[1].category}
-                  </span>
-                  <span className="absolute bottom-2 right-2 bg-black/80 text-[#e6c280] font-mono text-[8px] px-1.5 py-0.5 border border-white/10">
-                    [02A]
-                  </span>
                 </div>
 
                 {/* 3 & 4. Sağ Alt İki Kadraj */}
@@ -642,12 +630,6 @@ export function MagazineModal({
                       alt={coverCollageImages[2].title}
                       className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105 filter contrast-[1.08]"
                     />
-                    <span className="absolute top-1.5 left-1.5 bg-black/80 text-white font-mono text-[8px] px-1 font-bold uppercase truncate max-w-[70px] border border-white/10">
-                      {coverCollageImages[2].category}
-                    </span>
-                    <span className="absolute bottom-1.5 right-1.5 bg-black/80 text-[#e6c280] font-mono text-[8px] px-1">
-                      [03A]
-                    </span>
                   </div>
 
                   <div
@@ -660,12 +642,6 @@ export function MagazineModal({
                       alt={coverCollageImages[3]?.title || 'Detay'}
                       className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105 filter contrast-[1.08]"
                     />
-                    <span className="absolute top-1.5 left-1.5 bg-black/80 text-white font-mono text-[8px] px-1 font-bold uppercase truncate max-w-[70px] border border-white/10">
-                      {coverCollageImages[3]?.category || 'ARŞİV'}
-                    </span>
-                    <span className="absolute bottom-1.5 right-1.5 bg-black/80 text-[#e6c280] font-mono text-[8px] px-1">
-                      [04A]
-                    </span>
                   </div>
                 </div>
               </div>
@@ -676,21 +652,18 @@ export function MagazineModal({
                   className={`col-span-7 row-span-2 relative overflow-hidden group ${!isPdf ? 'cursor-pointer' : ''} border border-black/80`}
                 >
                   <img src={coverCollageImages[0].url} alt="" className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform" />
-                  <span className="absolute top-3 left-3 bg-red-600 text-white font-mono text-[9px] px-2 py-0.5 font-bold uppercase">[01A // {coverCollageImages[0].category}]</span>
                 </div>
                 <div
                   onClick={!isPdf ? () => setCurrentPage(getArticlePageIdx(coverCollageImages[1].postIndex)) : undefined}
                   className={`col-span-5 row-span-1 relative overflow-hidden group ${!isPdf ? 'cursor-pointer' : ''} border border-black/80`}
                 >
                   <img src={coverCollageImages[1].url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                  <span className="absolute top-2 left-2 bg-black/80 text-white font-mono text-[8px] px-1.5 uppercase">[02A // {coverCollageImages[1].category}]</span>
                 </div>
                 <div
                   onClick={!isPdf ? () => setCurrentPage(getArticlePageIdx(coverCollageImages[2].postIndex)) : undefined}
                   className={`col-span-5 row-span-1 relative overflow-hidden group ${!isPdf ? 'cursor-pointer' : ''} border border-black/80`}
                 >
                   <img src={coverCollageImages[2].url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                  <span className="absolute top-2 left-2 bg-black/80 text-white font-mono text-[8px] px-1.5 uppercase">[03A // {coverCollageImages[2].category}]</span>
                 </div>
               </div>
             ) : coverCollageImages.length === 2 ? (
@@ -702,7 +675,6 @@ export function MagazineModal({
                     className={`relative overflow-hidden group ${!isPdf ? 'cursor-pointer' : ''} border border-black/80`}
                   >
                     <img src={img.url} alt="" className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform" />
-                    <span className="absolute top-3 left-3 bg-red-600 text-white font-mono text-[9px] px-2 py-0.5 font-bold uppercase">[0{i + 1}A // {img.category}]</span>
                   </div>
                 ))}
               </div>
@@ -712,7 +684,6 @@ export function MagazineModal({
                 className={`relative w-full h-full group ${!isPdf ? 'cursor-pointer' : ''}`}
               >
                 <img src={coverCollageImages[0].url} alt="" className="w-full h-full object-cover object-center filter contrast-[1.08]" />
-                <span className="absolute top-3 left-3 bg-red-600 text-white font-mono text-[9px] px-2 py-0.5 font-bold uppercase">[01A // {coverCollageImages[0].category}]</span>
               </div>
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-neutral-900 via-black to-neutral-950 flex flex-col items-center justify-center p-6 text-neutral-400">
@@ -869,7 +840,7 @@ export function MagazineModal({
                   İçindekiler Fihristi &rarr;
                 </button>
               ) : (
-                <span>İçindekiler Fihristi &rarr;</span>
+                null
               )}
               <span>&bull; SAYFA 02</span>
             </div>
@@ -944,7 +915,7 @@ export function MagazineModal({
                         </span>
                       )}
                       <span className="font-serif font-black text-red-600 text-xs">
-                        S. {String(pageNo).padStart(2, '0')} &rarr;
+                        S. {String(pageNo).padStart(2, '0')}{!isPdf && <> &rarr;</>}
                       </span>
                     </div>
                   </div>
@@ -1002,11 +973,7 @@ export function MagazineModal({
                   <CheckCircle2 className="w-3 h-3" />
                   <span>INSTAGRAM RESMİ YAYIN ARŞİVİ</span>
                 </div>
-              ) : (
-                <div className="border border-neutral-400 text-neutral-500 px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider">
-                  EDİTORYAL DERGİ BASKISI
-                </div>
-              )}
+              ) : null}
             </div>
 
             {/* Headline */}
@@ -1047,7 +1014,8 @@ export function MagazineModal({
               ))}
             </div>
 
-            {/* 90's Special Dossier Box */}
+            {/* 90's Special Dossier Box (PDF'te yalnızca AI derinlik içeriği varsa) */}
+            {(!isPdf || post.magazineDeepDossier) && (
             <div className={`p-4 rounded border-2 border-dashed space-y-3 font-mono text-[11px] ${
               isPaper ? 'bg-black/[0.03] border-black/40' : 'bg-white/[0.02] border-white/20'
             }`}>
@@ -1122,6 +1090,7 @@ export function MagazineModal({
                 </div>
               )}
             </div>
+            )}
           </div>
 
           {/* Bottom Footer */}
@@ -1211,15 +1180,7 @@ export function MagazineModal({
 
               {/* Açıklama Kutusu */}
               <div className="mt-2 pt-2 border-t border-black/20 flex flex-col justify-between font-mono text-neutral-800 shrink-0">
-                <div className="flex items-center justify-between text-[11px] sm:text-xs font-bold">
-                  <span className="text-red-600 truncate mr-2">
-                    {photoIndex === 0 ? 'KAPAK KADRAJI' : `KADRAJ #${photoIndex + 1}`} — {photo?.title || post?.title || 'EDİTORYAL KADRAJ'}
-                  </span>
-                  <span className="text-[10px] text-neutral-500 shrink-0">
-                    KADRAJ #{photoIndex + 1} / {totalPhotos}
-                  </span>
-                </div>
-                <p className="font-serif italic text-xs leading-snug text-neutral-700 line-clamp-2 my-1">
+                <p className="font-serif italic text-xs leading-snug text-neutral-700 line-clamp-2 mb-1">
                   “{photo?.quote || post?.hook || post?.conceptTitle || post?.title || "90'lar editoryal arşiv fotoğrafı."}”
                 </p>
                 <p className="text-[10px] text-neutral-500 leading-tight truncate">
@@ -1408,7 +1369,7 @@ export function MagazineModal({
               </>
             ) : (
               <>
-                <span>TEMİZ 35MM ARŞİV NEGATİFİ &bull; KADRAJ #{photoIndex + 1}/{totalPhotos}</span>
+                <span>KADRAJ #{photoIndex + 1}/{totalPhotos}</span>
                 <span>SAYFA {String(pageIdx + 1).padStart(2, '0')}</span>
               </>
             )}
