@@ -178,6 +178,8 @@ export function MagazineModal({
   const [editingPhotoKey, setEditingPhotoKey] = useState(null);
   const [isDraggingPhoto, setIsDraggingPhoto] = useState(false);
   const [photoAdjustments, setPhotoAdjustments] = useState({});
+  const [isEditingZoomInput, setIsEditingZoomInput] = useState(false);
+  const [customZoomInput, setCustomZoomInput] = useState('100');
   const dragRef = useRef({
     isDragging: false,
     key: '',
@@ -193,6 +195,7 @@ export function MagazineModal({
   // Sayfa değiştiğinde düzenleme modundan çık
   useEffect(() => {
     setEditingPhotoKey(null);
+    setIsEditingZoomInput(false);
   }, [currentPage]);
 
   // Görselin mevcut dergi kadraj ayarını al
@@ -269,6 +272,14 @@ export function MagazineModal({
     const updated = { ...current, zoom: newZoom };
     setPhotoAdjustments((prev) => ({ ...prev, [key]: updated }));
     await saveMagazineSettings(post, photoIndex, updated);
+  };
+
+  const handleCommitZoomInput = async (post, photoIndex) => {
+    let val = parseInt(customZoomInput, 10);
+    if (isNaN(val) || val <= 0) val = 100;
+    val = Math.max(10, Math.min(500, val));
+    await handleUpdateZoom(post, photoIndex, val);
+    setIsEditingZoomInput(false);
   };
 
   const handleResetSetting = async (post, photoIndex) => {
@@ -1109,15 +1120,19 @@ export function MagazineModal({
                   <div className="absolute inset-0 bg-black/20" />
                 </div>
 
-                {/* Ana Görsel (Dergiye Özel Sürüklenebilir ve Ayarlanabilir) */}
+                {/* Ana Görsel (Sistemdeki Orijinal Fotoğraf Tam Haliyle, Sürüklenebilir ve Orantılı) */}
                 <img
                   src={photo?.url}
                   alt={photo?.title || 'Dergi Fotoğrafı'}
                   style={{
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                    width: 'auto',
+                    height: 'auto',
                     transform: `translate(${offsetX}px, ${offsetY}px) scale(${zoom / 100})`,
                     transformOrigin: 'center center'
                   }}
-                  className="relative z-10 w-full h-full object-cover object-[center_top] filter contrast-[1.05] pointer-events-none select-none transition-transform duration-75"
+                  className="relative z-10 filter contrast-[1.05] pointer-events-none select-none transition-transform duration-75 drop-shadow-md"
                   draggable={false}
                 />
 
@@ -1162,24 +1177,58 @@ export function MagazineModal({
                     </span>
                   </div>
 
-                  {/* Yakınlaştırma (- / +) */}
+                  {/* Yakınlaştırma (- / + ve Tıklanabilir Oran Girişi) */}
                   <div className="flex items-center space-x-1">
                     <button
                       type="button"
-                      onClick={() => handleUpdateZoom(post, photoIndex, Math.max(70, zoom - 10))}
-                      className="w-5 h-5 rounded bg-white/10 hover:bg-white/20 flex items-center justify-center font-bold text-xs cursor-pointer"
-                      title="Uzaklaştır"
+                      onClick={() => handleUpdateZoom(post, photoIndex, Math.max(10, zoom - 10))}
+                      className="w-5 h-5 rounded bg-white/10 hover:bg-white/20 flex items-center justify-center font-bold text-xs cursor-pointer text-white"
+                      title="Uzaklaştır (-%10)"
                     >
                       -
                     </button>
-                    <span className="text-[10px] text-neutral-300 min-w-[36px] text-center">
-                      %{zoom}
-                    </span>
+
+                    {isEditingZoomInput ? (
+                      <div className="flex items-center bg-black/95 border border-red-500 rounded px-1.5 py-0.5 shadow-inner">
+                        <span className="text-[10px] text-red-400 font-bold">%</span>
+                        <input
+                          type="number"
+                          min="10"
+                          max="500"
+                          autoFocus
+                          value={customZoomInput}
+                          onChange={(e) => setCustomZoomInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleCommitZoomInput(post, photoIndex);
+                            } else if (e.key === 'Escape') {
+                              setIsEditingZoomInput(false);
+                            }
+                          }}
+                          onBlur={() => handleCommitZoomInput(post, photoIndex)}
+                          className="w-12 bg-transparent text-white font-mono text-xs text-center focus:outline-none"
+                          placeholder="100"
+                        />
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomZoomInput(String(zoom));
+                          setIsEditingZoomInput(true);
+                        }}
+                        className="px-2 py-0.5 rounded bg-white/15 hover:bg-white/25 border border-white/20 hover:border-red-400 text-[11px] text-white min-w-[44px] text-center font-mono font-bold cursor-pointer transition-all shadow-sm"
+                        title="Tıklayın ve istediğiniz yakınlaştırma oranını (%10 - %500) elle yazın"
+                      >
+                        %{zoom}
+                      </button>
+                    )}
+
                     <button
                       type="button"
-                      onClick={() => handleUpdateZoom(post, photoIndex, Math.min(300, zoom + 10))}
-                      className="w-5 h-5 rounded bg-white/10 hover:bg-white/20 flex items-center justify-center font-bold text-xs cursor-pointer"
-                      title="Yakınlaştır"
+                      onClick={() => handleUpdateZoom(post, photoIndex, Math.min(500, zoom + 10))}
+                      className="w-5 h-5 rounded bg-white/10 hover:bg-white/20 flex items-center justify-center font-bold text-xs cursor-pointer text-white"
+                      title="Yakınlaştır (+%10)"
                     >
                       +
                     </button>
