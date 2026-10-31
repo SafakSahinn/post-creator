@@ -32,7 +32,7 @@ import {
 import { jsPDF } from 'jspdf';
 import { toJpeg, getFontEmbedCSS } from 'html-to-image';
 import { InstagramIcon } from './Icons';
-import { generateDeepMagazineEssay } from '../services/gemini';
+import { generateDeepMagazineEssay, generateShortMagazineTitles } from '../services/gemini';
 import { saveArchiveToDb } from '../services/archiveDb';
 
 /**
@@ -638,6 +638,37 @@ export function MagazineModal({
     }
     return list;
   }, [archives, onlyPublished]);
+
+  // Arka kapaktaki "Bu Sayıda" listesi için kısa başlıklar: eksik olanları AI tek istekte üretir
+  // ve arşive kaydeder (bir kez). Anahtar yoksa ya da istek başarısızsa uzun başlık kısaltılmadan kalır.
+  const shortTitleAttemptedRef = useRef(new Set());
+  const latestArchivesRef = useRef(archives);
+  latestArchivesRef.current = archives;
+  useEffect(() => {
+    if (!isOpen) return;
+    const missing = archives.filter(
+      (p) => p?.id && p.title && !p.shortTitle && !shortTitleAttemptedRef.current.has(p.id)
+    );
+    if (missing.length === 0) return;
+    const batch = missing.slice(0, 40); // kalanlar arşiv güncellenince sonraki turda istenir
+    batch.forEach((p) => shortTitleAttemptedRef.current.add(p.id));
+    (async () => {
+      try {
+        const map = await generateShortMagazineTitles({ items: batch });
+        for (const { id } of batch) {
+          const short = map[String(id)];
+          // İstek sürerken gönderi değişmiş olabilir: en güncel kaydın üzerine ekle
+          const post = latestArchivesRef.current.find((p) => p.id === id);
+          if (!short || !post || post.shortTitle) continue;
+          const updated = { ...post, shortTitle: short, updatedAt: new Date().toISOString() };
+          if (onUpdateArchiveItem) await onUpdateArchiveItem(updated);
+          else await saveArchiveToDb(updated);
+        }
+      } catch (err) {
+        console.warn('Kısa başlıklar üretilemedi, uzun başlık kullanılacak:', err?.message || err);
+      }
+    })();
+  }, [isOpen, archives, onUpdateArchiveItem]);
 
   // Her sayfanın tipini ve içeriğini tutan dinamik sayfa listesi:
   // Her gönderi için 1 Metin & Derinlik Sayfası + Gönderideki HER temiz fotoğraf için 1 Tam Sayfa Editoryal Plaka
@@ -1616,7 +1647,7 @@ export function MagazineModal({
                       {String(idx + 1).padStart(2, '0')}
                     </span>
                     <span className="font-serif text-sm font-bold uppercase leading-snug text-white truncate">
-                      {post.title}
+                      {post.shortTitle || post.title}
                     </span>
                   </div>
                 ))}

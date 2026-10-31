@@ -3,6 +3,15 @@
  */
 import { recordApiRequest } from './apiQuota';
 
+// Ayarlarda kaydedilen Gemini anahtarı (App.jsx ile aynı kaynak)
+function getStoredApiKey() {
+  try {
+    return localStorage.getItem('lore_gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY || '';
+  } catch {
+    return import.meta.env.VITE_GEMINI_API_KEY || '';
+  }
+}
+
 export function buildSystemInstruction(project) {
   if (!project) {
     return DEFAULT_SYSTEM_INSTRUCTION;
@@ -55,6 +64,7 @@ KRİTİK ANLAM & DİL KURALLARI:
 JSON yapısı:
 {
   "title": "Konuyu özetleyen havalı, dergi kapağı tarzı bir isim",
+  "shortTitle": "Başlığın dergi arka kapağı listesi için kısa hali: en fazla 4 kelime / 30 karakter, konunun özü (örnek: Gri Devrim: PlayStation)",
   "hook": "Okuyucuyu ilk saniyede yakalayacak, merak uyandıran 1-2 cümlelik vurucu bir soru veya tespit.",
   "lore": [
     "1. Paragraf: Giriş ve konunun çarpıcı başlangıcı.",
@@ -100,6 +110,7 @@ KRİTİK ANLAM & DİL KURALLARI:
 JSON yapısı:
 {
   "title": "Konuyu özetleyen havalı, dergi kapağı tarzı bir isim",
+  "shortTitle": "Başlığın dergi arka kapağı listesi için kısa hali: en fazla 4 kelime / 30 karakter, konunun özü (örnek: Gri Devrim: PlayStation)",
   "hook": "Okuyucuyu ilk saniyede yakalayacak, merak uyandıran 1-2 cümlelik vurucu bir soru veya tespit.",
   "lore": [
     "1. Paragraf: Tasarımın, nesnenin veya sahnenin neden ikonikleştiğinin başlangıcı.",
@@ -462,4 +473,63 @@ JSON Formatında Sadece Aşağıdaki Yapıyı Döndür:
   }
 
   throw new Error('Dergi makalesi üretilemedi. Lütfen bağlantınızı ve API anahtarınızı kontrol edin.');
+}
+
+/**
+ * Dergi arka kapağındaki "Bu Sayıda" listesi için uzun başlıkları kısaltır.
+ * Tek istekte toplu çalışır; { [id]: kısaBaşlık } döndürür.
+ */
+export async function generateShortMagazineTitles({ items, apiKey, model = 'gemini-2.5-flash' }) {
+  const activeKey = apiKey || getStoredApiKey();
+  if (!activeKey) throw new Error('Gemini API anahtarı tanımlı değil.');
+  if (!items?.length) return {};
+
+  const list = items.map((it) => ({ id: String(it.id), title: it.title || '', concept: it.conceptTitle || '' }));
+  const prompt = `
+Rol: 1990'lar kültür dergisinin baş editörü.
+Görev: Aşağıdaki makale başlıklarını derginin ARKA KAPAĞINDAKİ "Bu Sayıda" listesi için kısalt.
+
+Kurallar:
+- Her kısa başlık en fazla 4 kelime ve 30 karakter olsun.
+- Konunun özünü ve özel adını koru; açıklayıcı uzun kuyruğu at.
+- Başlıkta "Ana İfade: Özel Ad" yapısı varsa onu kullan.
+- Örnek: "Gri Devrim: PlayStation ve 90'ların Oturma Odasını Ele Geçiren Konsol" -> "Gri Devrim: PlayStation"
+- Türkçe yazım ve özel adların doğru yazılışı korunmalı (PlayStation, Nokia, MTV...).
+- Tırnak işareti ve sonda nokta kullanma.
+
+Başlıklar (JSON):
+${JSON.stringify(list)}
+
+Sadece şu JSON yapısını döndür:
+{ "titles": [ { "id": "aynı id", "shortTitle": "kısa başlık" } ] }
+`;
+
+  for (const mod of Array.from(new Set([model, 'gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash']))) {
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${mod}:generateContent?key=${activeKey}`;
+    try {
+      recordApiRequest();
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.3, responseMimeType: 'application/json' }
+        })
+      });
+      if (!res.ok) continue;
+      const data = await res.json();
+      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!rawText) continue;
+      const parsed = JSON.parse(rawText.replace(/```json/g, '').replace(/```/g, '').trim());
+      const out = {};
+      for (const row of parsed?.titles || []) {
+        const short = String(row?.shortTitle || '').trim().replace(/^["'“”\s]+|["'“”.,;:\s]+$/g, '');
+        if (row?.id != null && short) out[String(row.id)] = short;
+      }
+      return out;
+    } catch (e) {
+      console.warn(`Kısa başlık üretimi ${mod} ile başarısız:`, e);
+    }
+  }
+  throw new Error('Kısa başlıklar üretilemedi.');
 }
