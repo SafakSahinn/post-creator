@@ -319,7 +319,7 @@ export async function ensureWorkingModel(apiKey, current) {
   return pickBestModel(results) || id;
 }
 
-// Yardımcı istekler (kısa başlık, derinlik makalesi, görsel istemi) için denenecek model sırası:
+// Yardımcı istekler (kısa başlık, derinlik makalesi) için denenecek model sırası:
 // önce kullanıcının seçtiği model, sonra tarama/canlı listedeki en yeni flash modeller.
 // Ölü (404) modeller hiç denenmez.
 const modelChainCache = new Map();
