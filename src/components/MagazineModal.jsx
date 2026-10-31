@@ -97,6 +97,7 @@ export function MagazineModal({
   const [isExpandingAi, setIsExpandingAi] = useState(false);
   const [aiError, setAiError] = useState(null);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
+  const scrollViewportRef = useRef(null);
 
   // Filtrelenmiş gönderiler
   const displayPosts = useMemo(() => {
@@ -115,9 +116,12 @@ export function MagazineModal({
   const currentPost = currentPostIndex >= 0 ? displayPosts[currentPostIndex] : null;
   const cleanPhotos = useMemo(() => extractCleanPhotos(currentPost), [currentPost]);
 
-  // Sayfa değiştiğinde fotoğraf seçimini sıfırla
+  // Sayfa değiştiğinde fotoğraf seçimini sıfırla ve tepeye kaydır (Scroll to Top)
   useEffect(() => {
     setSelectedPhotoIndex(0);
+    if (scrollViewportRef.current) {
+      scrollViewportRef.current.scrollTo({ top: 0, behavior: 'instant' });
+    }
   }, [currentPage]);
 
   // Klavye kısayolları (← / → ile sayfa çevirme, Esc ile kapatma)
@@ -178,7 +182,7 @@ export function MagazineModal({
     <div className="fixed inset-0 z-50 flex flex-col bg-black/90 backdrop-blur-md overflow-hidden animate-fadeIn">
       
       {/* 90's Editorial Top Control Bar */}
-      <div className="h-16 px-4 sm:px-6 bg-[#101115] border-b border-white/10 flex items-center justify-between shrink-0 select-none z-20">
+      <div className="h-14 px-3 sm:px-6 bg-[#101115] border-b border-white/10 flex items-center justify-between shrink-0 select-none z-20">
         
         {/* Brand & Issue Info */}
         <div className="flex items-center space-x-3 sm:space-x-4">
@@ -292,12 +296,15 @@ export function MagazineModal({
       </div>
 
       {/* Main Magazine Viewport */}
-      <div className={`flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8 flex items-center justify-center transition-colors duration-300 ${
-        isPaper ? 'bg-[#212124]' : 'bg-[#08080a]'
-      }`}>
+      <div
+        ref={scrollViewportRef}
+        className={`flex-1 overflow-y-auto p-2 sm:p-5 lg:p-8 flex items-start justify-center transition-colors duration-300 ${
+          isPaper ? 'bg-[#212124]' : 'bg-[#08080a]'
+        }`}
+      >
         
         {/* The 90's Physical Magazine Spread Container */}
-        <div className={`relative w-full max-w-6xl shadow-2xl rounded-sm transition-all duration-300 overflow-hidden ${
+        <div className={`relative w-full max-w-6xl my-1 sm:my-3 shadow-2xl rounded-sm transition-all duration-300 overflow-hidden ${
           isPaper
             ? 'bg-[#f6f3eb] text-[#1c1c1f] shadow-[0_20px_60px_rgba(0,0,0,0.6)] border border-[#d8d4c7]'
             : 'bg-[#121318] text-[#e8e4dc] shadow-[0_20px_60px_rgba(0,0,0,0.85)] border border-white/10'
@@ -307,7 +314,7 @@ export function MagazineModal({
           {/* PAGE 0: 1990'S RETRO COVER PAGE                         */}
           {/* ======================================================== */}
           {currentPage === 0 && (
-            <div className="relative min-h-[750px] p-6 sm:p-10 flex flex-col justify-between border-4 border-black/80 m-2 sm:m-4 bg-gradient-to-b from-transparent to-black/5">
+            <div className="relative p-4 sm:p-8 lg:p-10 flex flex-col justify-between border-4 border-black/80 m-1.5 sm:m-3 bg-gradient-to-b from-transparent to-black/5">
               
               {/* Top Banner & Barcode Strip */}
               <div className="border-b-2 border-black/80 pb-3 flex items-center justify-between font-mono text-[11px] uppercase tracking-widest">
@@ -385,10 +392,10 @@ export function MagazineModal({
                       <img
                         src={displayPosts[0].thumbnails?.[0] || displayPosts[0].savedGallery?.[0]?.dataUrl}
                         alt="Dergi Kapağı"
-                        className="w-full h-[400px] sm:h-[480px] object-cover filter contrast-[1.05]"
+                        className="w-full h-[300px] sm:h-[380px] lg:h-[440px] max-h-[50vh] object-cover filter contrast-[1.05]"
                       />
                     ) : (
-                      <div className="w-full h-[400px] sm:h-[480px] bg-neutral-800 flex flex-col items-center justify-center p-6 text-center text-neutral-400">
+                      <div className="w-full h-[300px] sm:h-[380px] lg:h-[440px] bg-neutral-800 flex flex-col items-center justify-center p-6 text-center text-neutral-400">
                         <BookOpen className="w-12 h-12 text-[#e6c280] mb-2" />
                         <span className="font-serif text-lg font-bold text-white">Fotoğraf Arşivi</span>
                         <span className="text-xs font-mono">Kapak fotoğrafı oluşturulan ilk gönderiden otomatik seçilir.</span>
@@ -448,7 +455,7 @@ export function MagazineModal({
           {/* PAGE 1: 1990'S TABLE OF CONTENTS / FİHRİST              */}
           {/* ======================================================== */}
           {currentPage === 1 && (
-            <div className="p-6 sm:p-12 min-h-[750px] flex flex-col justify-between m-2 sm:m-4 border-2 border-black/80">
+            <div className="p-4 sm:p-8 lg:p-10 flex flex-col justify-between m-1.5 sm:m-3 border-2 border-black/80">
               
               {/* Header */}
               <div className="border-b-4 border-black pb-4 flex items-end justify-between">
@@ -532,7 +539,7 @@ export function MagazineModal({
           {/* PAGES 2..N: 1990'S EDITORIAL TWO-PAGE SPREAD             */}
           {/* ======================================================== */}
           {currentPage >= 2 && currentPost && (
-            <div className="p-4 sm:p-8 lg:p-10 min-h-[820px] flex flex-col justify-between">
+            <div className="p-4 sm:p-6 lg:p-8 flex flex-col justify-between m-1 sm:m-2">
               
               {/* Running Header / Folio Line */}
               <div className="border-b-2 border-black/80 pb-2.5 flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-neutral-600">
@@ -717,7 +724,7 @@ export function MagazineModal({
                       <img
                         src={cleanPhotos[selectedPhotoIndex]?.url || cleanPhotos[0]?.url}
                         alt="Temiz Dergi Fotoğrafı"
-                        className="w-full h-[380px] sm:h-[420px] object-cover filter contrast-[1.05]"
+                        className="w-full h-[280px] sm:h-[350px] lg:h-[400px] max-h-[48vh] object-cover filter contrast-[1.05]"
                       />
                       
                       {/* Photo Caption Plate Underneath */}
@@ -827,7 +834,7 @@ export function MagazineModal({
       </div>
 
       {/* 90's Bottom Navigation Bar */}
-      <div className="h-16 px-4 sm:px-6 bg-[#101115] border-t border-white/10 flex items-center justify-between shrink-0 font-mono text-xs z-20">
+      <div className="h-14 px-3 sm:px-6 bg-[#101115] border-t border-white/10 flex items-center justify-between shrink-0 font-mono text-xs z-20">
         
         {/* Previous Button */}
         <button
