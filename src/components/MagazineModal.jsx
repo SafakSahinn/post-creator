@@ -21,7 +21,9 @@ import {
   ZoomIn,
   Loader2,
   RefreshCw,
-  Info
+  Info,
+  Move,
+  Check
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import { toJpeg } from 'html-to-image';
@@ -171,6 +173,170 @@ export function MagazineModal({
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [pdfProgress, setPdfProgress] = useState({ current: 0, total: 0 });
   const scrollViewportRef = useRef(null);
+
+  // Dergi üzerinde görselleri sürükleyerek düzenleme durumları (Stüdyodan bağımsız)
+  const [editingPhotoKey, setEditingPhotoKey] = useState(null);
+  const [isDraggingPhoto, setIsDraggingPhoto] = useState(false);
+  const [photoAdjustments, setPhotoAdjustments] = useState({});
+  const dragRef = useRef({
+    isDragging: false,
+    key: '',
+    post: null,
+    photoIndex: 0,
+    startX: 0,
+    startY: 0,
+    initialX: 0,
+    initialY: 0,
+    zoom: 100
+  });
+
+  // Sayfa değiştiğinde düzenleme modundan çık
+  useEffect(() => {
+    setEditingPhotoKey(null);
+  }, [currentPage]);
+
+  // Görselin mevcut dergi kadraj ayarını al
+  const getPhotoSetting = (targetPost, pIdx) => {
+    const key = `${targetPost?.id || targetPost?.title}_${pIdx}`;
+    if (photoAdjustments[key]) return photoAdjustments[key];
+    if (targetPost?.magazinePhotoSettings?.[pIdx]) return targetPost.magazinePhotoSettings[pIdx];
+    return { offsetX: 0, offsetY: 0, zoom: 100 };
+  };
+
+  // Kadraj ayarını veritabanına ve post nesnesine kaydet (Stüdyoyu etkilemez, dergiye özeldir)
+  const saveMagazineSettings = async (targetPost, pIdx, newSetting) => {
+    if (!targetPost) return;
+    const currentSettings = targetPost.magazinePhotoSettings || {};
+    const updatedPost = {
+      ...targetPost,
+      magazinePhotoSettings: {
+        ...currentSettings,
+        [pIdx]: newSetting
+      },
+      updatedAt: new Date().toISOString()
+    };
+    try {
+      await saveArchiveToDb(updatedPost);
+      if (onUpdateArchiveItem) {
+        onUpdateArchiveItem(updatedPost);
+      }
+    } catch (err) {
+      console.error('Dergi kadraj ayarı kaydedilemedi:', err);
+    }
+  };
+
+  const handleStartDrag = (e, post, photoIndex, photoKey) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const current = getPhotoSetting(post, photoIndex);
+    dragRef.current = {
+      isDragging: true,
+      key: photoKey,
+      post,
+      photoIndex,
+      startX: e.clientX,
+      startY: e.clientY,
+      initialX: current.offsetX || 0,
+      initialY: current.offsetY || 0,
+      zoom: current.zoom || 100
+    };
+    setIsDraggingPhoto(true);
+  };
+
+  const handleStartTouchDrag = (e, post, photoIndex, photoKey) => {
+    if (!e.touches || e.touches.length === 0) return;
+    const touch = e.touches[0];
+    const current = getPhotoSetting(post, photoIndex);
+    dragRef.current = {
+      isDragging: true,
+      key: photoKey,
+      post,
+      photoIndex,
+      startX: touch.clientX,
+      startY: touch.clientY,
+      initialX: current.offsetX || 0,
+      initialY: current.offsetY || 0,
+      zoom: current.zoom || 100
+    };
+    setIsDraggingPhoto(true);
+  };
+
+  const handleUpdateZoom = async (post, photoIndex, newZoom) => {
+    const current = getPhotoSetting(post, photoIndex);
+    const key = `${post?.id || post?.title}_${photoIndex}`;
+    const updated = { ...current, zoom: newZoom };
+    setPhotoAdjustments((prev) => ({ ...prev, [key]: updated }));
+    await saveMagazineSettings(post, photoIndex, updated);
+  };
+
+  const handleResetSetting = async (post, photoIndex) => {
+    const key = `${post?.id || post?.title}_${photoIndex}`;
+    const reset = { offsetX: 0, offsetY: 0, zoom: 100 };
+    setPhotoAdjustments((prev) => ({ ...prev, [key]: reset }));
+    await saveMagazineSettings(post, photoIndex, reset);
+  };
+
+  useEffect(() => {
+    if (!isDraggingPhoto) return;
+
+    const handleMouseMove = (e) => {
+      if (!dragRef.current.isDragging) return;
+      const dx = e.clientX - dragRef.current.startX;
+      const dy = e.clientY - dragRef.current.startY;
+      const newX = Math.round(dragRef.current.initialX + dx);
+      const newY = Math.round(dragRef.current.initialY + dy);
+      const { key, zoom } = dragRef.current;
+
+      setPhotoAdjustments((prev) => ({
+        ...prev,
+        [key]: { offsetX: newX, offsetY: newY, zoom }
+      }));
+    };
+
+    const handleTouchMove = (e) => {
+      if (!dragRef.current.isDragging || !e.touches || e.touches.length === 0) return;
+      const touch = e.touches[0];
+      const dx = touch.clientX - dragRef.current.startX;
+      const dy = touch.clientY - dragRef.current.startY;
+      const newX = Math.round(dragRef.current.initialX + dx);
+      const newY = Math.round(dragRef.current.initialY + dy);
+      const { key, zoom } = dragRef.current;
+
+      setPhotoAdjustments((prev) => ({
+        ...prev,
+        [key]: { offsetX: newX, offsetY: newY, zoom }
+      }));
+    };
+
+    const handleDragEnd = async () => {
+      if (dragRef.current.isDragging) {
+        dragRef.current.isDragging = false;
+        setIsDraggingPhoto(false);
+        const { post, photoIndex, key } = dragRef.current;
+        if (post) {
+          setPhotoAdjustments((currentAdjustments) => {
+            const finalSetting = currentAdjustments[key] || { offsetX: 0, offsetY: 0, zoom: 100 };
+            saveMagazineSettings(post, photoIndex, finalSetting);
+            return currentAdjustments;
+          });
+        }
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleDragEnd);
+    window.addEventListener('touchmove', handleTouchMove);
+    window.addEventListener('touchend', handleDragEnd);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleDragEnd);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleDragEnd);
+    };
+  }, [isDraggingPhoto]);
 
   // Filtrelenmiş gönderiler
   const displayPosts = useMemo(() => {
@@ -893,6 +1059,13 @@ export function MagazineModal({
 
     if (pageData.type === 'photo') {
       const { post, postIndex, photo, photoIndex, totalPhotos } = pageData;
+      const photoKey = `${post.id || post.title || postIndex}_${photoIndex}`;
+      const isEditingThisPhoto = !isPdf && editingPhotoKey === photoKey;
+      const setting = getPhotoSetting(post, photoIndex);
+      const offsetX = setting.offsetX || 0;
+      const offsetY = setting.offsetY || 0;
+      const zoom = setting.zoom || 100;
+
       return (
         <div className={`relative flex-1 ${isPdf ? 'w-full h-full' : 'min-h-[760px] sm:min-h-[820px] lg:min-h-[860px]'} p-4 sm:p-6 flex flex-col justify-between m-1.5 sm:m-3 border-4 border-black/80 box-border`}>
           {/* Running Header */}
@@ -911,26 +1084,50 @@ export function MagazineModal({
           </div>
 
           {/* Main Photo Content: Restored Impactful Full-Page Photo Plate */}
-          <div className="my-auto flex-1 flex flex-col justify-center items-center space-y-3">
+          <div className="my-auto flex-1 flex flex-col justify-center items-center space-y-2">
             <div className="relative border-4 border-black/90 p-2 sm:p-2.5 bg-white shadow-xl flex flex-col shrink-0 max-w-[420px] sm:max-w-[440px] mx-auto w-full">
-              {/* 4:5 Hero Plate */}
-              <div className="w-full aspect-[4/5] max-h-[460px] bg-neutral-950 overflow-hidden relative shrink-0 flex items-center justify-center border border-black/10">
+              {/* 4:5 Hero Plate with Direct Interactive Dragging */}
+              <div
+                onMouseDown={isEditingThisPhoto ? (e) => handleStartDrag(e, post, photoIndex, photoKey) : undefined}
+                onTouchStart={isEditingThisPhoto ? (e) => handleStartTouchDrag(e, post, photoIndex, photoKey) : undefined}
+                className={`w-full aspect-[4/5] max-h-[460px] bg-neutral-950 overflow-hidden relative shrink-0 flex items-center justify-center border border-black/10 select-none ${
+                  isEditingThisPhoto
+                    ? isDraggingPhoto
+                      ? 'cursor-grabbing ring-2 ring-red-600 shadow-2xl'
+                      : 'cursor-grab ring-2 ring-red-500/80 hover:ring-red-600 shadow-xl'
+                    : ''
+                }`}
+                title={isEditingThisPhoto ? 'Fotoğrafı basılı tutup sürükleyerek kadrajı ayarlayın' : undefined}
+              >
                 {/* Otomatik Boşluk Kapatıcı & Atmosferik Dolgu Katmanı */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
                   <img
                     src={photo?.url}
                     alt=""
-                    className="w-full h-full object-cover blur-2xl opacity-35 scale-125 filter contrast-125 brightness-75"
+                    className="w-full h-full object-cover blur-2xl opacity-35 scale-125 filter contrast-125 brightness-75 pointer-events-none select-none"
                   />
                   <div className="absolute inset-0 bg-black/20" />
                 </div>
 
-                {/* Ana Görsel */}
+                {/* Ana Görsel (Dergiye Özel Sürüklenebilir ve Ayarlanabilir) */}
                 <img
                   src={photo?.url}
                   alt={photo?.title || 'Dergi Fotoğrafı'}
-                  className="relative z-10 w-full h-full object-cover object-[center_top] filter contrast-[1.05]"
+                  style={{
+                    transform: `translate(${offsetX}px, ${offsetY}px) scale(${zoom / 100})`,
+                    transformOrigin: 'center center'
+                  }}
+                  className="relative z-10 w-full h-full object-cover object-[center_top] filter contrast-[1.05] pointer-events-none select-none transition-transform duration-75"
+                  draggable={false}
                 />
+
+                {/* Düzenleme Modu Görsel Rozeti */}
+                {isEditingThisPhoto && (
+                  <div className="absolute top-2.5 right-2.5 z-20 bg-red-600/90 backdrop-blur-md text-white font-mono text-[9px] px-2 py-0.5 rounded font-bold uppercase tracking-wider flex items-center space-x-1 shadow border border-white/20 pointer-events-none animate-pulse">
+                    <Move className="w-3 h-3" />
+                    <span>Kadrajı Sürükleyin</span>
+                  </div>
+                )}
               </div>
 
               {/* Açıklama Kutusu */}
@@ -952,22 +1149,76 @@ export function MagazineModal({
               </div>
             </div>
 
-            {/* Stüdyoda Düzenle Butonu (Yalnızca Ekranda) */}
-            {!isPdf && onLoadPostToStudio && (
-              <div className="flex justify-end max-w-[420px] sm:max-w-[440px] mx-auto w-full shrink-0">
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    onLoadPostToStudio(post);
-                  }}
-                  className="px-2.5 py-1 rounded bg-black/10 hover:bg-black/20 text-[10px] font-mono font-bold uppercase transition-all flex items-center space-x-1 cursor-pointer"
-                  title="Bu gönderiyi düzenlemek için Carousel Stüdyosu'na aktar"
-                >
-                  <Sliders className="w-3 h-3 text-red-600" />
-                  <span>Stüdyoda Düzenle</span>
-                </button>
-              </div>
+            {/* Düzenle / Kadraj Sürükleme Kontrol Paneli (Yalnızca Ekranda) */}
+            {!isPdf && (
+              isEditingThisPhoto ? (
+                <div className="mt-1 p-2 rounded-lg bg-black/90 border border-red-500/50 backdrop-blur-md flex flex-wrap items-center justify-between gap-2 text-white font-mono text-xs w-full max-w-[420px] sm:max-w-[440px] mx-auto shadow-2xl animate-fadeIn">
+                  {/* Bilgi & Pozisyon */}
+                  <div className="flex items-center space-x-1.5 text-[11px] text-neutral-300">
+                    <Move className="w-3.5 h-3.5 text-red-500 animate-pulse" />
+                    <span className="font-bold text-red-400">Sürükleyin:</span>
+                    <span className="text-[10px] text-neutral-400 bg-white/10 px-1.5 py-0.5 rounded font-mono">
+                      X:{offsetX} Y:{offsetY}
+                    </span>
+                  </div>
+
+                  {/* Yakınlaştırma (- / +) */}
+                  <div className="flex items-center space-x-1">
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateZoom(post, photoIndex, Math.max(70, zoom - 10))}
+                      className="w-5 h-5 rounded bg-white/10 hover:bg-white/20 flex items-center justify-center font-bold text-xs cursor-pointer"
+                      title="Uzaklaştır"
+                    >
+                      -
+                    </button>
+                    <span className="text-[10px] text-neutral-300 min-w-[36px] text-center">
+                      %{zoom}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateZoom(post, photoIndex, Math.min(300, zoom + 10))}
+                      className="w-5 h-5 rounded bg-white/10 hover:bg-white/20 flex items-center justify-center font-bold text-xs cursor-pointer"
+                      title="Yakınlaştır"
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  {/* Sıfırla & Tamam */}
+                  <div className="flex items-center space-x-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleResetSetting(post, photoIndex)}
+                      className="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-[10px] text-neutral-300 transition-colors cursor-pointer"
+                      title="Kadrajı ve ölçeği sıfırla"
+                    >
+                      Sıfırla
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingPhotoKey(null)}
+                      className="px-2.5 py-0.5 rounded bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold uppercase transition-colors flex items-center space-x-1 cursor-pointer shadow-sm"
+                      title="Düzenlemeyi tamamla"
+                    >
+                      <Check className="w-3 h-3" />
+                      <span>Tamam</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex justify-end max-w-[420px] sm:max-w-[440px] mx-auto w-full shrink-0 pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setEditingPhotoKey(photoKey)}
+                    className="px-2.5 py-1 rounded bg-black/10 hover:bg-black/20 text-neutral-700 dark:text-neutral-300 text-[10px] font-mono font-bold uppercase transition-all flex items-center space-x-1.5 cursor-pointer border border-black/15 dark:border-white/15"
+                    title="Bu görseli dergi üzerinde sürükleyerek kadrajını ayarla"
+                  >
+                    <Move className="w-3 h-3 text-red-600" />
+                    <span>Düzenle</span>
+                  </button>
+                </div>
+              )
             )}
           </div>
 
