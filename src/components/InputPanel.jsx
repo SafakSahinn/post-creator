@@ -142,7 +142,7 @@ export function InputPanel({
           </span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-2.5">
           {categories.map((cat) => {
             const catId = cat.id || cat.name;
             const Icon = (cat.iconName && ICON_MAP[cat.iconName]) ? ICON_MAP[cat.iconName] : Box;
@@ -161,7 +161,7 @@ export function InputPanel({
               >
                 {/* Hover Bilgi Kutusu (Tooltip) */}
                 {cat.tooltip && (
-                  <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2.5 w-64 sm:w-72 p-3 bg-[#0d0e14] border border-[#e6c280]/40 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 text-left">
+                  <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2.5 w-64 sm:w-72 p-3 bg-[#0d0e14] border border-[#e6c280]/40 rounded-xl shadow-2xl hidden group-hover:block z-50 text-left">
                     <div className="flex items-center justify-between border-b border-white/10 pb-1.5 mb-1.5">
                       <span className="font-serif font-bold text-xs text-[#e6c280] tracking-wide">
                         {cat.tooltip.title || cat.name}
@@ -186,9 +186,9 @@ export function InputPanel({
                   </div>
                 )}
 
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between gap-1.5 mb-2 min-w-0">
                   <div
-                    className={`p-2 rounded-lg ${
+                    className={`p-2 shrink-0 rounded-lg ${
                       isSelected
                         ? 'bg-[#e6c280] text-black'
                         : 'bg-white/5 text-neutral-400 group-hover:text-white group-hover:bg-white/10'
@@ -198,7 +198,7 @@ export function InputPanel({
                   </div>
                   {cat.badge && (
                     <span
-                      className={`text-[9px] font-mono tracking-wider px-1.5 py-0.5 rounded ${
+                      className={`text-[9px] font-mono tracking-wider px-1.5 py-0.5 rounded truncate min-w-0 ${
                         isSelected
                           ? 'text-[#e6c280] bg-[#e6c280]/15'
                           : 'text-neutral-500 bg-white/5'
@@ -229,7 +229,7 @@ export function InputPanel({
           <span className="text-[11px] text-neutral-500 font-mono">{filterCategoryTitle}</span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-2">
           {filterOptions.map((opt) => {
             const optId = opt.id || opt.label;
             const isSelected = selectedDecade === optId;
@@ -247,7 +247,7 @@ export function InputPanel({
               >
                 {/* Hover Bilgi Kutusu (Tooltip) */}
                 {opt.tooltip && (
-                  <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2.5 w-64 sm:w-72 p-3 bg-[#0d0e14] border border-[#e6c280]/40 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 text-left">
+                  <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2.5 w-64 sm:w-72 p-3 bg-[#0d0e14] border border-[#e6c280]/40 rounded-xl shadow-2xl hidden group-hover:block z-50 text-left">
                     <div className="flex items-center justify-between border-b border-white/10 pb-1.5 mb-1.5">
                       <span className="font-serif font-bold text-xs text-[#e6c280] tracking-wide">
                         {opt.tooltip.title || opt.label}

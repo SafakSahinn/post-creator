@@ -80,18 +80,18 @@ export function Header({
   }, []);
   return (
     <header className="border-b border-white/10 bg-[#0c0d11]/80 backdrop-blur-md sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-3">
         
         {/* Brand / Logo (Tıklandığında Boş Çalışma Alanı / Stüdyo Sıfırlama) */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center gap-3 xl:gap-4 shrink-0">
           <button
             type="button"
             onClick={onResetWorkspace}
-            className="flex items-center space-x-3.5 text-left group cursor-pointer focus:outline-none transition-all select-none"
+            className="flex items-center gap-3.5 shrink-0 whitespace-nowrap text-left group cursor-pointer focus:outline-none transition-all select-none"
             title="Yeni Boş Çalışma Alanı Aç (Stüdyoyu Sıfırla)"
           >
             <PostCreatorLogo />
-            <div>
+            <div className="hidden md:block">
               <div className="flex items-center space-x-2">
                 <span className="font-serif tracking-[0.2em] text-lg font-black text-white uppercase group-hover:text-[#e6c280] transition-colors">
                   POST CREATOR
@@ -100,11 +100,8 @@ export function Header({
                   Studio
                 </span>
               </div>
-              <p className="text-[11px] text-neutral-400 font-mono tracking-wider group-hover:text-neutral-300 transition-colors flex items-center space-x-1.5">
+              <p className="text-[11px] text-neutral-400 font-mono tracking-wider group-hover:text-neutral-300 transition-colors flex items-center space-x-1.5 whitespace-nowrap">
                 <span>INSTAGRAM CAROUSEL STÜDYOSU</span>
-                <span className="text-[#e6c280] font-semibold opacity-0 group-hover:opacity-100 transition-opacity text-[10px] hidden sm:inline">
-                  &bull; Yeni Boş Sayfa
-                </span>
               </p>
             </div>
           </button>
@@ -114,7 +111,7 @@ export function Header({
             <button
               type="button"
               onClick={onOpenProjects}
-              className="hidden md:flex items-center space-x-2.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.07] hover:border-[#e6c280]/40 transition-all text-left group ml-2 cursor-pointer"
+              className="hidden xl:flex shrink-0 whitespace-nowrap items-center space-x-2.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.07] hover:border-[#e6c280]/40 transition-all text-left group ml-2 cursor-pointer"
               title="Aktif projeyi değiştirin veya yeni proje oluşturun"
             >
               <div
@@ -131,7 +128,7 @@ export function Header({
                 <div className="text-[9px] font-mono uppercase text-neutral-400 group-hover:text-neutral-300">
                   Proje
                 </div>
-                <div className="text-xs font-serif font-bold text-white group-hover:text-[#e6c280] transition-colors truncate max-w-[140px]">
+                <div className="text-xs font-serif font-bold text-white group-hover:text-[#e6c280] transition-colors truncate max-w-[110px]">
                   {activeProject.name || 'Lore Magazine'}
                 </div>
               </div>
@@ -141,24 +138,25 @@ export function Header({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center gap-2 xl:gap-2.5 shrink-0">
           {/* Guide / How to use */}
           <button
             onClick={onOpenGuide}
-            className="hidden sm:flex items-center space-x-1.5 px-3 py-2 rounded border border-white/10 text-neutral-300 hover:text-white hover:border-white/20 transition-all text-xs font-mono"
+            className="hidden md:flex shrink-0 whitespace-nowrap items-center space-x-1.5 px-2.5 py-2 rounded border border-white/10 text-neutral-300 hover:text-white hover:border-white/20 transition-all text-xs font-mono"
             title="Kullanım Rehberi"
           >
             <HelpCircle className="w-3.5 h-3.5 text-[#e6c280]" />
-            <span>Rehber</span>
+            <span className="sr-only">Rehber</span>
           </button>
 
           {/* Archive / History */}
           <button
             onClick={onOpenArchive}
-            className="flex items-center space-x-2 px-3.5 py-2 rounded border border-white/10 text-neutral-300 hover:text-white hover:border-white/20 transition-all text-xs font-mono bg-neutral-900/60"
+            title="Arşiv"
+            className="flex shrink-0 whitespace-nowrap items-center space-x-2 px-2.5 py-2 rounded border border-white/10 text-neutral-300 hover:text-white hover:border-white/20 transition-all text-xs font-mono bg-neutral-900/60"
           >
             <Bookmark className="w-3.5 h-3.5 text-[#e6c280]" />
-            <span>Arşiv</span>
+            <span className="hidden lg:inline">Arşiv</span>
             {archiveCount > 0 && (
               <span className="bg-[#e6c280] text-black text-[10px] font-bold px-1.5 py-0.2 rounded-full">
                 {archiveCount}
@@ -170,27 +168,24 @@ export function Header({
           <button
             onClick={onOpenMagazine}
             title="Gönderileri 90'lar Editoryal Dergisi ve Temiz Fotoğraf Formatında Oku"
-            className="flex items-center space-x-1.5 px-3 py-2 rounded border border-red-500/40 bg-red-950/25 text-red-300 hover:text-white hover:border-red-400 hover:bg-red-950/40 transition-all text-xs font-mono shadow-[0_0_12px_rgba(239,68,68,0.15)] cursor-pointer"
+            className="flex shrink-0 whitespace-nowrap items-center space-x-1.5 px-2.5 py-2 rounded border border-red-500/40 bg-red-950/25 text-red-300 hover:text-white hover:border-red-400 hover:bg-red-950/40 transition-all text-xs font-mono shadow-[0_0_12px_rgba(239,68,68,0.15)] cursor-pointer"
           >
             <BookOpen className="w-3.5 h-3.5 text-red-400" />
-            <span className="font-semibold">90'lar Dergisi</span>
-            <span className="text-[9px] px-1 py-0.2 rounded bg-red-600 text-white font-black uppercase tracking-wider">
-              Mag
-            </span>
+            <span className="font-semibold hidden lg:inline">90'lar Dergisi</span>
           </button>
 
           {/* Meta / Instagram Connect */}
           <button
             onClick={onOpenMetaModal}
             title={metaProfile ? `@${metaProfile.username} (Instagram Bağlı) - Ayarlar için tıklayın` : 'Meta / Instagram Otomatik Paylaşım & Zamanlama Bağla'}
-            className={`flex items-center space-x-1.5 px-3 py-2 rounded border text-xs font-mono transition-all cursor-pointer ${
+            className={`flex shrink-0 whitespace-nowrap items-center space-x-1.5 px-2.5 py-2 rounded border text-xs font-mono transition-all cursor-pointer ${
               metaProfile
                 ? 'border-pink-500/40 bg-pink-950/25 text-pink-300 hover:border-pink-400 hover:bg-pink-950/40'
                 : 'border-white/10 text-neutral-300 hover:text-white hover:border-white/20'
             }`}
           >
             <InstagramIcon className={`w-3.5 h-3.5 ${metaProfile ? 'text-pink-400' : 'text-neutral-400'}`} />
-            <span className="hidden md:inline">
+            <span className="sr-only">
               {metaProfile ? `@${metaProfile.username}` : 'Instagram'}
             </span>
             {metaProfile && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]" />}
@@ -200,7 +195,7 @@ export function Header({
           <button
             onClick={onOpenSettings}
             title={hasApiKey ? `Model: ${model || 'gemini-2.5-flash'} | Bugün Kalan: ${quota.remaining} / ${quota.dailyLimit} istek` : 'API Anahtarı Tanımlayın'}
-            className={`flex items-center space-x-2 px-3 py-2 rounded border text-xs font-mono transition-all ${
+            className={`flex shrink-0 whitespace-nowrap items-center space-x-2 px-2.5 py-2 rounded border text-xs font-mono transition-all ${
               hasApiKey
                 ? "border-emerald-500/30 bg-emerald-950/20 text-emerald-300 hover:border-emerald-500/50 hover:bg-emerald-950/30"
                 : "border-amber-500/50 bg-amber-950/30 text-amber-200 animate-pulse hover:border-amber-400"
@@ -208,27 +203,24 @@ export function Header({
           >
             <Key className="w-3.5 h-3.5" />
             <div className="flex items-center space-x-1.5">
-              <span>{hasApiKey ? "API Aktif" : "API Anahtarı Girin"}</span>
+              <span className={hasApiKey ? 'hidden xl:inline' : 'hidden lg:inline'}>{hasApiKey ? "API Aktif" : "API Anahtarı Girin"}</span>
               {hasApiKey && (
                 <>
-                  <span className="text-[10px] text-[#e6c280] bg-[#e6c280]/10 px-1.5 py-0.2 rounded border border-[#e6c280]/30 font-semibold hidden md:inline">
-                    {model || 'gemini-2.5-flash'}
-                  </span>
-                  <span className="text-[10px] text-emerald-400/80 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20">
+                  <span className="hidden lg:inline text-[10px] text-emerald-400/80 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20">
                     {quota.remaining.toLocaleString('tr-TR')} Hak
                   </span>
                 </>
               )}
             </div>
             <span
-              className={`w-2 h-2 rounded-full ${
+              className={`w-2 h-2 shrink-0 rounded-full ${
                 hasApiKey ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" : "bg-amber-400"
               }`}
             />
           </button>
 
           {/* User Account / Logout */}
-          <div className="flex items-center space-x-2 pl-2 border-l border-white/10">
+          <div className="flex shrink-0 items-center space-x-2 pl-2 border-l border-white/10">
             {user ? (
               <div className="flex items-center space-x-2">
                 {user.picture ? (
@@ -257,10 +249,10 @@ export function Header({
                 type="button"
                 onClick={onLogout}
                 title="Giriş Ekranına Dön"
-                className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded text-[11px] font-mono text-neutral-400 hover:text-white bg-white/5 border border-white/5 hover:border-white/15 transition-all"
+                className="flex whitespace-nowrap items-center space-x-1.5 px-2.5 py-1.5 rounded text-[11px] font-mono text-neutral-400 hover:text-white bg-white/5 border border-white/5 hover:border-white/15 transition-all"
               >
                 <LogOut className="w-3 h-3" />
-                <span>Giriş Yap</span>
+                <span className="hidden xl:inline">Giriş Yap</span>
               </button>
             )}
           </div>

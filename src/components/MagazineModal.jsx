@@ -1531,14 +1531,14 @@ export function MagazineModal({
       <div className="magazine-screen-only flex flex-col h-full w-full overflow-hidden">
         
         {/* 90's Editorial Top Control Bar */}
-        <div className="h-14 px-3 sm:px-6 bg-[#101115] border-b border-white/10 flex items-center justify-between shrink-0 select-none z-20">
+        <div className="h-14 px-3 sm:px-6 bg-[#101115] border-b border-white/10 flex items-center justify-between gap-2 shrink-0 select-none z-20">
           
           {/* Brand & Issue Info */}
-          <div className="flex items-center space-x-3 sm:space-x-4">
-            <div className="w-9 h-9 rounded-lg bg-[#e6c280]/20 border border-[#e6c280]/40 flex items-center justify-center text-[#e6c280]">
+          <div className="flex items-center space-x-3 sm:space-x-4 shrink-0">
+            <div className="hidden sm:flex w-9 h-9 shrink-0 rounded-lg bg-[#e6c280]/20 border border-[#e6c280]/40 items-center justify-center text-[#e6c280]">
               <BookOpen className="w-5 h-5" />
             </div>
-            <div>
+            <div className="hidden xl:block whitespace-nowrap">
               <div className="flex items-center space-x-2">
                 <span className="font-serif tracking-[0.2em] text-sm sm:text-base font-black text-white">
                   {brandName}
@@ -1554,7 +1554,7 @@ export function MagazineModal({
           </div>
 
           {/* Center Page Navigator */}
-          <div className="flex items-center space-x-2 font-mono text-xs">
+          <div className="flex items-center space-x-1.5 sm:space-x-2 font-mono text-xs shrink-0">
             <button
               type="button"
               disabled={currentPage === 0}
@@ -1565,17 +1565,17 @@ export function MagazineModal({
               <ChevronLeft className="w-4 h-4" />
             </button>
 
-            <div className="px-3 py-1 rounded bg-black/50 border border-white/10 text-neutral-300 text-[11px] min-w-[170px] text-center">
+            <div className="px-3 py-1 rounded bg-black/50 border border-white/10 text-neutral-300 text-[11px] min-w-[110px] sm:min-w-[170px] text-center whitespace-nowrap">
               {currentPage === 0 ? (
-                <span className="text-[#e6c280] font-bold">ÖN KAPAK (SAYFA 01)</span>
+                <span className="text-[#e6c280] font-bold">ÖN KAPAK<span className="hidden sm:inline"> (SAYFA 01)</span></span>
               ) : currentPage === 1 ? (
-                <span className="text-[#e6c280] font-bold">EDİTÖRÜN NOTU (SAYFA 02)</span>
+                <span className="text-[#e6c280] font-bold">EDİTÖRÜN NOTU<span className="hidden sm:inline"> (SAYFA 02)</span></span>
               ) : currentPage === 2 ? (
-                <span className="text-[#e6c280] font-bold">İÇİNDEKİLER (SAYFA 03)</span>
+                <span className="text-[#e6c280] font-bold">İÇİNDEKİLER<span className="hidden sm:inline"> (SAYFA 03)</span></span>
               ) : (
                 <span>
                   SAYFA <strong className="text-white">{String(currentPage + 1).padStart(2, '0')}</strong> / {String(totalPages).padStart(2, '0')}
-                  <span className="text-neutral-400 text-[10px] ml-1.5 font-sans">
+                  <span className="hidden sm:inline text-neutral-400 text-[10px] ml-1.5 font-sans">
                     ({activePageData?.type === 'photo' ? `Fotoğraf #${(activePageData?.photoIndex || 0) + 1}` : 'Metin'})
                   </span>
                 </span>
@@ -1594,7 +1594,7 @@ export function MagazineModal({
         </div>
 
         {/* Right Actions: Theme, Filter, Print, Close */}
-        <div className="flex items-center space-x-2 sm:space-x-3">
+        <div className="flex items-center space-x-1.5 sm:space-x-3 shrink-0">
           
           {/* Published Only Filter */}
           <button
@@ -1603,7 +1603,7 @@ export function MagazineModal({
               setOnlyPublished(!onlyPublished);
               setCurrentPage(0);
             }}
-            className={`hidden md:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-mono transition-all cursor-pointer ${
+            className={`hidden sm:flex shrink-0 items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-mono transition-all cursor-pointer ${
               onlyPublished
                 ? 'border-pink-500/50 bg-pink-950/30 text-pink-300'
                 : 'border-white/10 text-neutral-400 hover:text-white'
@@ -1611,7 +1611,7 @@ export function MagazineModal({
             title="Sadece Instagram'da yayınlanmış gönderileri göster"
           >
             <InstagramIcon className="w-3.5 h-3.5" />
-            <span>{onlyPublished ? 'Sadece Yayındakiler' : 'Tüm Gönderiler'}</span>
+            <span className="hidden xl:inline whitespace-nowrap">{onlyPublished ? 'Sadece Yayındakiler' : 'Tüm Gönderiler'}</span>
           </button>
 
           {/* Theme Toggle: 90's Paper vs 90's Noir */}
@@ -1638,7 +1638,7 @@ export function MagazineModal({
             ) : (
               <Download className="w-3.5 h-3.5" />
             )}
-            <span>{isGeneratingPdf ? 'İndiriliyor...' : 'PDF İndir'}</span>
+            <span className="hidden md:inline whitespace-nowrap">{isGeneratingPdf ? 'İndiriliyor...' : 'PDF İndir'}</span>
           </button>
 
           {/* Browser Print / Physical Paper */}
@@ -1649,7 +1649,7 @@ export function MagazineModal({
             title="Tarayıcı Yazdırma Penceresini Aç"
           >
             <Printer className="w-3.5 h-3.5 text-[#e6c280]" />
-            <span>Yazdır</span>
+            <span className="hidden xl:inline">Yazdır</span>
           </button>
 
           {/* Close */}

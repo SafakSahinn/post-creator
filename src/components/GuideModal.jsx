@@ -57,11 +57,11 @@ export function GuideModal({ isOpen, onClose, onOpenSettings, onOpenProjects, on
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-white/10 bg-black/40 px-6 pt-2 overflow-x-auto space-x-1 scrollbar-none">
+        <div className="flex shrink-0 border-b border-white/10 bg-black/40 px-6 pt-2 overflow-x-auto space-x-1 scrollbar-none">
           <button
             type="button"
             onClick={() => setActiveTab('newProject')}
-            className={`pb-3 px-3.5 font-mono text-xs font-semibold flex items-center space-x-2 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+            className={`pb-3 px-3.5 shrink-0 font-mono text-xs font-semibold flex items-center space-x-2 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'newProject'
                 ? 'border-[#e6c280] text-[#e6c280]'
                 : 'border-transparent text-neutral-400 hover:text-white'
@@ -74,7 +74,7 @@ export function GuideModal({ isOpen, onClose, onOpenSettings, onOpenProjects, on
           <button
             type="button"
             onClick={() => setActiveTab('instagram')}
-            className={`pb-3 px-3.5 font-mono text-xs font-semibold flex items-center space-x-2 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+            className={`pb-3 px-3.5 shrink-0 font-mono text-xs font-semibold flex items-center space-x-2 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'instagram'
                 ? 'border-[#e6c280] text-[#e6c280]'
                 : 'border-transparent text-neutral-400 hover:text-white'
@@ -87,7 +87,7 @@ export function GuideModal({ isOpen, onClose, onOpenSettings, onOpenProjects, on
           <button
             type="button"
             onClick={() => setActiveTab('general')}
-            className={`pb-3 px-3.5 font-mono text-xs font-semibold flex items-center space-x-2 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+            className={`pb-3 px-3.5 shrink-0 font-mono text-xs font-semibold flex items-center space-x-2 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'general'
                 ? 'border-[#e6c280] text-[#e6c280]'
                 : 'border-transparent text-neutral-400 hover:text-white'
