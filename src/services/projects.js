@@ -544,15 +544,24 @@ const STORAGE_PROJECTS_KEY = 'pc_user_projects';
 const ACTIVE_PROJECT_KEY = 'pc_active_project_id';
 
 /**
+ * Kullanıcının kayıtlı (özel + düzenlenmiş yerleşik) projelerini okur.
+ * Bozuk JSON, dizi olmayan değer veya id'siz kayıtlar yok sayılır.
+ */
+function readCustomProjects() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(STORAGE_PROJECTS_KEY) || '[]');
+    return Array.isArray(parsed) ? parsed.filter((p) => p && typeof p === 'object' && p.id) : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Kayıtlı tüm projeleri getirir (Varsayılanlar + Kullanıcının eklediği özel projeler)
  */
 export function getAllProjects() {
   try {
-    const raw = localStorage.getItem(STORAGE_PROJECTS_KEY);
-    if (!raw) {
-      return BUILTIN_PROJECTS;
-    }
-    const userCustomProjects = JSON.parse(raw);
+    const userCustomProjects = readCustomProjects();
     // Builtin projeler ile custom projeleri birleştir
     const combined = [...BUILTIN_PROJECTS];
     userCustomProjects.forEach((custom) => {
@@ -578,7 +587,12 @@ export function getAllProjects() {
  */
 export function getActiveProject() {
   const all = getAllProjects();
-  const activeId = localStorage.getItem(ACTIVE_PROJECT_KEY) || 'lore-magazine';
+  let activeId = 'lore-magazine';
+  try {
+    activeId = localStorage.getItem(ACTIVE_PROJECT_KEY) || 'lore-magazine';
+  } catch {
+    // localStorage erişilemiyor: varsayılan proje
+  }
   const found = all.find((p) => p.id === activeId);
   return found || all[0] || BUILTIN_PROJECTS[0];
 }
@@ -597,13 +611,7 @@ export function setActiveProjectId(id) {
  * Yeni proje kaydeder veya var olanı günceller
  */
 export function saveProject(project) {
-  const raw = localStorage.getItem(STORAGE_PROJECTS_KEY);
-  let customProjects = [];
-  try {
-    customProjects = raw ? JSON.parse(raw) : [];
-  } catch {
-    customProjects = [];
-  }
+  const customProjects = readCustomProjects();
 
   const existingIdx = customProjects.findIndex((p) => p.id === project.id);
   if (existingIdx >= 0) {
@@ -628,10 +636,8 @@ export function deleteProject(id) {
     throw new Error('Yerleşik sistem projeleri silinemez.');
   }
 
-  const raw = localStorage.getItem(STORAGE_PROJECTS_KEY);
-  if (!raw) return;
   try {
-    const list = JSON.parse(raw).filter((p) => p.id !== id);
+    const list = readCustomProjects().filter((p) => p.id !== id);
     localStorage.setItem(STORAGE_PROJECTS_KEY, JSON.stringify(list));
     // Eğer silinen proje aktifse varsayılana dön
     if (localStorage.getItem(ACTIVE_PROJECT_KEY) === id) {

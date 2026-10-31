@@ -26,6 +26,9 @@ export function ProjectModal({
 }) {
   const [view, setView] = useState('list'); // 'list' | 'create' | 'edit'
   const [editingProject, setEditingProject] = useState(null);
+  // Formun başladığı proje (düzenlenen ya da kopyalanan şablon); ad eski haline
+  // dönerse orijinal id geri verilir ki hazır konu önerileri (curatedTopics) kaybolmasın
+  const [sourceProject, setSourceProject] = useState(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -58,8 +61,10 @@ export function ProjectModal({
 
   const handleStartCreate = (template = null) => {
     if (template) {
+      // Derin kopya: form düzenlemeleri şablonun (yerleşik proje dahil) kendi
+      // kategori/filtre nesnelerini yerinde değiştirmesin
       setFormData({
-        ...template,
+        ...JSON.parse(JSON.stringify(template)),
         id: 'proj_' + Date.now(),
         name: `${template.name} (Kopya)`,
         shortCode: template.shortCode + '2',
@@ -94,11 +99,13 @@ export function ProjectModal({
       });
     }
     setEditingProject(null);
+    setSourceProject(template);
     setView('create');
   };
 
   const handleStartEdit = (proj) => {
     setEditingProject(proj);
+    setSourceProject(proj);
     setFormData({
       ...JSON.parse(JSON.stringify(proj)),
       watermark: proj.watermark || proj.shortCode || ''
@@ -112,40 +119,75 @@ export function ProjectModal({
       alert('Lütfen proje adını girin.');
       return;
     }
-    const cleanShort = formData.shortCode?.trim().toUpperCase() || formData.name.slice(0, 4).toUpperCase();
-    const cleanWatermark = formData.watermark?.trim().toUpperCase() || cleanShort;
+    const name = formData.name.trim();
+    // Kategori/filtre id'si adından türetiliyor; boş veya tekrarlanan ad seçimi bozar
+    // (iki kart birden seçili görünür, React anahtarı çakışır)
+    const checkNames = (list, label) => {
+      const names = list.map((x) => (x.id || '').trim());
+      if (names.some((n) => !n)) return `${label} adları boş bırakılamaz.`;
+      const lower = names.map((n) => n.toLocaleLowerCase('tr-TR'));
+      if (new Set(lower).size !== lower.length) return `Her ${label.toLocaleLowerCase('tr-TR')} adı farklı olmalı.`;
+      return null;
+    };
+    const nameError = checkNames(formData.categories || [], 'Kategori')
+      || checkNames(formData.filterOptions || [], 'Filtre seçeneği');
+    if (nameError) {
+      alert(nameError);
+      return;
+    }
+    const cleanShort = formData.shortCode?.trim().toLocaleUpperCase('tr-TR') || name.slice(0, 4).toLocaleUpperCase('tr-TR');
+    const cleanWatermark = formData.watermark?.trim().toLocaleUpperCase('tr-TR') || cleanShort;
     const finalProj = {
       ...formData,
       id: editingProject?.id || formData.id || 'proj_' + Date.now(),
-      name: formData.name.trim(),
+      name,
+      categories: (formData.categories || []).map((c) => ({ ...c, id: c.id.trim(), name: (c.name || c.id).trim() })),
+      filterOptions: (formData.filterOptions || []).map((o) => ({ ...o, id: o.id.trim(), label: (o.label || o.id).trim() })),
       shortCode: cleanShort,
       watermark: cleanWatermark,
-      buttonText: formData.buttonText?.trim() || `${formData.name} İçeriğini Üret`
+      buttonText: formData.buttonText?.trim() || `${name} İçeriğini Üret`
     };
 
+    // onSaveProject kaydı ve proje geçişini kendisi yapar (ayrıca onSelectProject
+    // çağırmak eski proje listesinden düzenleme öncesi sürümü geri yüklüyordu)
     onSaveProject(finalProj);
-    onSelectProject(finalProj.id);
     setView('list');
   };
 
+  const handleClose = () => {
+    setView('list');
+    setEditingProject(null);
+    setSourceProject(null);
+    onClose();
+  };
+
+  // Nesneleri yerinde değiştirmeden güncelle (kopyalanan şablonla paylaşım riski)
   const handleCategoryChange = (index, field, value) => {
-    const updated = [...formData.categories];
-    if (field === 'title' || field === 'description') {
-      updated[index].tooltip = {
-        ...updated[index].tooltip,
-        [field]: value
-      };
-    } else {
-      updated[index][field] = value;
-      if (field === 'name') updated[index].id = value;
-    }
+    const updated = formData.categories.map((cat, i) => {
+      if (i !== index) return cat;
+      if (field === 'title' || field === 'description') {
+        return { ...cat, tooltip: { ...cat.tooltip, [field]: value } };
+      }
+      const next = { ...cat, [field]: value };
+      if (field === 'name') {
+        const orig = sourceProject?.categories?.[index];
+        next.id = orig && (orig.name || orig.id) === value ? orig.id : value;
+      }
+      return next;
+    });
     setFormData({ ...formData, categories: updated });
   };
 
   const handleFilterOptionChange = (index, field, value) => {
-    const updated = [...formData.filterOptions];
-    updated[index][field] = value;
-    if (field === 'label') updated[index].id = value;
+    const updated = formData.filterOptions.map((opt, i) => {
+      if (i !== index) return opt;
+      const next = { ...opt, [field]: value };
+      if (field === 'label') {
+        const orig = sourceProject?.filterOptions?.[index];
+        next.id = orig && (orig.label || orig.id) === value ? orig.id : value;
+      }
+      return next;
+    });
     setFormData({ ...formData, filterOptions: updated });
   };
 
@@ -171,7 +213,7 @@ export function ProjectModal({
             </div>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 transition-colors"
           >
             <X className="w-5 h-5" />
@@ -297,7 +339,7 @@ export function ProjectModal({
                         type="button"
                         onClick={() => {
                           onSelectProject(proj.id);
-                          onClose();
+                          handleClose();
                         }}
                         className={`w-full py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all ${
                           isActive

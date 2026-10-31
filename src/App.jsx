@@ -599,14 +599,28 @@ export function App() {
           saveProject(proj);
           const updated = getAllProjects();
           setProjects(updated);
-          handleSwitchProject(proj);
+          const fresh = updated.find((p) => p.id === proj.id) || proj;
+          if (fresh.id === activeProject?.id) {
+            // Aktif proje düzenlendi: çalışma alanını (gönderi, görseller) silme,
+            // sadece artık var olmayan kategori/filtre seçimini düzelt
+            setActiveProject(fresh);
+            const catIds = (fresh.categories || []).map((c) => c.id || c.name);
+            if (catIds.length && !catIds.includes(category)) setCategory(catIds[0]);
+            const optIds = (fresh.filterOptions || []).map((o) => o.id || o.label);
+            if (optIds.length && !optIds.includes(decade)) setDecade(optIds[0]);
+          } else {
+            handleSwitchProject(fresh);
+          }
         }}
         onDeleteProject={(id) => {
           deleteProject(id);
           const updated = getAllProjects();
           setProjects(updated);
-          const newActive = getActiveProject();
-          handleSwitchProject(newActive);
+          // Sadece aktif proje silindiyse geçiş yap; başka bir proje silinince
+          // çalışma alanı (gönderi, görseller) korunur
+          if (id === activeProject?.id) {
+            handleSwitchProject(getActiveProject());
+          }
         }}
       />
 
