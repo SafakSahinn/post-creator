@@ -303,8 +303,8 @@ export function MagazineModal({
         }`}
       >
         
-        {/* The 90's Physical Magazine Spread Container */}
-        <div className={`relative w-full max-w-6xl my-1 sm:my-3 shadow-2xl rounded-sm transition-all duration-300 overflow-hidden ${
+        {/* The 90's Physical Magazine Spread Container (Tüm Sayfalar İçin Sabit Boyut) */}
+        <div className={`relative w-full max-w-6xl my-1 sm:my-3 shadow-2xl rounded-sm transition-all duration-300 overflow-hidden min-h-[760px] sm:min-h-[820px] lg:min-h-[860px] flex flex-col ${
           isPaper
             ? 'bg-[#f6f3eb] text-[#1c1c1f] shadow-[0_20px_60px_rgba(0,0,0,0.6)] border border-[#d8d4c7]'
             : 'bg-[#121318] text-[#e8e4dc] shadow-[0_20px_60px_rgba(0,0,0,0.85)] border border-white/10'
@@ -314,7 +314,7 @@ export function MagazineModal({
           {/* PAGE 0: 1990'S RETRO COVER PAGE                         */}
           {/* ======================================================== */}
           {currentPage === 0 && (
-            <div className="relative p-4 sm:p-8 lg:p-10 flex flex-col justify-between border-4 border-black/80 m-1.5 sm:m-3 bg-gradient-to-b from-transparent to-black/5">
+            <div className="relative flex-1 min-h-[760px] sm:min-h-[820px] lg:min-h-[860px] p-4 sm:p-8 lg:p-10 flex flex-col justify-between border-4 border-black/80 m-1.5 sm:m-3 bg-gradient-to-b from-transparent to-black/5">
               
               {/* Top Banner & Barcode Strip */}
               <div className="border-b-2 border-black/80 pb-3 flex items-center justify-between font-mono text-[11px] uppercase tracking-widest">
@@ -387,23 +387,25 @@ export function MagazineModal({
 
                 {/* Center / Right: Clean Cover Photo (NO Text Overlay!) */}
                 <div className="lg:col-span-8 relative">
-                  <div className="relative border-4 border-black/90 p-2 bg-white shadow-xl">
-                    {displayPosts[0]?.thumbnails?.[0] || displayPosts[0]?.savedGallery?.[0]?.dataUrl ? (
-                      <img
-                        src={displayPosts[0].thumbnails?.[0] || displayPosts[0].savedGallery?.[0]?.dataUrl}
-                        alt="Dergi Kapağı"
-                        className="w-full h-[300px] sm:h-[380px] lg:h-[440px] max-h-[50vh] object-cover filter contrast-[1.05]"
-                      />
-                    ) : (
-                      <div className="w-full h-[300px] sm:h-[380px] lg:h-[440px] bg-neutral-800 flex flex-col items-center justify-center p-6 text-center text-neutral-400">
-                        <BookOpen className="w-12 h-12 text-[#e6c280] mb-2" />
-                        <span className="font-serif text-lg font-bold text-white">Fotoğraf Arşivi</span>
-                        <span className="text-xs font-mono">Kapak fotoğrafı oluşturulan ilk gönderiden otomatik seçilir.</span>
-                      </div>
-                    )}
+                  <div className="relative border-4 border-black/90 p-2.5 bg-white shadow-xl flex flex-col">
+                    <div className="w-full h-[320px] sm:h-[380px] bg-neutral-900 overflow-hidden relative">
+                      {displayPosts[0]?.thumbnails?.[0] || displayPosts[0]?.savedGallery?.[0]?.dataUrl ? (
+                        <img
+                          src={displayPosts[0].thumbnails?.[0] || displayPosts[0].savedGallery?.[0]?.dataUrl}
+                          alt="Dergi Kapağı"
+                          className="w-full h-full object-cover filter contrast-[1.05]"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-neutral-800 flex flex-col items-center justify-center p-6 text-center text-neutral-400">
+                          <BookOpen className="w-12 h-12 text-[#e6c280] mb-2" />
+                          <span className="font-serif text-lg font-bold text-white">Fotoğraf Arşivi</span>
+                          <span className="text-xs font-mono">Kapak fotoğrafı oluşturulan ilk gönderiden otomatik seçilir.</span>
+                        </div>
+                      )}
+                    </div>
 
-                    {/* Photo Plate Caption in 90's style */}
-                    <div className="mt-2 pt-2 border-t border-black/20 flex items-center justify-between font-mono text-[10px] text-neutral-600">
+                    {/* Photo Plate Caption in 90's style (fixed height) */}
+                    <div className="mt-2.5 pt-2 border-t border-black/20 flex items-center justify-between font-mono text-[10px] text-neutral-600 h-[22px] shrink-0">
                       <span>FOTOĞRAF NO: #001 · 35MM KODAK TRI-X 400</span>
                       <span>EDİTORYAL DERGİ FORMATI</span>
                     </div>
@@ -455,7 +457,7 @@ export function MagazineModal({
           {/* PAGE 1: 1990'S TABLE OF CONTENTS / FİHRİST              */}
           {/* ======================================================== */}
           {currentPage === 1 && (
-            <div className="p-4 sm:p-8 lg:p-10 flex flex-col justify-between m-1.5 sm:m-3 border-2 border-black/80">
+            <div className="relative flex-1 min-h-[760px] sm:min-h-[820px] lg:min-h-[860px] p-4 sm:p-8 lg:p-10 flex flex-col justify-between m-1.5 sm:m-3 border-4 border-black/80">
               
               {/* Header */}
               <div className="border-b-4 border-black pb-4 flex items-end justify-between">
@@ -539,7 +541,7 @@ export function MagazineModal({
           {/* PAGES 2..N: 1990'S EDITORIAL TWO-PAGE SPREAD             */}
           {/* ======================================================== */}
           {currentPage >= 2 && currentPost && (
-            <div className="p-4 sm:p-6 lg:p-8 flex flex-col justify-between m-1 sm:m-2">
+            <div className="relative flex-1 min-h-[760px] sm:min-h-[820px] lg:min-h-[860px] p-4 sm:p-8 lg:p-10 flex flex-col justify-between m-1.5 sm:m-3 border-4 border-black/80">
               
               {/* Running Header / Folio Line */}
               <div className="border-b-2 border-black/80 pb-2.5 flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-neutral-600">
@@ -718,39 +720,40 @@ export function MagazineModal({
                     <span>TEMİZ 35MM ARŞİV GÖRSELİ (YAZISIZ)</span>
                   </div>
 
-                  {/* Main Clean Photography Hero Plate */}
+                  {/* Main Clean Photography Hero Plate (Tamamen Sabit Boyut - Asla Boyut Değişmez) */}
                   {cleanPhotos.length > 0 ? (
-                    <div className="relative border-4 border-black/90 p-2 bg-white shadow-xl">
-                      <img
-                        src={cleanPhotos[selectedPhotoIndex]?.url || cleanPhotos[0]?.url}
-                        alt="Temiz Dergi Fotoğrafı"
-                        className="w-full h-[280px] sm:h-[350px] lg:h-[400px] max-h-[48vh] object-cover filter contrast-[1.05]"
-                      />
+                    <div className="relative border-4 border-black/90 p-2.5 bg-white shadow-xl flex flex-col shrink-0">
                       
-                      {/* Photo Caption Plate Underneath */}
-                      <div className="mt-3 pt-2.5 border-t border-black/20 space-y-1 font-mono text-neutral-800">
+                      {/* Sabit Yükseklik ve Oranlı Görsel Alanı */}
+                      <div className="w-full h-[320px] sm:h-[380px] bg-neutral-900 overflow-hidden relative shrink-0">
+                        <img
+                          src={cleanPhotos[selectedPhotoIndex]?.url || cleanPhotos[0]?.url}
+                          alt="Temiz Dergi Fotoğrafı"
+                          className="w-full h-full object-cover filter contrast-[1.05]"
+                        />
+                      </div>
+                      
+                      {/* Sabit Yükseklikli Açıklama Kutusu (Görsel Değişse de Boyut Zıplamaz) */}
+                      <div className="mt-2.5 pt-2 border-t border-black/20 flex flex-col justify-between h-[82px] font-mono text-neutral-800 shrink-0">
                         <div className="flex items-center justify-between text-[11px] font-bold">
-                          <span className="text-red-600">
+                          <span className="text-red-600 truncate mr-2">
                             ŞEKİL 1.{selectedPhotoIndex + 1} — {cleanPhotos[selectedPhotoIndex]?.title || 'EDİTORYAL KADRAJ'}
                           </span>
-                          <span className="text-[10px] text-neutral-500">
+                          <span className="text-[10px] text-neutral-500 shrink-0">
                             KADRAJ #{selectedPhotoIndex + 1} / {cleanPhotos.length}
                           </span>
                         </div>
-                        {cleanPhotos[selectedPhotoIndex]?.quote && (
-                          <p className="font-serif italic text-xs leading-snug text-neutral-700">
-                            "{cleanPhotos[selectedPhotoIndex]?.quote}"
-                          </p>
-                        )}
-                        {cleanPhotos[selectedPhotoIndex]?.idea && (
-                          <p className="text-[10px] text-neutral-500 leading-tight">
-                            <strong>Küratör Notu:</strong> {cleanPhotos[selectedPhotoIndex]?.idea}
-                          </p>
-                        )}
+                        <p className="font-serif italic text-xs leading-tight text-neutral-700 line-clamp-2 my-0.5">
+                          {cleanPhotos[selectedPhotoIndex]?.quote ? `"${cleanPhotos[selectedPhotoIndex].quote}"` : '—'}
+                        </p>
+                        <p className="text-[10px] text-neutral-500 leading-tight truncate">
+                          <strong>Küratör Notu:</strong> {cleanPhotos[selectedPhotoIndex]?.idea || '35mm editoryal arşiv negatif baskısı.'}
+                        </p>
                       </div>
+
                     </div>
                   ) : (
-                    <div className="h-[380px] rounded border-2 border-dashed border-neutral-400 flex flex-col items-center justify-center p-6 text-center text-neutral-500 font-mono text-xs">
+                    <div className="h-[465px] rounded border-2 border-dashed border-neutral-400 flex flex-col items-center justify-center p-6 text-center text-neutral-500 font-mono text-xs shrink-0">
                       <BookOpen className="w-10 h-10 mb-2 opacity-50" />
                       <span>Bu gönderiye ait yüklü görsel bulunamadı.</span>
                     </div>
@@ -775,12 +778,14 @@ export function MagazineModal({
                                 : 'border-black/30 opacity-70 hover:opacity-100'
                             }`}
                           >
-                            <img
-                              src={photo.url}
-                              alt=""
-                              className="w-full h-16 sm:h-20 object-cover"
-                            />
-                            <span className="absolute bottom-1 right-1 bg-black/80 text-white font-mono text-[9px] px-1 font-bold">
+                            <div className="w-full h-16 sm:h-20 bg-neutral-900 overflow-hidden">
+                              <img
+                                src={photo.url}
+                                alt=""
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <span className="absolute bottom-1.5 right-1.5 bg-black/85 text-white font-mono text-[9px] px-1 font-bold">
                               #{pIdx + 1}
                             </span>
                           </button>
