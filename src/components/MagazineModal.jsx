@@ -255,59 +255,113 @@ export function MagazineModal({
   const issueDate = `${currentMonthYear} // SAYI #01`;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-black/90 backdrop-blur-md overflow-hidden animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex flex-col bg-black/90 backdrop-blur-md overflow-hidden animate-fadeIn magazine-modal-portal">
       
-      {/* 90's Editorial Top Control Bar */}
-      <div className="h-14 px-3 sm:px-6 bg-[#101115] border-b border-white/10 flex items-center justify-between shrink-0 select-none z-20">
+      {/* 90's Publication Print & PDF Stylesheet (A4 Multi-Page Standard) */}
+      <style>{`
+        @media print {
+          @page {
+            size: A4 portrait;
+            margin: 0;
+          }
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            color: #111111 !important;
+            overflow: visible !important;
+          }
+          .magazine-screen-only {
+            display: none !important;
+          }
+          .magazine-print-only {
+            display: block !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 210mm !important;
+            background: white !important;
+            z-index: 999999 !important;
+          }
+          .magazine-page-a4 {
+            width: 210mm !important;
+            height: 297mm !important;
+            min-height: 297mm !important;
+            max-height: 297mm !important;
+            page-break-after: always !important;
+            break-after: page !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            box-sizing: border-box !important;
+            overflow: hidden !important;
+            position: relative !important;
+            background: white !important;
+            color: #111111 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+        }
+        @media screen {
+          .magazine-print-only {
+            display: none !important;
+          }
+        }
+      `}</style>
+
+      {/* Screen Interface Wrapper */}
+      <div className="magazine-screen-only flex flex-col h-full w-full overflow-hidden">
         
-        {/* Brand & Issue Info */}
-        <div className="flex items-center space-x-3 sm:space-x-4">
-          <div className="w-9 h-9 rounded-lg bg-[#e6c280]/20 border border-[#e6c280]/40 flex items-center justify-center text-[#e6c280]">
-            <BookOpen className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <span className="font-serif tracking-[0.2em] text-sm sm:text-base font-black text-white">
-                {brandName}
-              </span>
-              <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-red-600/20 text-red-400 border border-red-500/30 uppercase font-bold tracking-widest">
-                90's Magazine
-              </span>
+        {/* 90's Editorial Top Control Bar */}
+        <div className="h-14 px-3 sm:px-6 bg-[#101115] border-b border-white/10 flex items-center justify-between shrink-0 select-none z-20">
+          
+          {/* Brand & Issue Info */}
+          <div className="flex items-center space-x-3 sm:space-x-4">
+            <div className="w-9 h-9 rounded-lg bg-[#e6c280]/20 border border-[#e6c280]/40 flex items-center justify-center text-[#e6c280]">
+              <BookOpen className="w-5 h-5" />
             </div>
-            <p className="text-[10px] font-mono text-neutral-400">
-              {issueDate} · EDİTORYAL BASKI & FOTOĞRAF ARŞİVİ
-            </p>
-          </div>
-        </div>
-
-        {/* Center Page Navigator */}
-        <div className="flex items-center space-x-2 font-mono text-xs">
-          <button
-            type="button"
-            disabled={currentPage === 0}
-            onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
-            className="p-1.5 rounded-lg border border-white/10 text-neutral-300 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-all cursor-pointer"
-            title="Önceki Sayfa (Sol Ok)"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-
-          <div className="px-3 py-1 rounded bg-black/50 border border-white/10 text-neutral-300 text-[11px] min-w-[130px] text-center">
-            {currentPage === 0 ? (
-              <span className="text-[#e6c280] font-bold">KAPAK</span>
-            ) : currentPage === 1 ? (
-              <span className="text-[#e6c280] font-bold">İÇİNDEKİLER</span>
-            ) : (
-              <span>
-                SAYFA <strong className="text-white">{currentPage * 2} - {currentPage * 2 + 1}</strong> / {totalPages * 2}
-              </span>
-            )}
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="font-serif tracking-[0.2em] text-sm sm:text-base font-black text-white">
+                  {brandName}
+                </span>
+                <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-red-600/20 text-red-400 border border-red-500/30 uppercase font-bold tracking-widest">
+                  90's Magazine
+                </span>
+              </div>
+              <p className="text-[10px] font-mono text-neutral-400">
+                {issueDate} · EDİTORYAL BASKI & FOTOĞRAF ARŞİVİ
+              </p>
+            </div>
           </div>
 
-          <button
-            type="button"
-            disabled={currentPage >= totalPages - 1}
-            onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
+          {/* Center Page Navigator */}
+          <div className="flex items-center space-x-2 font-mono text-xs">
+            <button
+              type="button"
+              disabled={currentPage === 0}
+              onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+              className="p-1.5 rounded-lg border border-white/10 text-neutral-300 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-all cursor-pointer"
+              title="Önceki Sayfa (Sol Ok)"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            <div className="px-3 py-1 rounded bg-black/50 border border-white/10 text-neutral-300 text-[11px] min-w-[170px] text-center">
+              {currentPage === 0 ? (
+                <span className="text-[#e6c280] font-bold">ÖN KAPAK (SAYFA 01)</span>
+              ) : currentPage === 1 ? (
+                <span className="text-[#e6c280] font-bold">KÜNYE & İÇİNDEKİLER (02 - 03)</span>
+              ) : (
+                <span>
+                  SAYFA <strong className="text-white">{currentPage * 2} - {currentPage * 2 + 1}</strong> / {totalPages * 2}
+                </span>
+              )}
+            </div>
+
+            <button
+              type="button"
+              disabled={currentPage >= totalPages - 1}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
             className="p-1.5 rounded-lg border border-white/10 text-neutral-300 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-all cursor-pointer"
             title="Sonraki Sayfa (Sağ Ok)"
           >
@@ -379,8 +433,12 @@ export function MagazineModal({
         }`}
       >
         
-        {/* The 90's Physical Magazine Spread Container (Tüm Sayfalar İçin Sabit Boyut) */}
-        <div className={`relative w-full max-w-6xl my-1 sm:my-3 shadow-2xl rounded-sm transition-all duration-300 overflow-hidden min-h-[760px] sm:min-h-[820px] lg:min-h-[860px] flex flex-col ${
+        {/* The 90's Physical Magazine Spread Container (Kapakta Tek A4, İç Sayfalarda Çift Sayfa Yayılımı) */}
+        <div className={`relative w-full shadow-2xl rounded-sm transition-all duration-300 overflow-hidden min-h-[760px] sm:min-h-[820px] lg:min-h-[860px] flex flex-col ${
+          currentPage === 0
+            ? 'max-w-[540px] sm:max-w-[580px] my-1 sm:my-3'
+            : 'max-w-6xl my-1 sm:my-3'
+        } ${
           isPaper
             ? 'bg-[#f6f3eb] text-[#1c1c1f] shadow-[0_20px_60px_rgba(0,0,0,0.6)] border border-[#d8d4c7]'
             : 'bg-[#121318] text-[#e8e4dc] shadow-[0_20px_60px_rgba(0,0,0,0.85)] border border-white/10'
@@ -566,75 +624,68 @@ export function MagazineModal({
                 </div>
 
                 {/* Big Iconic 90's Masthead (Ray Gun / The Face Aesthetic) */}
-                <div className="my-3 text-center select-none pointer-events-auto">
-                  <h1 className="font-serif text-6xl sm:text-8xl lg:text-9xl font-black tracking-[0.25em] leading-none uppercase drop-shadow-[0_4px_20px_rgba(0,0,0,0.95)] text-white">
+                <div className="my-2 sm:my-3 text-center select-none pointer-events-auto">
+                  <h1 className="font-serif text-5xl sm:text-6xl lg:text-7xl font-black tracking-[0.2em] leading-none uppercase drop-shadow-[0_4px_20px_rgba(0,0,0,0.95)] text-white">
                     {brandName}
                   </h1>
-                  <div className="flex items-center justify-center space-x-4 mt-2.5">
-                    <span className="h-[2px] w-16 bg-red-500/80" />
-                    <p className="font-mono text-xs sm:text-sm tracking-[0.35em] uppercase font-bold text-red-400 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                  <div className="flex items-center justify-center space-x-3 mt-2">
+                    <span className="h-[2px] w-10 sm:w-14 bg-red-500/80" />
+                    <p className="font-mono text-[9px] sm:text-xs tracking-[0.25em] uppercase font-bold text-red-400 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
                       KÜLTÜR, SİNEMA, MODA VE ANALOG ESTETİK DERGİSİ
                     </p>
-                    <span className="h-[2px] w-16 bg-red-500/80" />
+                    <span className="h-[2px] w-10 sm:w-14 bg-red-500/80" />
                   </div>
                 </div>
 
-                {/* Lower Section: Floating Headlines & Dossier (Tamamen Sayfanın Altına Kaydırıldı) */}
-                <div className="mt-auto mb-1 grid grid-cols-1 md:grid-cols-12 gap-3.5 items-end pointer-events-auto">
+                {/* Lower Section: Floating Headlines & Dossier (Tek A4 Kapağa Göre Dikey Hizalanmış) */}
+                <div className="mt-auto mb-1 flex flex-col space-y-2 pointer-events-auto relative">
                   
-                  {/* Left: Headline Floating Card */}
-                  <div className="md:col-span-7">
-                    <div className="bg-black/80 backdrop-blur-md border-l-4 border-red-600 p-3 sm:p-4 rounded-r-xl border-y border-r border-white/15 max-w-lg shadow-2xl space-y-1">
-                      <span className="font-mono text-[9px] sm:text-[10px] text-red-400 font-bold uppercase tracking-wider block">
-                        BAŞ MANŞET // SAYFA 04
-                      </span>
-                      <h2 className="font-serif text-xl sm:text-2xl lg:text-3xl font-black leading-tight uppercase text-white drop-shadow">
-                        {displayPosts[0]?.title || "90'LARIN ANALOG RUHU VE MİNİMALİZM"}
-                      </h2>
-                      <p className="text-xs sm:text-[13px] font-serif italic text-neutral-300 leading-snug">
-                        {displayPosts[0]?.conceptTitle || "Sessiz lüks, bit pazarları ve piksel öncesi estetik."}
-                      </p>
-                    </div>
+                  {/* 90's Circular Badge / Sticker (Sağ Köşeye Asılı Mühür) */}
+                  <div className="absolute -top-7 right-2 z-10 w-14 h-14 rounded-full border-2 border-dashed border-red-500 bg-red-600/40 backdrop-blur-md flex flex-col items-center justify-center text-center p-1 transform rotate-12 shadow-2xl border-white/30 text-white select-none pointer-events-none">
+                    <span className="text-[6px] font-mono font-bold tracking-widest text-red-300 uppercase leading-none">ÖZEL DOSYA</span>
+                    <span className="font-serif text-[9px] font-black uppercase tracking-tight leading-none mt-0.5">KÜLT ARŞİV</span>
+                    <span className="text-[6px] font-mono text-neutral-300 leading-none mt-0.5">{currentYear}</span>
                   </div>
 
-                  {/* Right: Floating Dossier Box & Retro Sticker Stamp */}
-                  <div className="md:col-span-5 relative flex flex-col items-start md:items-end">
-                    
-                    {/* 90's Circular Badge / Sticker (Kutunun Üzerine Asılı Köşe Mührü - Dikey Alanı İtmez) */}
-                    <div className="hidden sm:flex absolute -top-8 right-2 z-10 w-16 h-16 rounded-full border-2 border-dashed border-red-500 bg-red-600/40 backdrop-blur-md flex-col items-center justify-center text-center p-1 transform rotate-12 shadow-2xl border-white/30 text-white select-none pointer-events-none">
-                      <span className="text-[7px] font-mono font-bold tracking-widest text-red-300 uppercase leading-none">ÖZEL DOSYA</span>
-                      <span className="font-serif text-[10px] font-black uppercase tracking-tight leading-none mt-0.5">KÜLT ARŞİV</span>
-                      <span className="text-[7px] font-mono text-neutral-300 leading-none mt-0.5">{currentYear}</span>
-                    </div>
+                  {/* Headline Floating Card */}
+                  <div className="bg-black/85 backdrop-blur-md border-l-4 border-red-600 p-3 sm:p-3.5 rounded-r-xl border-y border-r border-white/20 shadow-2xl space-y-1">
+                    <span className="font-mono text-[9px] text-red-400 font-bold uppercase tracking-wider block">
+                      BAŞ MANŞET // SAYFA 04
+                    </span>
+                    <h2 className="font-serif text-lg sm:text-2xl font-black leading-tight uppercase text-white drop-shadow">
+                      {displayPosts[0]?.title || "90'LARIN ANALOG RUHU VE MİNİMALİZM"}
+                    </h2>
+                    <p className="text-xs font-serif italic text-neutral-300 leading-snug line-clamp-2">
+                      {displayPosts[0]?.conceptTitle || "Sessiz lüks, bit pazarları ve piksel öncesi estetik."}
+                    </p>
+                  </div>
 
-                    {/* Dossier Teaser Card */}
-                    <div className="bg-black/85 backdrop-blur-md border border-white/20 p-3 rounded-xl font-mono text-[10px] sm:text-[11px] w-full max-w-xs shadow-2xl space-y-1.5">
-                      <div className="font-bold text-red-400 uppercase flex items-center justify-between border-b border-white/10 pb-1">
-                        <span>✦ BU SAYININ DOSYALARI</span>
-                        <span className="text-[9px] text-[#e6c280]">{coverCollageImages.length} KADRAJ</span>
-                      </div>
-                      <ul className="space-y-1 text-neutral-200">
-                        {displayPosts.slice(0, 3).map((p, i) => (
-                          <li
-                            key={i}
-                            onClick={() => setCurrentPage(i + 2)}
-                            className="truncate cursor-pointer hover:text-red-400 transition-colors flex items-center space-x-1"
-                            title={`${p.title} - Sayfaya Git`}
-                          >
-                            <span className="text-red-500 font-bold">&bull;</span>
-                            <strong className="text-white">{p.category || 'DOSYA'}:</strong>
-                            <span className="truncate">{p.title}</span>
-                          </li>
-                        ))}
-                      </ul>
+                  {/* Dossier Teaser Bar */}
+                  <div className="bg-black/85 backdrop-blur-md border border-white/20 p-2.5 rounded-xl font-mono text-[10px] shadow-2xl space-y-1">
+                    <div className="font-bold text-red-400 uppercase flex items-center justify-between border-b border-white/10 pb-1">
+                      <span>✦ BU SAYININ DOSYALARI</span>
+                      <span className="text-[9px] text-[#e6c280]">{coverCollageImages.length} KADRAJ</span>
                     </div>
-
+                    <ul className="space-y-0.5 text-neutral-200">
+                      {displayPosts.slice(0, 3).map((p, i) => (
+                        <li
+                          key={i}
+                          onClick={() => setCurrentPage(i + 2)}
+                          className="truncate cursor-pointer hover:text-red-400 transition-colors flex items-center space-x-1"
+                          title={`${p.title} - Sayfaya Git`}
+                        >
+                          <span className="text-red-500 font-bold">&bull;</span>
+                          <strong className="text-white">{p.category || 'DOSYA'}:</strong>
+                          <span className="truncate">{p.title}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
 
                 </div>
 
                 {/* Minimalist Bottom Folio Line (En Altta İnce Folyo Şeridi) */}
-                <div className="border-t border-white/15 pt-2 pb-0.5 flex items-center justify-between text-[10px] font-mono text-neutral-400 pointer-events-auto">
+                <div className="border-t border-white/15 pt-2 pb-0.5 flex items-center justify-between text-[9px] sm:text-[10px] font-mono text-neutral-400 pointer-events-auto">
                   <div className="flex items-center space-x-2">
                     <span className="text-red-400 font-bold uppercase">✦ {brandName}</span>
                     <span className="text-neutral-500">&bull;</span>
@@ -651,82 +702,113 @@ export function MagazineModal({
           )}
 
           {/* ======================================================== */}
-          {/* PAGE 1: 1990'S TABLE OF CONTENTS / FİHRİST              */}
+          {/* PAGE 1: 1990'S TWO-PAGE SPREAD: KÜNYE (SAYFA 02) & İÇİNDEKİLER (SAYFA 03) */}
           {/* ======================================================== */}
           {currentPage === 1 && (
             <div className="relative flex-1 min-h-[760px] sm:min-h-[820px] lg:min-h-[860px] p-4 sm:p-8 lg:p-10 flex flex-col justify-between m-1.5 sm:m-3 border-4 border-black/80">
               
-              {/* Header */}
-              <div className="border-b-4 border-black pb-4 flex items-end justify-between">
-                <div>
+              {/* Running Header */}
+              <div className="border-b-2 border-black/80 pb-2.5 flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-neutral-600">
+                <div className="flex items-center space-x-2">
+                  <span className="font-bold text-red-600">SAYFA 02</span>
+                  <span>// {brandName} • MANİFESTO & KÜNYE</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span>FİHRİST & DOSYA DİZİNİ // SAYFA 03</span>
+                </div>
+              </div>
+
+              {/* Two-Column Grid: Left (Sayfa 02: Manifesto & Künye) / Right (Sayfa 03: İçindekiler) */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 my-6 flex-1 items-start">
+                
+                {/* SOL SAYFA (SAYFA 02): EDİTÖRÜN NOTU & YAYIN KÜNYESİ */}
+                <div className="lg:col-span-5 space-y-5 lg:pr-6 lg:border-r-2 lg:border-black/20">
                   <span className="font-mono text-xs font-bold tracking-[0.3em] uppercase text-red-600 block">
-                    {brandName} // DOSYA DİZİNİ
+                    EDİTÖRÜN NOTU // MANİFESTO
                   </span>
-                  <h2 className="font-serif text-4xl sm:text-5xl font-black tracking-tight uppercase">
-                    İÇİNDEKİLER
+                  <h2 className="font-serif text-2xl sm:text-3xl font-black uppercase tracking-tight leading-tight">
+                    ANALOG RUHUN DİJİTALDEKİ İZLERİ
                   </h2>
-                </div>
-                <div className="text-right font-mono text-xs text-neutral-500">
-                  <div>SAYI: 04 · CİLT I</div>
-                  <div>TOPLAM {displayPosts.length} EDİTORYAL DOSYA</div>
-                </div>
-              </div>
-
-              {/* Contents Table with 90's Dotted Leaders */}
-              <div className="my-8 space-y-4 font-mono text-xs flex-1">
-                {displayPosts.length === 0 ? (
-                  <div className="text-center py-20 text-neutral-500 font-serif">
-                    <p className="text-lg">Henüz arşivde gönderi bulunmuyor.</p>
-                    <p className="text-xs font-mono mt-1">İçerik stüdyosundan yeni bir gönderi üreterek derginizi oluşturabilirsiniz.</p>
+                  <div className="space-y-3 font-serif text-xs sm:text-[13px] leading-relaxed text-justify">
+                    <p>
+                      <span className="float-left text-5xl font-serif font-black leading-none mr-2 text-red-600">B</span>
+                      u dergi, Instagram'ın hızla tükenen akışını durdurup analog 90'lar yayıncılığının ağırlığına kavuşturmak amacıyla hazırlandı. 35mm film greni, yüksek kontrast ve sadeleştirilmiş tipografi ile her gönderi ölümsüz bir arşive dönüşüyor.
+                    </p>
+                    <p>
+                      Burada yalnızca fotoğrafları değil, onların ardındaki kültürel arka planı, sinema referanslarını ve stil sosyolojisini bulacaksınız.
+                    </p>
                   </div>
-                ) : (
-                  displayPosts.map((post, idx) => {
-                    const pageNo = (idx + 1) * 2 + 2;
-                    const isShared = Boolean(post.instagramPublishedAt || post.publishedToInstagram);
-                    return (
-                      <div
-                        key={post.id || idx}
-                        onClick={() => setCurrentPage(idx + 2)}
-                        className={`group p-3 rounded border transition-all cursor-pointer flex items-center justify-between ${
-                          isPaper
-                            ? 'hover:bg-black/5 border-black/10'
-                            : 'hover:bg-white/5 border-white/10'
-                        }`}
-                      >
-                        <div className="flex items-center space-x-3 truncate pr-4">
-                          <span className="font-bold text-red-600 w-8 shrink-0">
-                            #{String(idx + 1).padStart(2, '0')}
-                          </span>
-                          <span className="px-2 py-0.5 rounded bg-black/10 font-bold text-[10px] uppercase shrink-0">
-                            {post.category || 'GENEL'}
-                          </span>
-                          <span className="font-serif text-sm sm:text-base font-bold truncate group-hover:text-red-600 transition-colors">
-                            {post.title}
-                          </span>
-                          {isShared && (
-                            <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-600 border border-emerald-500/30 text-[9px] uppercase font-bold shrink-0 hidden sm:inline">
-                              Yayında
-                            </span>
-                          )}
-                        </div>
 
-                        {/* Dotted Leader & Page Number */}
-                        <div className="flex items-center space-x-2 shrink-0">
-                          <span className="hidden md:inline text-neutral-400 select-none">
-                            ...................................
-                          </span>
-                          <span className="font-serif text-sm font-black text-red-600 group-hover:underline">
-                            SAYFA {pageNo} &rarr;
-                          </span>
+                  {/* 90's Colophon Box */}
+                  <div className="p-3.5 border-2 border-dashed border-black/40 font-mono text-[10px] space-y-1.5 bg-black/[0.02]">
+                    <span className="font-bold text-red-600 uppercase block">YAYIN KÜNYESİ</span>
+                    <div className="space-y-1 text-neutral-700">
+                      <div><strong>Yayıncı:</strong> Post Creator Editoryal Atölyesi</div>
+                      <div><strong>Tarih:</strong> {fullDateFormatted}</div>
+                      <div><strong>Format:</strong> 90'lar Kuşe Kağıt (A4 Standardı)</div>
+                      <div><strong>Küratör:</strong> {brandName}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* SAĞ SAYFA (SAYFA 03): İÇİNDEKİLER FİHRİSTİ */}
+                <div className="lg:col-span-7 space-y-4">
+                  <div className="flex items-end justify-between border-b-2 border-black pb-2">
+                    <div>
+                      <span className="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-red-600 block">
+                        DOSYA DİZİNİ
+                      </span>
+                      <h3 className="font-serif text-3xl font-black tracking-tight uppercase">
+                        İÇİNDEKİLER
+                      </h3>
+                    </div>
+                    <div className="text-right font-mono text-[10px] text-neutral-500">
+                      TOPLAM {displayPosts.length} EDİTORYAL DOSYA
+                    </div>
+                  </div>
+
+                  {/* Dotted Leader Table */}
+                  <div className="space-y-2.5 font-mono text-xs">
+                    {displayPosts.map((post, idx) => {
+                      const pageNo = (idx + 1) * 2 + 2;
+                      const isShared = Boolean(post.instagramPublishedAt || post.publishedToInstagram);
+                      return (
+                        <div
+                          key={post.id || idx}
+                          onClick={() => setCurrentPage(idx + 2)}
+                          className={`group p-2.5 rounded border transition-all cursor-pointer flex items-center justify-between ${
+                            isPaper ? 'hover:bg-black/5 border-black/10' : 'hover:bg-white/5 border-white/10'
+                          }`}
+                        >
+                          <div className="flex items-center space-x-2.5 truncate pr-3">
+                            <span className="font-bold text-red-600 w-7 shrink-0">
+                              #{String(idx + 1).padStart(2, '0')}
+                            </span>
+                            <span className="px-1.5 py-0.5 rounded bg-black/10 font-bold text-[9px] uppercase shrink-0">
+                              {post.category || 'GENEL'}
+                            </span>
+                            <span className="font-serif text-xs sm:text-sm font-bold truncate group-hover:text-red-600 transition-colors">
+                              {post.title}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2 shrink-0">
+                            <span className="hidden sm:inline text-neutral-400 select-none">
+                              ...........
+                            </span>
+                            <span className="font-serif text-xs sm:text-sm font-black text-red-600 group-hover:underline">
+                              SAYFA {pageNo} &rarr;
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })
-                )}
+                      );
+                    })}
+                  </div>
+                </div>
+
               </div>
 
-              {/* Bottom Quote / Colophon */}
-              <div className="border-t-2 border-black/80 pt-4 flex items-center justify-between font-mono text-[10px] text-neutral-600">
+              {/* Bottom Running Footer */}
+              <div className="border-t-2 border-black/80 pt-3 flex items-center justify-between font-mono text-[10px] text-neutral-600">
                 <span>BASIM TARİHİ: {fullDateFormatted} · BASKI MERKEZİ: POST CREATOR ATÖLYESİ</span>
                 <span>TÜM HAKLARI SAKLIDIR &bull; DERGİ SAYFA NO: 02 - 03</span>
               </div>
@@ -1084,6 +1166,314 @@ export function MagazineModal({
         </button>
 
       </div>
+
+    </div>
+
+    {/* ======================================================== */}
+    {/* 90'S PUBLICATION PRINT ENGINE: MULTI-PAGE A4 DOCUMENT     */}
+    {/* Sadece tarayıcıdan "PDF Olarak Kaydet" veya "Yazdır"      */}
+    {/* seçildiğinde devreye girer. Her sayfa tam A4 boyutundadır. */}
+    {/* ======================================================== */}
+    <div id="magazine-print-document" className="magazine-print-only">
+      
+      {/* ======================================================== */}
+      {/* SAYFA 1 (PDF): ÖN KAPAK (STANDART A4 PORTRAIT)           */}
+      {/* ======================================================== */}
+      <div className="magazine-page-a4 bg-black text-white p-6 relative overflow-hidden flex flex-col justify-between">
+        
+        {/* Full-bleed collage background */}
+        <div className="absolute inset-0 z-0 overflow-hidden">
+          {coverCollageImages.length >= 4 ? (
+            <div className="grid grid-cols-12 grid-rows-2 gap-2 h-full w-full p-2 bg-black">
+              <div className="col-span-7 row-span-2 relative overflow-hidden border border-black/80 bg-neutral-900">
+                <img src={coverCollageImages[0].url} alt="" className="w-full h-full object-cover object-top filter contrast-[1.08]" />
+                <span className="absolute top-3 left-3 bg-red-600 text-white font-mono text-[9px] px-2 py-0.5 font-bold uppercase tracking-wider">
+                  BAŞ MANŞET // {coverCollageImages[0].category}
+                </span>
+              </div>
+              <div className="col-span-5 row-span-1 relative overflow-hidden border border-black/80 bg-neutral-900">
+                <img src={coverCollageImages[1].url} alt="" className="w-full h-full object-cover object-top filter contrast-[1.08]" />
+              </div>
+              <div className="col-span-5 row-span-1 grid grid-cols-2 gap-2 h-full">
+                <div className="relative overflow-hidden border border-black/80 bg-neutral-900">
+                  <img src={coverCollageImages[2].url} alt="" className="w-full h-full object-cover object-top filter contrast-[1.08]" />
+                </div>
+                <div className="relative overflow-hidden border border-black/80 bg-neutral-900">
+                  <img src={coverCollageImages[3]?.url || coverCollageImages[0].url} alt="" className="w-full h-full object-cover object-top filter contrast-[1.08]" />
+                </div>
+              </div>
+            </div>
+          ) : coverCollageImages.length > 0 ? (
+            <div className="w-full h-full">
+              <img src={coverCollageImages[0].url} alt="" className="w-full h-full object-cover object-top filter contrast-[1.08]" />
+            </div>
+          ) : null}
+        </div>
+
+        <div className="absolute inset-0 z-[1] bg-gradient-to-b from-black/85 via-black/45 to-black/90 pointer-events-none" />
+
+        {/* Foreground Typography */}
+        <div className="relative z-10 flex flex-col justify-between h-full p-6">
+          <div className="border-b border-white/20 pb-2 flex items-center justify-between font-mono text-[10px] uppercase tracking-widest text-neutral-200">
+            <span className="font-bold text-red-400 bg-red-950/70 px-2 py-0.5 border border-red-500/50">ÖZEL RETROSPEKTİF BASKI</span>
+            <span className="font-bold text-[#e6c280]">{fullDateFormatted}</span>
+          </div>
+
+          <div className="my-auto text-center">
+            <h1 className="font-serif text-6xl font-black tracking-[0.25em] leading-none uppercase text-white drop-shadow-xl">
+              {brandName}
+            </h1>
+            <p className="font-mono text-xs tracking-[0.3em] uppercase font-bold text-red-400 mt-2">
+              KÜLTÜR, SİNEMA, MODA VE ANALOG ESTETİK DERGİSİ
+            </p>
+          </div>
+
+          <div className="mt-auto space-y-2.5">
+            <div className="bg-black/85 border-l-4 border-red-600 p-3.5 rounded-r-xl border-y border-r border-white/20 space-y-1">
+              <span className="font-mono text-[9px] text-red-400 font-bold uppercase block">BAŞ MANŞET // SAYFA 04</span>
+              <h2 className="font-serif text-2xl font-black uppercase text-white leading-tight">
+                {displayPosts[0]?.title || "90'LARIN ANALOG RUHU VE MİNİMALİZM"}
+              </h2>
+              <p className="text-xs font-serif italic text-neutral-300">
+                {displayPosts[0]?.conceptTitle || "Sessiz lüks, bit pazarları ve piksel öncesi estetik."}
+              </p>
+            </div>
+
+            <div className="border-t border-white/20 pt-2 flex items-center justify-between text-[9px] font-mono text-neutral-400">
+              <span>✦ {brandName} • EDİTORYAL ARŞİV DERGİSİ</span>
+              <span className="text-neutral-300">{currentMonthYear} BASKISI &bull; CİLT 01</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      {/* ======================================================== */}
+      {/* SAYFA 2 (PDF): MANİFESTO & EDİTORYAL KÜNYE (A4 PORTRAIT) */}
+      {/* ======================================================== */}
+      <div className="magazine-page-a4 bg-[#f8f6f0] text-[#1c1c1f] p-12 flex flex-col justify-between border-8 border-black">
+        <div className="border-b-2 border-black pb-2 flex items-center justify-between font-mono text-[10px] text-neutral-600 uppercase">
+          <span>POST CREATOR // EDİTÖRÜN NOTU & MANİFESTO</span>
+          <span>SAYFA 02</span>
+        </div>
+
+        <div className="my-auto space-y-6">
+          <span className="font-mono text-xs font-bold tracking-[0.3em] uppercase text-red-600 block">
+            90'LAR EDİTORYAL VİZYONU
+          </span>
+          <h2 className="font-serif text-3xl font-black uppercase tracking-tight leading-tight">
+            ANALOG RUHUN DİJİTALDEKİ İZLERİ
+          </h2>
+          <div className="space-y-4 font-serif text-sm leading-relaxed text-justify">
+            <p>
+              <span className="float-left text-5xl font-serif font-black leading-none mr-3 text-red-600">B</span>
+              u dergi, Instagram'ın hızla tüketilen ve kaybolup giden dijital akışını durdurup analog 90'lar yayıncılığının ağırlığına kavuşturmak amacıyla hazırlandı. 35mm film greni, yüksek kontrast, sessiz lüks ve sadeleştirilmiş editoryal tipografi ile her içerik kalıcı bir arşive dönüşüyor.
+            </p>
+            <p>
+              Burada yalnızca fotoğrafları değil, onların ardındaki kültürel sosyolojiyi, kilit referansları ve slaytlara sığmayan derin analizleri bulacaksınız.
+            </p>
+          </div>
+
+          <div className="p-4 border-2 border-dashed border-black/40 font-mono text-xs space-y-2 bg-black/[0.02]">
+            <span className="font-bold text-red-600 uppercase block">YAYIN KÜNYESİ</span>
+            <div className="grid grid-cols-2 gap-2 text-[11px] text-neutral-700">
+              <div><strong>Yayıncı:</strong> Post Creator Editoryal Atölyesi</div>
+              <div><strong>Baskı Tarihi:</strong> {fullDateFormatted}</div>
+              <div><strong>Küratör:</strong> {brandName}</div>
+              <div><strong>Format:</strong> 90'lar Editoryal Kuşe A4</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t-2 border-black pt-2 flex items-center justify-between font-mono text-[9px] text-neutral-500">
+          <span>{brandCode} EDİTORYAL KÜTÜPHANESİ</span>
+          <span>CİLT I &bull; SAYI 01</span>
+        </div>
+      </div>
+
+      {/* ======================================================== */}
+      {/* SAYFA 3 (PDF): İÇİNDEKİLER FİHRİSTİ (A4 PORTRAIT)        */}
+      {/* ======================================================== */}
+      <div className="magazine-page-a4 bg-[#f8f6f0] text-[#1c1c1f] p-12 flex flex-col justify-between border-8 border-black">
+        <div className="border-b-2 border-black pb-2 flex items-center justify-between font-mono text-[10px] text-neutral-600 uppercase">
+          <span>{brandName} // DOSYA DİZİNİ</span>
+          <span>SAYFA 03</span>
+        </div>
+
+        <div className="my-4">
+          <span className="font-mono text-xs font-bold tracking-[0.3em] uppercase text-red-600 block">
+            EDİTORYAL FİHRİST
+          </span>
+          <h2 className="font-serif text-4xl font-black tracking-tight uppercase">
+            İÇİNDEKİLER
+          </h2>
+          <p className="font-mono text-xs text-neutral-500 mt-1">TOPLAM {displayPosts.length} EDİTORYAL DOSYA</p>
+        </div>
+
+        <div className="space-y-3 font-mono text-xs flex-1 my-4">
+          {displayPosts.map((post, idx) => {
+            const pageNo = (idx + 1) * 2 + 2;
+            return (
+              <div key={idx} className="flex items-center justify-between border-b border-black/10 pb-2.5">
+                <div className="flex items-center space-x-2.5 truncate pr-4">
+                  <span className="font-bold text-red-600">#{String(idx + 1).padStart(2, '0')}</span>
+                  <span className="px-1.5 py-0.5 rounded bg-black/10 text-[9px] font-bold uppercase">{post.category || 'GENEL'}</span>
+                  <span className="font-serif font-bold text-sm truncate">{post.title}</span>
+                </div>
+                <div className="shrink-0 font-serif font-black text-red-600 text-sm">
+                  SAYFA {pageNo}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="border-t-2 border-black pt-2 flex items-center justify-between font-mono text-[9px] text-neutral-500">
+          <span>TÜM HAKLARI SAKLIDIR</span>
+          <span>FİHRİST NO: 01</span>
+        </div>
+      </div>
+
+      {/* ======================================================== */}
+      {/* SAYFA 4..N (PDF): HER GÖNDERİ İÇİN 2 AYRI A4 SAYFASI      */}
+      {/* (SOL SAYFA: METİN & ANALİZ, SAĞ SAYFA: FOTOĞRAF PLAKASI) */}
+      {/* ======================================================== */}
+      {displayPosts.map((post, postIdx) => {
+        const pageLeftNo = (postIdx + 1) * 2 + 2;
+        const pageRightNo = pageLeftNo + 1;
+        const postPhotos = extractCleanPhotos(post);
+
+        return (
+          <React.Fragment key={post.id || postIdx}>
+            
+            {/* SOL A4 SAYFASI: MAKALE METNİ & DERİNLİK ANALİZİ */}
+            <div className="magazine-page-a4 bg-[#f8f6f0] text-[#1c1c1f] p-12 flex flex-col justify-between border-8 border-black">
+              <div className="border-b-2 border-black pb-2 flex items-center justify-between font-mono text-[10px] uppercase text-neutral-600">
+                <span className="font-bold text-red-600">SAYFA {pageLeftNo}</span>
+                <span>// {brandName} • {post.category || 'KÜLTÜR'} ARŞİVİ</span>
+                <span>DOSYA NO: #{String(postIdx + 1).padStart(3, '0')}</span>
+              </div>
+
+              <div className="my-4 space-y-4 flex-1">
+                <div className="flex items-center space-x-2 font-mono text-[10px] uppercase">
+                  <span className="px-2 py-0.5 bg-red-600 text-white font-bold">{post.category || 'KÜLTÜR'}</span>
+                  <span className="text-neutral-500 font-bold">{post.period || "90'LAR"} RUHU</span>
+                </div>
+
+                <h2 className="font-serif text-3xl font-black uppercase leading-tight">
+                  {post.title}
+                </h2>
+                {post.conceptTitle && (
+                  <p className="font-serif italic text-sm text-neutral-600">{post.conceptTitle}</p>
+                )}
+
+                <div className="space-y-3 font-serif text-xs leading-relaxed text-justify">
+                  {Array.isArray(post.lore) && post.lore.length > 0 ? (
+                    <div>
+                      <span className="float-left text-4xl font-serif font-black leading-none mr-2 text-red-600">
+                        {post.lore[0]?.charAt(0) || 'B'}
+                      </span>
+                      <p>{post.lore[0]?.slice(1)}</p>
+                    </div>
+                  ) : (
+                    <p>{typeof post.lore === 'string' ? post.lore : 'Editoryal içerik bulunmuyor.'}</p>
+                  )}
+
+                  {(post.slideQuotes?.[0] || post.hook) && (
+                    <div className="my-3 py-2 px-3 border-y-2 border-black text-center font-serif italic text-sm font-bold text-red-600">
+                      “{post.slideQuotes?.[0] || post.hook}”
+                    </div>
+                  )}
+
+                  {Array.isArray(post.lore) && post.lore.slice(1, 3).map((para, pIdx) => (
+                    <p key={pIdx} className="indent-4">{para}</p>
+                  ))}
+                </div>
+
+                {/* 90's Cultural Dossier Box */}
+                <div className="p-3 border-2 border-dashed border-black/40 bg-black/[0.02] font-mono text-[10px] space-y-1.5">
+                  <span className="font-bold text-red-600 uppercase block">90'LAR ARŞİV DOSYASI & EKSTRA DERİNLİK:</span>
+                  <p className="text-neutral-700 leading-snug">
+                    {post.magazineDeepDossier?.deepEssay?.[0] || post.conceptExplanation || "Instagram kısıtlamalarının ötesinde 90'ların analog tasarım sosyolojisi ve estetik mirası."}
+                  </p>
+                </div>
+              </div>
+
+              <div className="border-t-2 border-black pt-2 flex items-center justify-between font-mono text-[9px] text-neutral-500">
+                <span>{brandCode} EDİTORYAL KÜTÜPHANESİ</span>
+                <span>POST CREATOR {currentYear}</span>
+              </div>
+            </div>
+
+            {/* SAĞ A4 SAYFASI: EDİTORYAL FOTOĞRAF PLAKASI */}
+            <div className="magazine-page-a4 bg-[#f8f6f0] text-[#1c1c1f] p-12 flex flex-col justify-between border-8 border-black">
+              <div className="border-b-2 border-black pb-2 flex items-center justify-between font-mono text-[10px] uppercase text-neutral-600">
+                <span>EDİTORYAL FOTOĞRAF PLAKASI</span>
+                <span>{currentMonthYear} // SAYFA {pageRightNo}</span>
+              </div>
+
+              <div className="my-auto space-y-4">
+                {postPhotos.length > 0 ? (
+                  <div className="border-4 border-black p-3 bg-white shadow-md flex flex-col">
+                    <div className="w-full aspect-[4/5] max-h-[150mm] bg-neutral-900 overflow-hidden relative flex items-center justify-center border border-black/10">
+                      <img
+                        src={postPhotos[0]?.url}
+                        alt="Temiz Dergi Fotoğrafı"
+                        className="w-full h-full object-cover object-[center_top] filter contrast-[1.05]"
+                      />
+                    </div>
+
+                    <div className="mt-2.5 pt-2 border-t border-black/20 font-mono text-neutral-800 space-y-1">
+                      <div className="flex items-center justify-between text-[11px] font-bold">
+                        <span className="text-red-600 truncate mr-2">
+                          KAPAK KADRAJI — {post.title}
+                        </span>
+                        <span className="text-[10px] text-neutral-500 shrink-0">
+                          KADRAJ #01 / {postPhotos.length}
+                        </span>
+                      </div>
+                      <p className="font-serif italic text-xs leading-tight text-neutral-700">
+                        “{postPhotos[0]?.quote || post.hook || post.title}”
+                      </p>
+                      <p className="text-[9px] text-neutral-500 leading-tight">
+                        <strong>Küratör Notu:</strong> {postPhotos[0]?.idea || '35mm editoryal arşiv negatif baskısı.'}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+
+                {postPhotos.length > 1 && (
+                  <div className="pt-2 border-t border-black/20">
+                    <span className="font-mono text-[9px] uppercase font-bold text-neutral-600 block mb-2">
+                      EK DİĞER SLAYT KADRAJLARI (KONTAK BASKI):
+                    </span>
+                    <div className="grid grid-cols-3 gap-2">
+                      {postPhotos.slice(1, 4).map((ph, pIdx) => (
+                        <div key={pIdx} className="border border-black p-1 bg-white">
+                          <div className="w-full aspect-[4/5] max-h-[38mm] bg-neutral-900 overflow-hidden">
+                            <img src={ph.url} alt="" className="w-full h-full object-cover object-top" />
+                          </div>
+                          <span className="font-mono text-[8px] text-neutral-600 block truncate mt-0.5 font-bold">
+                            #{pIdx + 2} {ph.title}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t-2 border-black pt-2 flex items-center justify-between font-mono text-[9px] text-neutral-500">
+                <span>TEMİZ 35MM ARŞİV NEGATİFİ</span>
+                <span>SAYFA {pageRightNo}</span>
+              </div>
+            </div>
+
+          </React.Fragment>
+        );
+      })}
+
+    </div>
 
     </div>
   );
