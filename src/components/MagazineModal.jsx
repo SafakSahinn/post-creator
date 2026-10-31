@@ -224,10 +224,16 @@ export function MagazineModal({
 
   const isPaper = themeMode === 'paper';
 
+  // Günümüz tarihi (90'lar Editoryal Tipografi Formatı)
+  const currentDate = new Date();
+  const currentMonthYear = currentDate.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' }).toUpperCase();
+  const fullDateFormatted = currentDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase();
+  const currentYear = currentDate.getFullYear();
+
   // Proje adı ve logo
   const brandName = (activeProject?.name || currentPost?.projectName || 'LORE MAGAZINE').toUpperCase();
   const brandCode = (activeProject?.shortCode || currentPost?.projectShortCode || 'LORE').toUpperCase();
-  const issueDate = 'EKİM 1994 // SAYI #04';
+  const issueDate = `${currentMonthYear} // SAYI #01`;
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black/90 backdrop-blur-md overflow-hidden animate-fadeIn">
@@ -523,24 +529,25 @@ export function MagazineModal({
               {/* ======================================================== */}
               <div className="relative z-10 flex flex-col justify-between h-full p-4 sm:p-8 lg:p-10 pointer-events-none">
                 
-                {/* Top Banner Strip */}
+                {/* Top Banner Strip (Günümüz Tarihi & Sadeleştirilmiş Şerit) */}
                 <div className="border-b border-white/20 pb-3 flex items-center justify-between font-mono text-[11px] uppercase tracking-widest text-neutral-200 pointer-events-auto">
                   <div className="flex items-center space-x-3">
-                    <span className="font-bold text-red-400 bg-red-950/70 px-2 py-0.5 border border-red-500/50 shadow">
+                    <span className="font-bold text-red-400 bg-red-950/70 px-2.5 py-0.5 border border-red-500/50 shadow">
                       ÖZEL RETROSPEKTİF BASKI
                     </span>
-                    <span className="text-neutral-300 hidden sm:inline drop-shadow">
-                      VOL. III · SAYI 04 · EKİM 1994
+                    <span className="text-neutral-300 drop-shadow">
+                      CİLT I · SAYI 01
                     </span>
                   </div>
-                  <div className="flex items-center space-x-4">
-                    <span className="hidden md:inline drop-shadow">İSTANBUL · LONDRA · MİLANO · TOKYO</span>
-                    <span className="font-bold text-[#e6c280] drop-shadow">FİYATI: 120.000 TL / $4.50 / £2.80</span>
+                  <div className="text-right">
+                    <span className="font-bold text-[#e6c280] drop-shadow font-mono tracking-wider">
+                      {fullDateFormatted}
+                    </span>
                   </div>
                 </div>
 
                 {/* Big Iconic 90's Masthead (Ray Gun / The Face Aesthetic) */}
-                <div className="my-6 text-center select-none pointer-events-auto">
+                <div className="my-4 text-center select-none pointer-events-auto">
                   <h1 className="font-serif text-6xl sm:text-8xl lg:text-9xl font-black tracking-[0.25em] leading-none uppercase drop-shadow-[0_4px_20px_rgba(0,0,0,0.95)] text-white">
                     {brandName}
                   </h1>
@@ -553,8 +560,8 @@ export function MagazineModal({
                   </div>
                 </div>
 
-                {/* Mid Section: Floating Headlines & Newsstand Badges */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 my-auto py-4 items-end pointer-events-auto">
+                {/* Lower Section: Floating Headlines & Dossier (Aşağıya İndirildi & Ferahlatıldı) */}
+                <div className="mt-auto mb-2 pt-6 grid grid-cols-1 md:grid-cols-12 gap-5 items-end pointer-events-auto">
                   
                   {/* Left: Headline Floating Card */}
                   <div className="md:col-span-7">
@@ -572,20 +579,20 @@ export function MagazineModal({
                   </div>
 
                   {/* Right: Floating Dossier Box & Retro Sticker Stamp */}
-                  <div className="md:col-span-5 flex flex-col items-start md:items-end space-y-4">
+                  <div className="md:col-span-5 flex flex-col items-start md:items-end space-y-3">
                     
                     {/* 90's Circular Badge / Sticker */}
-                    <div className="w-24 h-24 rounded-full border-2 border-dashed border-red-500 bg-red-600/30 backdrop-blur-md flex flex-col items-center justify-center text-center p-2 transform -rotate-12 shadow-2xl border-white/30 text-white">
+                    <div className="w-22 h-22 rounded-full border-2 border-dashed border-red-500 bg-red-600/30 backdrop-blur-md flex flex-col items-center justify-center text-center p-2 transform -rotate-12 shadow-2xl border-white/30 text-white">
                       <span className="text-[8px] font-mono font-bold tracking-widest text-red-300 uppercase">ÖZEL DOSYA</span>
                       <span className="font-serif text-xs font-black uppercase tracking-tight">KÜLT ARŞİV</span>
-                      <span className="text-[8px] font-mono text-neutral-300">1990 - 1999</span>
+                      <span className="text-[8px] font-mono text-neutral-300">{currentYear}</span>
                     </div>
 
                     {/* Dossier Teaser Card */}
                     <div className="bg-black/80 backdrop-blur-md border border-white/20 p-3.5 rounded-xl font-mono text-[11px] w-full max-w-xs shadow-2xl space-y-2">
                       <div className="font-bold text-red-400 uppercase flex items-center justify-between border-b border-white/10 pb-1.5">
                         <span>✦ BU SAYININ DOSYALARI</span>
-                        <span className="text-[9px] text-[#e6c280]">4 KÜLTÜR KADRAJI</span>
+                        <span className="text-[9px] text-[#e6c280]">{coverCollageImages.length} KADRAJ</span>
                       </div>
                       <ul className="space-y-1.5 text-neutral-200">
                         {displayPosts.slice(0, 3).map((p, i) => (
@@ -607,41 +614,16 @@ export function MagazineModal({
 
                 </div>
 
-                {/* Bottom Bar: Barcode, Collage Caption & Navigation Button */}
-                <div className="border-t border-white/20 pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 pointer-events-auto bg-black/60 backdrop-blur-md p-3 sm:p-4 rounded-xl border border-white/10 shadow-2xl">
-                  
-                  {/* 90's Barcode & Collage Stats */}
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-end space-x-[2px] h-9 bg-white px-2 py-1 border border-black/40 rounded-sm">
-                      <div className="w-[3px] h-7 bg-black" />
-                      <div className="w-[1px] h-7 bg-black" />
-                      <div className="w-[2px] h-6 bg-black" />
-                      <div className="w-[4px] h-7 bg-black" />
-                      <div className="w-[1px] h-6 bg-black" />
-                      <div className="w-[3px] h-7 bg-black" />
-                      <div className="w-[2px] h-7 bg-black" />
-                      <div className="w-[1px] h-6 bg-black" />
-                      <div className="w-[3px] h-7 bg-black" />
-                    </div>
-                    <div className="font-mono text-[10px] text-neutral-300 leading-tight">
-                      <div className="font-bold text-white flex items-center space-x-1.5">
-                        <span className="text-red-400">✦ FULL-BLEED EDİTORYAL KOLAJ</span>
-                        <span className="text-neutral-400">({coverCollageImages.length} KADRAJ)</span>
-                      </div>
-                      <div className="text-[9px] text-neutral-400">ISSN 1042-8720 · FOTOĞRAFLARA TIKLAYARAK İLGİLİ SAYFAYA GİDİN</div>
-                    </div>
+                {/* Minimalist Bottom Folio Line (Barkod, Fiyat & Aç Butonu Kaldırıldı) */}
+                <div className="border-t border-white/15 pt-3 pb-1 flex items-center justify-between text-[10px] font-mono text-neutral-400 pointer-events-auto">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-red-400 font-bold uppercase">✦ {brandName}</span>
+                    <span className="text-neutral-500">&bull;</span>
+                    <span>EDİTORYAL ARŞİV DERGİSİ</span>
                   </div>
-
-                  {/* Start Reading Button */}
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage(1)}
-                    className="px-6 py-2.5 rounded-lg bg-red-600 text-white hover:bg-white hover:text-black font-mono text-xs font-bold tracking-widest uppercase transition-all flex items-center space-x-2 shadow-[0_0_20px_rgba(220,38,38,0.5)] cursor-pointer"
-                  >
-                    <span>Dergiyi Aç & Sayfaları Çevir</span>
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-
+                  <div className="text-neutral-300 font-semibold tracking-wider">
+                    {currentMonthYear} BASKISI &bull; CİLT 01
+                  </div>
                 </div>
 
               </div>
@@ -726,7 +708,7 @@ export function MagazineModal({
 
               {/* Bottom Quote / Colophon */}
               <div className="border-t-2 border-black/80 pt-4 flex items-center justify-between font-mono text-[10px] text-neutral-600">
-                <span>BASIM TARİHİ: EKİM 1994 · BASKI MERKEZİ: POST CREATOR ATÖLYESİ</span>
+                <span>BASIM TARİHİ: {fullDateFormatted} · BASKI MERKEZİ: POST CREATOR ATÖLYESİ</span>
                 <span>TÜM HAKLARI SAKLIDIR &bull; DERGİ SAYFA NO: 02 - 03</span>
               </div>
 
@@ -748,7 +730,7 @@ export function MagazineModal({
                 </div>
                 <div className="flex items-center space-x-3">
                   <span className="hidden md:inline">DOSYA NO: #{String(currentPostIndex + 1).padStart(3, '0')}</span>
-                  <span>EKİM 1994 // SAYFA {currentPage * 2 + 1}</span>
+                  <span>{currentMonthYear} // SAYFA {currentPage * 2 + 1}</span>
                 </div>
               </div>
 
@@ -1014,7 +996,7 @@ export function MagazineModal({
 
               {/* Bottom Folio Bar */}
               <div className="border-t-2 border-black/80 pt-3 flex items-center justify-between font-mono text-[10px] text-neutral-600">
-                <span>{brandCode} EDİTORYAL KÜTÜPHANESİ &bull; POST CREATOR 1994</span>
+                <span>{brandCode} EDİTORYAL KÜTÜPHANESİ &bull; POST CREATOR {currentYear}</span>
                 <div className="flex items-center space-x-4">
                   <button
                     type="button"
