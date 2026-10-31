@@ -27,9 +27,9 @@ import { generateDeepMagazineEssay } from '../services/gemini';
 import { saveArchiveToDb } from '../services/archiveDb';
 
 /**
- * Gönderinin temiz, üzerine yazı basılmamış orijinal fotoğraflarını ayıklar.
- * Mükerrer görselleri (örn. kapak ve kapanış slaytında aynı görselin tekrarını)
- * otomatik temizler, her kadrajın benzersiz olmasını garanti eder.
+ * Gönderinin arşivdeki slaytlarında fiilen KULLANILMIŞ temiz fotoğraflarını ayıklar.
+ * Galerideki kullanılmamış atıl fotoğrafları çekmez.
+ * 1. kapak ve son slayttaki mükerrer tekrarları ayıklar.
  */
 function extractCleanPhotos(post) {
   if (!post) return [];
@@ -37,73 +37,57 @@ function extractCleanPhotos(post) {
   const settings = post.savedSlideSettings || {};
   const thumbs = post.thumbnails || [];
 
-  const slideCount = Math.max(
-    post.slideQuotes?.length ? post.slideQuotes.length + 1 : 4,
-    Object.keys(settings).length,
-    thumbs.filter(Boolean).length,
-    gallery.length
+  // Gönderinin fiili slayt sayısı (stüdyoda kaydedilen veya tanımlı slaytlar)
+  const slideCount = Math.min(
+    10,
+    Math.max(
+      post.slideCount || 0,
+      thumbs.filter(Boolean).length,
+      Object.keys(settings).length,
+      post.slideQuotes?.length ? post.slideQuotes.length + 1 : 4
+    )
   );
 
   const photos = [];
   const seenUrls = new Set();
 
   for (let i = 0; i < slideCount; i++) {
+    // Yalnızca bu slayta fiilen atanmış görseli al (settings veya thumbs)
     const imgId = settings[i]?.imageId;
-    const galleryMatch = gallery.find((g) => g.id === imgId);
-    let url = galleryMatch?.dataUrl || thumbs[i] || gallery[i]?.dataUrl || null;
+    const galleryMatch = imgId ? gallery.find((g) => g.id === imgId) : null;
+    const url = galleryMatch?.dataUrl || thumbs[i] || null;
     
-    // Eğer bu görsel URL'si daha önce kullanılmışsa (örn. 1. kapak görseli son slaytta tekrar edildiyse):
-    if (url && seenUrls.has(url)) {
-      // Galeride henüz eklenmemiş alternatif temiz fotoğraf var mı ara
-      const unusedGalleryItem = gallery.find((g) => g.dataUrl && !seenUrls.has(g.dataUrl));
-      if (unusedGalleryItem) {
-        url = unusedGalleryItem.dataUrl;
-      } else {
-        // Alternatif benzersiz görsel yoksa mükerrer görseli listeye ekleme
-        url = null;
-      }
-    }
-
+    // Eğer görsel varsa ve daha önce eklenmemişse (mükerrerliği önle)
     if (url && !seenUrls.has(url)) {
       seenUrls.add(url);
+      
+      const isCover = photos.length === 0 || i === 0;
+      const quote = isCover
+        ? (settings[0]?.customQuote || post.hook || post.conceptTitle || post.title || '')
+        : (settings[i]?.customQuote || post.slideQuotes?.[i - 1] || post.slideQuotes?.[i] || '');
+
       photos.push({
         index: photos.length,
         url,
-        title: photos.length === 0 ? (post.title || 'Kapak Görseli') : `Slayt #${i + 1}`,
-        quote: settings[i]?.customQuote || post.slideQuotes?.[i - 1] || '',
-        idea: post.visualIdeas?.[i] || post.visualIdeas?.[i - 1] || '90\'lar editoryal fotoğraf arşivi.',
+        title: isCover ? (post.title || 'Kapak Görseli') : `Slayt #${i + 1} Kadrajı`,
+        quote,
+        idea: post.visualIdeas?.[i] || post.visualIdeas?.[i - 1] || (isCover ? 'Kapak editoryal fotoğrafı.' : '90\'lar arşiv detayı.'),
         filter: settings[i]?.filter || 'normal'
       });
     }
   }
 
-  // Galeride kalan ve henüz listeye girmemiş başka temiz fotoğraflar varsa ekle
-  if (photos.length < gallery.length) {
-    gallery.forEach((g) => {
-      if (g.dataUrl && !seenUrls.has(g.dataUrl)) {
-        seenUrls.add(g.dataUrl);
-        photos.push({
-          index: photos.length,
-          url: g.dataUrl,
-          title: `Arşiv Kadraj #${photos.length + 1}`,
-          quote: '',
-          idea: '90\'lar editoryal negatif arşiv görseli.',
-          filter: 'normal'
-        });
-      }
-    });
-  }
-
-  // Yedek: thumbs veya gallery'den doğrudan doldur
+  // Yedek: Eğer photos hala boşsa (eski arşiv kayıtları için thumbs üzerinden)
   if (photos.length === 0) {
     thumbs.forEach((t, idx) => {
       if (t && !seenUrls.has(t)) {
         seenUrls.add(t);
+        const isCover = photos.length === 0 || idx === 0;
         photos.push({
           index: photos.length,
           url: t,
-          title: photos.length === 0 ? post.title : `Slayt #${idx + 1}`,
-          quote: post.slideQuotes?.[idx - 1] || '',
+          title: isCover ? (post.title || 'Kapak Görseli') : `Slayt #${idx + 1}`,
+          quote: isCover ? (post.hook || post.conceptTitle || post.title || '') : (post.slideQuotes?.[idx - 1] || ''),
           idea: post.visualIdeas?.[idx] || 'Arşiv görseli.',
           filter: 'normal'
         });
@@ -962,14 +946,14 @@ export function MagazineModal({
                       <div className="mt-2 pt-2 border-t border-black/20 flex flex-col justify-between h-[78px] font-mono text-neutral-800 shrink-0">
                         <div className="flex items-center justify-between text-[11px] font-bold">
                           <span className="text-red-600 truncate mr-2">
-                            ŞEKİL 1.{selectedPhotoIndex + 1} — {cleanPhotos[selectedPhotoIndex]?.title || 'EDİTORYAL KADRAJ'}
+                            {selectedPhotoIndex === 0 ? 'KAPAK KADRAJI' : `ŞEKİL 1.${selectedPhotoIndex + 1}`} — {cleanPhotos[selectedPhotoIndex]?.title || 'EDİTORYAL KADRAJ'}
                           </span>
                           <span className="text-[10px] text-neutral-500 shrink-0">
                             KADRAJ #{selectedPhotoIndex + 1} / {cleanPhotos.length}
                           </span>
                         </div>
                         <p className="font-serif italic text-xs leading-tight text-neutral-700 line-clamp-2 my-0.5">
-                          {cleanPhotos[selectedPhotoIndex]?.quote ? `"${cleanPhotos[selectedPhotoIndex].quote}"` : '—'}
+                          “{cleanPhotos[selectedPhotoIndex]?.quote || currentPost?.hook || currentPost?.conceptTitle || currentPost?.title || '90\'lar editoryal arşiv fotoğrafı.'}”
                         </p>
                         <p className="text-[10px] text-neutral-500 leading-tight truncate">
                           <strong>Küratör Notu:</strong> {cleanPhotos[selectedPhotoIndex]?.idea || '35mm editoryal arşiv negatif baskısı.'}
