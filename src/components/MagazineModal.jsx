@@ -311,7 +311,7 @@ export function MagazineModal({
     // ----------------------------------------------------
     if (pageIdx === 0) {
       return (
-        <div className={`relative flex-1 ${isPdf ? 'w-full h-full' : 'min-h-[760px] sm:min-h-[820px] lg:min-h-[860px]'} border-4 border-black/90 m-1 sm:m-2 overflow-hidden flex flex-col justify-between shadow-2xl bg-black select-none`}>
+        <div className={`relative flex-1 ${isPdf ? 'w-full h-full' : 'min-h-[760px] sm:min-h-[820px] lg:min-h-[860px]'} border-4 border-black/90 m-1.5 sm:m-3 overflow-hidden flex flex-col justify-between shadow-2xl bg-black select-none`}>
           {/* Full-bleed background collage */}
           <div className="absolute inset-0 z-0 overflow-hidden">
             {coverCollageImages.length >= 4 ? (
@@ -534,7 +534,7 @@ export function MagazineModal({
     // ----------------------------------------------------
     if (pageIdx === 1) {
       return (
-        <div className={`relative flex-1 ${isPdf ? 'w-full h-full' : 'min-h-[760px] sm:min-h-[820px] lg:min-h-[860px]'} p-4 sm:p-6 flex flex-col justify-between m-1 sm:m-2 border-4 border-black/80`}>
+        <div className={`relative flex-1 ${isPdf ? 'w-full h-full' : 'min-h-[760px] sm:min-h-[820px] lg:min-h-[860px]'} p-5 sm:p-7 lg:p-8 flex flex-col justify-between m-1.5 sm:m-3 border-4 border-black/80`}>
           {/* Running Header */}
           <div className="border-b-2 border-black/80 pb-2 flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-neutral-600">
             <div className="flex items-center space-x-2">
@@ -607,7 +607,7 @@ export function MagazineModal({
     // ----------------------------------------------------
     if (pageIdx === 2) {
       return (
-        <div className={`relative flex-1 ${isPdf ? 'w-full h-full' : 'min-h-[760px] sm:min-h-[820px] lg:min-h-[860px]'} p-4 sm:p-6 flex flex-col justify-between m-1 sm:m-2 border-4 border-black/80`}>
+        <div className={`relative flex-1 ${isPdf ? 'w-full h-full' : 'min-h-[760px] sm:min-h-[820px] lg:min-h-[860px]'} p-5 sm:p-7 lg:p-8 flex flex-col justify-between m-1.5 sm:m-3 border-4 border-black/80`}>
           {/* Running Header */}
           <div className="border-b-2 border-black/80 pb-2 flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-neutral-600">
             <div className="flex items-center space-x-2">
@@ -695,7 +695,7 @@ export function MagazineModal({
     if (pageData.type === 'article') {
       const { post, postIndex, totalPhotos } = pageData;
       return (
-        <div className={`relative flex-1 ${isPdf ? 'w-full h-full' : 'min-h-[760px] sm:min-h-[820px] lg:min-h-[860px]'} p-4 sm:p-6 flex flex-col justify-between m-1 sm:m-2 border-4 border-black/80`}>
+        <div className={`relative flex-1 ${isPdf ? 'w-full h-full' : 'min-h-[760px] sm:min-h-[820px] lg:min-h-[860px]'} p-5 sm:p-7 lg:p-8 flex flex-col justify-between m-1.5 sm:m-3 border-4 border-black/80`}>
           {/* Running Header */}
           <div className="border-b-2 border-black/80 pb-2 flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-neutral-600">
             <div className="flex items-center space-x-2">
@@ -894,9 +894,9 @@ export function MagazineModal({
     if (pageData.type === 'photo') {
       const { post, postIndex, photo, photoIndex, totalPhotos } = pageData;
       return (
-        <div className={`relative flex-1 ${isPdf ? 'w-full h-full' : 'min-h-[760px] sm:min-h-[820px] lg:min-h-[860px]'} p-3 sm:p-4 flex flex-col justify-between m-1 sm:m-2 border-4 border-black/80 box-border`}>
+        <div className={`relative flex-1 ${isPdf ? 'w-full h-full' : 'min-h-[760px] sm:min-h-[820px] lg:min-h-[860px]'} p-4 sm:p-6 flex flex-col justify-between m-1.5 sm:m-3 border-4 border-black/80 box-border`}>
           {/* Running Header */}
-          <div className="border-b-2 border-black/80 pb-1.5 mb-2 flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-neutral-600 shrink-0">
+          <div className="border-b-2 border-black/80 pb-2 mb-2 sm:mb-3 flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-neutral-600 shrink-0">
             <div className="flex items-center space-x-2">
               <span className="font-bold text-red-600">SAYFA {String(pageIdx + 1).padStart(2, '0')}</span>
               <span>// EDİTORYAL FOTOĞRAF PLAKASI</span>
@@ -910,31 +910,31 @@ export function MagazineModal({
             </div>
           </div>
 
-          {/* Main Photo Content: Restored Impactful Full-Page Photo Plate with Complete Containment */}
-          <div className="my-auto flex-1 flex flex-col justify-center items-center w-full">
-            <div className="relative border-4 border-black/90 p-2 sm:p-2.5 bg-white shadow-xl flex flex-col shrink-0 w-full max-w-[530px] mx-auto">
-              {/* Hero Plate with Zero-Crop Containment */}
-              <div className="w-full h-[500px] sm:h-[530px] max-h-[530px] bg-neutral-950 overflow-hidden relative shrink-0 flex items-center justify-center border border-black/10 rounded-sm">
+          {/* Main Photo Content: Restored Impactful Full-Page Photo Plate */}
+          <div className="my-auto flex-1 flex flex-col justify-center items-center space-y-3">
+            <div className="relative border-4 border-black/90 p-2 sm:p-2.5 bg-white shadow-xl flex flex-col shrink-0 max-w-[420px] sm:max-w-[440px] mx-auto w-full">
+              {/* 4:5 Hero Plate */}
+              <div className="w-full aspect-[4/5] max-h-[460px] bg-neutral-950 overflow-hidden relative shrink-0 flex items-center justify-center border border-black/10">
                 {/* Otomatik Boşluk Kapatıcı & Atmosferik Dolgu Katmanı */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
                   <img
                     src={photo?.url}
                     alt=""
-                    className="w-full h-full object-cover blur-2xl opacity-30 scale-125 filter contrast-125 brightness-75 pointer-events-none"
+                    className="w-full h-full object-cover blur-2xl opacity-35 scale-125 filter contrast-125 brightness-75"
                   />
-                  <div className="absolute inset-0 bg-black/25" />
+                  <div className="absolute inset-0 bg-black/20" />
                 </div>
 
-                {/* Ana Görsel: Tamamen Görünür (object-contain ile Asla Kesilmez) */}
+                {/* Ana Görsel */}
                 <img
                   src={photo?.url}
                   alt={photo?.title || 'Dergi Fotoğrafı'}
-                  className="relative z-10 max-w-full max-h-full object-contain filter contrast-[1.04] drop-shadow-md"
+                  className="relative z-10 w-full h-full object-cover object-[center_top] filter contrast-[1.05]"
                 />
               </div>
 
               {/* Açıklama Kutusu */}
-              <div className="mt-2 pt-1.5 border-t border-black/20 flex flex-col justify-between font-mono text-neutral-800 shrink-0">
+              <div className="mt-2 pt-2 border-t border-black/20 flex flex-col justify-between font-mono text-neutral-800 shrink-0">
                 <div className="flex items-center justify-between text-[11px] sm:text-xs font-bold">
                   <span className="text-red-600 truncate mr-2">
                     {photoIndex === 0 ? 'KAPAK KADRAJI' : `KADRAJ #${photoIndex + 1}`} — {photo?.title || post?.title || 'EDİTORYAL KADRAJ'}
@@ -954,7 +954,7 @@ export function MagazineModal({
 
             {/* Stüdyoda Düzenle Butonu (Yalnızca Ekranda) */}
             {!isPdf && onLoadPostToStudio && (
-              <div className="flex justify-end w-full max-w-[530px] mx-auto shrink-0 mt-1.5">
+              <div className="flex justify-end max-w-[420px] sm:max-w-[440px] mx-auto w-full shrink-0">
                 <button
                   type="button"
                   onClick={() => {
@@ -972,7 +972,7 @@ export function MagazineModal({
           </div>
 
           {/* Bottom Footer */}
-          <div className="border-t-2 border-black/80 pt-1.5 flex items-center justify-between font-mono text-[10px] text-neutral-600 shrink-0">
+          <div className="border-t-2 border-black/80 pt-2 flex items-center justify-between font-mono text-[10px] text-neutral-600 shrink-0">
             {!isPdf ? (
               <>
                 <button
@@ -1057,31 +1057,16 @@ export function MagazineModal({
         const pageEl = pages[i];
 
         // Font ve görsellerin oturması için kısa render gecikmesi
-        await new Promise((resolve) => setTimeout(resolve, 80));
+        await new Promise((resolve) => setTimeout(resolve, 120));
 
-        let imgData;
-        try {
-          imgData = await toJpeg(pageEl, {
-            quality: 0.95,
-            pixelRatio: 2,
-            cacheBust: false,
-            skipFonts: true,
-            backgroundColor: bgColor,
-            width: 580,
-            height: 820
-          });
-        } catch (pageErr) {
-          console.warn(`Sayfa ${i + 1} yakalama uyarısı, yedek deneniyor:`, pageErr);
-          imgData = await toJpeg(pageEl, {
-            quality: 0.9,
-            pixelRatio: 1.5,
-            cacheBust: false,
-            skipFonts: true,
-            backgroundColor: bgColor,
-            width: 580,
-            height: 820
-          });
-        }
+        const imgData = await toJpeg(pageEl, {
+          quality: 0.98,
+          pixelRatio: 2,
+          cacheBust: true,
+          backgroundColor: bgColor,
+          width: 580,
+          height: 820
+        });
 
         if (i > 0) {
           pdf.addPage('a4', 'portrait');
@@ -1110,12 +1095,12 @@ export function MagazineModal({
         @media screen {
           .magazine-print-only {
             position: fixed !important;
-            left: 0 !important;
+            left: -99999px !important;
             top: 0 !important;
             width: 580px !important;
-            opacity: 0.001 !important;
+            opacity: 1 !important;
             pointer-events: none !important;
-            z-index: -9999 !important;
+            z-index: -999 !important;
           }
         }
         @media print {
