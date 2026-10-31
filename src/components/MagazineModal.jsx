@@ -170,11 +170,14 @@ const PAGE_H = 820;
 // PDF çözünürlüğü: A4 genişliği 210 mm = 8.27 inç; piksel oranı = DPI * 8.27 / PAGE_W
 // (300 DPI -> 2480 px genişlik). Seçim tarayıcıda hatırlanır.
 const A4_WIDTH_INCH = 210 / 25.4;
+const A4_HEIGHT_INCH = 297 / 25.4;
 const PDF_DPI_OPTIONS = [
-  { dpi: 96, label: 'Ekran' },
-  { dpi: 150, label: 'Taslak' },
-  { dpi: 200, label: 'Orta' },
-  { dpi: 300, label: 'Baskı' }
+  { dpi: 96, label: 'Ekran', hint: 'Paylaşım, ön izleme' },
+  { dpi: 150, label: 'Taslak', hint: 'Hızlı deneme baskısı' },
+  { dpi: 200, label: 'Orta', hint: 'Ev yazıcısı' },
+  { dpi: 300, label: 'Baskı', hint: 'Matbaa standardı', recommended: true },
+  { dpi: 400, label: 'Yüksek', hint: 'İnce fotoğraf detayı' },
+  { dpi: 600, label: 'Maksimum', hint: 'En keskin metin' }
 ];
 const DEFAULT_PDF_DPI = 300;
 const PDF_DPI_STORAGE_KEY = 'magazine.pdfDpi';
@@ -186,6 +189,113 @@ function readStoredPdfDpi() {
   } catch {
     return DEFAULT_PDF_DPI;
   }
+}
+
+// PDF düğmesine bitişik, modern açılır DPI seçici
+function PdfDpiPicker({ value, onChange, disabled }) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef(null);
+  const optionRefs = useRef([]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (e) => {
+      if (rootRef.current && !rootRef.current.contains(e.target)) setOpen(false);
+    };
+    // Yakalama aşamasında: Esc dergiyi değil yalnızca menüyü kapatsın
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        setOpen(false);
+      }
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('keydown', onKeyDown, true);
+    // Açılınca seçili seçeneğe odaklan
+    const idx = PDF_DPI_OPTIONS.findIndex((o) => o.dpi === value);
+    requestAnimationFrame(() => optionRefs.current[Math.max(0, idx)]?.focus());
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('keydown', onKeyDown, true);
+    };
+  }, [open, value]);
+
+  const moveFocus = (from, delta) => {
+    const n = PDF_DPI_OPTIONS.length;
+    optionRefs.current[(from + delta + n) % n]?.focus();
+  };
+
+  return (
+    <div ref={rootRef} className="relative flex">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        title="PDF çözünürlüğü (DPI)"
+        className={`flex items-center gap-0.5 pl-1.5 sm:pl-2 pr-1 rounded-r-lg border border-l-0 border-red-500/50 text-white text-[11px] font-mono font-bold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+          open ? 'bg-red-800' : 'bg-red-700 hover:bg-red-800'
+        }`}
+      >
+        <span className="whitespace-nowrap">{value}<span className="hidden lg:inline xl:hidden 2xl:inline"> DPI</span></span>
+        <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div
+          role="listbox"
+          aria-label="PDF çözünürlüğü"
+          className="absolute right-0 top-full mt-2 z-50 w-[304px] max-w-[calc(100vw-24px)] rounded-xl bg-[#16171d]/95 backdrop-blur-xl border border-white/10 shadow-[0_18px_50px_rgba(0,0,0,0.65)] p-1.5 animate-fadeIn"
+        >
+          <div className="px-2.5 pt-1.5 pb-2 flex items-baseline justify-between">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-[0.18em] text-neutral-400">PDF Çözünürlüğü</span>
+            <span className="text-[10px] font-mono text-neutral-500">A4 piksel</span>
+          </div>
+          {PDF_DPI_OPTIONS.map((o, idx) => {
+            const selected = o.dpi === value;
+            const w = Math.round(o.dpi * A4_WIDTH_INCH);
+            const h = Math.round(o.dpi * A4_HEIGHT_INCH);
+            return (
+              <button
+                key={o.dpi}
+                ref={(el) => { optionRefs.current[idx] = el; }}
+                type="button"
+                role="option"
+                aria-selected={selected}
+                onClick={() => { onChange(o.dpi); setOpen(false); }}
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowDown') { e.preventDefault(); moveFocus(idx, 1); }
+                  else if (e.key === 'ArrowUp') { e.preventDefault(); moveFocus(idx, -1); }
+                }}
+                className={`group w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-red-500/60 ${
+                  selected ? 'bg-red-600/15' : 'hover:bg-white/[0.06] focus:bg-white/[0.06]'
+                }`}
+              >
+                <span className={`w-12 shrink-0 font-mono text-sm font-bold tabular-nums ${selected ? 'text-red-400' : 'text-white'}`}>
+                  {o.dpi}
+                </span>
+                <span className="flex-1 min-w-0">
+                  <span className="flex items-center gap-1.5">
+                    <span className={`text-xs font-semibold ${selected ? 'text-red-300' : 'text-neutral-100'}`}>{o.label}</span>
+                    {o.recommended && (
+                      <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-px rounded bg-emerald-500/15 text-emerald-400">Önerilen</span>
+                    )}
+                  </span>
+                  <span className="block text-[10px] text-neutral-500 truncate">{o.hint}</span>
+                </span>
+                <span className="shrink-0 font-mono text-[10px] tabular-nums text-neutral-500">{w}×{h}</span>
+                <Check className={`w-3.5 h-3.5 shrink-0 text-red-400 ${selected ? 'opacity-100' : 'opacity-0'}`} />
+              </button>
+            );
+          })}
+          <p className="mx-2.5 mt-1.5 mb-1 pt-2 border-t border-white/10 text-[10px] leading-snug text-neutral-500">
+            300 DPI üzeri dosyayı büyütür ve süreyi uzatır; farkı en çok küçük metinde görülür.
+          </p>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // PDF yakalamasında gömülecek web font CSS'i.
@@ -1815,7 +1925,7 @@ export function MagazineModal({
             type="button"
             onClick={handleDownloadPdf}
             disabled={isGeneratingPdf}
-            className="flex items-center space-x-1.5 px-2 sm:px-3 py-1.5 rounded-l-lg bg-red-600 hover:bg-red-700 text-white border border-red-500/50 text-xs font-mono font-bold transition-all cursor-pointer disabled:opacity-50"
+            className="flex items-center space-x-1.5 px-1.5 sm:px-3 py-1.5 rounded-l-lg bg-red-600 hover:bg-red-700 text-white border border-red-500/50 text-xs font-mono font-bold transition-all cursor-pointer disabled:opacity-50"
             title={`Dergiyi ${pdfDpi} DPI standart A4 PDF olarak doğrudan indir`}
           >
             {isGeneratingPdf ? (
@@ -1825,23 +1935,7 @@ export function MagazineModal({
             )}
             <span className="hidden md:inline whitespace-nowrap">{isGeneratingPdf ? 'İndiriliyor...' : 'PDF İndir'}</span>
           </button>
-          <label className="relative flex items-center rounded-r-lg bg-red-700 hover:bg-red-800 border border-l-0 border-red-500/50 text-white text-[11px] font-mono font-bold transition-colors" title="PDF çözünürlüğü (DPI)">
-            <span className="pl-1.5 sm:pl-2 pr-3.5 sm:pr-4 pointer-events-none whitespace-nowrap">{pdfDpi}<span className="hidden lg:inline"> DPI</span></span>
-            <ChevronDown className="w-3 h-3 absolute right-1 pointer-events-none" />
-            <select
-              value={pdfDpi}
-              onChange={(e) => handleChangePdfDpi(Number(e.target.value))}
-              disabled={isGeneratingPdf}
-              aria-label="PDF çözünürlüğü (DPI)"
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
-            >
-              {PDF_DPI_OPTIONS.map((o) => (
-                <option key={o.dpi} value={o.dpi} className="text-black">
-                  {o.dpi} DPI — {o.label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <PdfDpiPicker value={pdfDpi} onChange={handleChangePdfDpi} disabled={isGeneratingPdf} />
           </div>
 
           {/* Browser Print / Physical Paper */}
